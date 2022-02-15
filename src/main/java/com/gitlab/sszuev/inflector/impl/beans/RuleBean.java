@@ -1,0 +1,52 @@
+package com.gitlab.sszuev.inflector.impl.beans;
+
+import java.util.List;
+
+/**
+ * Created by @ssz on 04.12.2020.
+ */
+@SuppressWarnings("unused")
+public class RuleBean {
+    private String gender;
+    private List<String> mods;
+    private List<String> test;
+
+    private List<String> tags;
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
+
+    public List<String> getMods() {
+        return mods;
+    }
+
+    public void setMods(List<String> mods) {
+        this.mods = mods;
+    }
+
+    public List<String> getTest() {
+        return test;
+    }
+
+    public void setTest(List<String> test) {
+        this.test = test;
+    }
+
+    public List<String> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<String> tags) {
+        this.tags = tags;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("RuleBean{gender='%s', mods=%s, test=%s}", gender, mods, test);
+    }
+}
