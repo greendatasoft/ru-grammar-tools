@@ -66,4 +66,10 @@ public class MiscDataTest {
     public void testIssue9() {
         checkName(WordType.FIRST_NAME, Gender.FEMALE, "Айгюль", "Айгюль", "Айгюль", "Айгюль", "Айгюль", "Айгюль");
     }
+
+    public static class XXX {
+        public static void main(String... args) {
+            System.out.println("Павел");
+        }
+    }
 }

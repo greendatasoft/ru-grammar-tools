@@ -5,7 +5,6 @@ import com.gitlab.sszuev.inflector.Gender;
 import com.gitlab.sszuev.inflector.impl.beans.NameBean;
 import com.gitlab.sszuev.inflector.impl.beans.RuleBean;
 import com.gitlab.sszuev.inflector.impl.beans.RulesBean;
-import org.springframework.core.io.ClassPathResource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,7 +78,8 @@ public class RuleLibrary {
     }
 
     private static <X> X loadJsonBean(Class<X> type, String file) {
-        try (InputStream in = new ClassPathResource(file, RuleLibrary.class).getInputStream()) {
+
+        try (InputStream in = RuleLibrary.class.getResourceAsStream(file)) {
             return new ObjectMapper().readValue(in, type);
         } catch (IOException e) {
             throw new IllegalStateException("Can't load", e);
