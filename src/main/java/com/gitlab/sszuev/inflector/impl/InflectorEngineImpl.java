@@ -30,7 +30,7 @@ public class InflectorEngineImpl implements InflectorEngine {
         if (type == WordType.REGULAR_TERM) {
             return inflectPosition(word, declension);
         }
-        return process(word, type, gender, declension);
+        return process(word, type, gender == null ? Gender.MALE : gender, declension);
     }
 
     /**
@@ -146,6 +146,8 @@ public class InflectorEngineImpl implements InflectorEngine {
                 return RuleLibrary.LAST_NAME_RULES;
             case REGULAR_TERM:
                 return RuleLibrary.REGULAR_TERM_RULES;
+            case NUMERALS:
+                return RuleLibrary.NUMERALS_RULES;
             default:
                 throw new IllegalArgumentException("Wrong type " + type);
         }

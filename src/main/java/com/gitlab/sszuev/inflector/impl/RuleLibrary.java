@@ -20,6 +20,7 @@ import java.util.Collection;
 public class RuleLibrary {
     private static final RulesBean NAMES_RULES_LIB = loadNamesBean();
     private static final NameBean REGULAR_RULES_LIB = loadRegularBean();
+    private static final NameBean NUMERALS_RULES_LIB = loadNumeralsBean();
 
     static final char KEEP_CHARACTER = '.';
     static final char REMOVE_CHARACTER = '-';
@@ -29,6 +30,7 @@ public class RuleLibrary {
     public static final RuleSet FIRST_NAME_RULES = map(NAMES_RULES_LIB.getFirstname());
     public static final RuleSet PATRONYMIC_NAME_RULES = map(NAMES_RULES_LIB.getMiddlename());
     public static final RuleSet REGULAR_TERM_RULES = map(REGULAR_RULES_LIB);
+    public static final RuleSet NUMERALS_RULES = map(NUMERALS_RULES_LIB);
 
     private static RuleSet map(NameBean bean) {
         return new RuleSet(map(bean.getExceptions()), map(bean.getSuffixes()));
@@ -75,6 +77,15 @@ public class RuleLibrary {
      */
     private static NameBean loadRegularBean() {
         return loadJsonBean(NameBean.class, "/regular.json");
+    }
+
+    /**
+     * Loads numerals library for inflecting Russian numerical terms (such as {@code "пятьсот"}).
+     *
+     * @return {@link NameBean}
+     */
+    private static NameBean loadNumeralsBean() {
+        return loadJsonBean(NameBean.class, "/numerals-rules.json");
     }
 
     private static <X> X loadJsonBean(Class<X> type, String file) {

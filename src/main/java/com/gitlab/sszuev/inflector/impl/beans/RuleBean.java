@@ -8,6 +8,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class RuleBean {
     private String gender;
+    private String description;
     private List<String> mods;
     private List<String> test;
 
@@ -43,6 +44,14 @@ public class RuleBean {
 
     public void setTags(List<String> tags) {
         this.tags = tags;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     @Override
