@@ -45,24 +45,42 @@ public class NumeralRuleTest {
     @Test
     @DisplayName("[test] ::: один")
     public void testNumeralMaleOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.MALE, false), "один", "одного", "одному", "один", "одним", "одном");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.MALE, false),
+                "один", "одного", "одному", "один", "одним", "одном");
     }
 
     @Test
     @DisplayName("[test] ::: одна")
     public void testNumeralFemaleOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false), "одна", "одной", "одной", "одну", "одной", "одной");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false),
+                "одна", "одной", "одной", "одну", "одной", "одной");
     }
 
     @Test
     @DisplayName("[test] ::: одно")
     public void testNumeralNeuterOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.NEUTER, false), "одно", "одного", "одному", "одно", "одним", "одном");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.NEUTER, false),
+                "одно", "одного", "одному", "одно", "одним", "одном");
     }
 
     @Test
     @DisplayName("[test] ::: тысяча")
     public void testNumeralThousand() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false), "тысяча", "тысячи", "тысяче", "тысячу", "тысячей", "тысяче");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false),
+                "тысяча", "тысячи", "тысяче", "тысячу", "тысячей", "тысяче");
+    }
+
+    @Test
+    @DisplayName("[test] ::: тысяч")
+    public void testNumeralPluralThousandFirstForm() {
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, true),
+                "тысяч", "тысяч", "тысячам", "тысяч", "тысячами", "тысячах");
+    }
+
+    @Test
+    @DisplayName("[test] ::: тысячи")
+    public void testNumeralPluralThousandSecondForm() {
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, true),
+                "тысячи", "тысяч", "тысячам", "тысячи", "тысячами", "тысячах");
     }
 }

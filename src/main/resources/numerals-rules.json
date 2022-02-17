@@ -187,7 +187,7 @@
       "gender": "androgynous",
       "description": "4",
       "test": [
-        "е"
+        "четыре"
       ],
       "mods": [
         "-ёх",
@@ -201,7 +201,7 @@
       "gender": "androgynous",
       "description": "3",
       "test": [
-        "и"
+        "три"
       ],
       "mods": [
         "-ёх",
@@ -279,6 +279,36 @@
         "-у",
         "-ей",
         "-е"
+      ]
+    },
+    {
+      "gender": "female",
+      "description": "1000",
+      "plural": true,
+      "test": [
+        "яч"
+      ],
+      "mods": [
+        ".",
+        "ам",
+        ".",
+        "ами",
+        "ах"
+      ]
+    },
+    {
+      "gender": "female",
+      "description": "1000",
+      "plural": true,
+      "test": [
+        "чи"
+      ],
+      "mods": [
+        "-",
+        "-ам",
+        ".",
+        "-ами",
+        "-ах"
       ]
     },
     {
