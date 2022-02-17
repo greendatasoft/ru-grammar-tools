@@ -31,7 +31,7 @@ public interface InflectorEngine {
     }
 
     /**
-     * Declines the given {@code number} (i.e. numeral phrase) into the specified declension case.
+     * Declines the given {@code number} (i.e. inanimate numeral) into the specified declension case.
      *
      * @param number     {@code String} not {@code null}, e.g.{@code "пятьсот"}
      * @param declension {@link Case declension case}, not {@code null}

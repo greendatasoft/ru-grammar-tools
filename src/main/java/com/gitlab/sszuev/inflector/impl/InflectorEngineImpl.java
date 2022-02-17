@@ -22,7 +22,7 @@ public class InflectorEngineImpl implements InflectorEngine {
     @Override
     public String inflect(String word, WordType type, Gender gender, Case declension) {
         if (word == null || word.isEmpty()) {
-            throw new IllegalArgumentException("No name");
+            throw new IllegalArgumentException("No name is given");
         }
         if (declension == Case.NOMINATIVE) {
             return word;
@@ -58,6 +58,7 @@ public class InflectorEngineImpl implements InflectorEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension) {
+        Objects.requireNonNull(declension);
         String[] parts = Objects.requireNonNull(phrase).trim().split("\\s+");
 
         Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.

@@ -11,6 +11,8 @@ import java.util.function.BiFunction;
 
 /**
  * Created by @ssz on 17.02.2022.
+ *
+ * @see <a href='https://numeralonline.ru/1'></a>
  */
 public class NumeralRuleTest {
 
@@ -43,5 +45,17 @@ public class NumeralRuleTest {
     @DisplayName("[test] ::: один")
     public void testNumeralMaleOne() {
         testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.MALE, c), "один", "одного", "одному", "один", "одним", "одном");
+    }
+
+    @Test
+    @DisplayName("[test] ::: одна")
+    public void testNumeralFemaleOne() {
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.FEMALE, c), "одна", "одной", "одной", "одну", "одной", "одной");
+    }
+
+    @Test
+    @DisplayName("[test] ::: одно")
+    public void testNumeralNeuterOne() {
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.NEUTER, c), "одно", "одного", "одному", "одно", "одним", "одном");
     }
 }
