@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/test/java/com/github/petrovich4j/PetrovichTests.java'>PetrovichTests</a>
  */
-public class ResourceDataTest {
+public class NameRuleTest {
     private final InflectorEngine engine = TestUtils.createEngine();
 
     private void check(WordType type, Gender gender, String... test) {

@@ -129,7 +129,7 @@
     },
     {
       "gender": "androgynous",
-      "description": "30,20,10",
+      "description": "30,20,10,9,6,5",
       "test": [
         "ть"
       ],
@@ -139,6 +139,104 @@
         ".",
         "--тью",
         "--ти"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "8",
+      "test": [
+        "осемь"
+      ],
+      "mods": [
+        "---ьми",
+        "---ьми",
+        ".",
+        "---ьмью",
+        "---ьми"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "0",
+      "test": [
+        "ль"
+      ],
+      "mods": [
+        "-я",
+        "-ю",
+        ".",
+        "-ём",
+        "-е"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "7,6,5",
+      "test": [
+        "ь"
+      ],
+      "mods": [
+        "-и",
+        "-и",
+        ".",
+        "-ью",
+        "-и"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "4",
+      "test": [
+        "е"
+      ],
+      "mods": [
+        "-ёх",
+        "-ём",
+        ".",
+        "-ьмя",
+        "-ёх"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "3",
+      "test": [
+        "и"
+      ],
+      "mods": [
+        "-ёх",
+        "-ём",
+        ".",
+        "-емя",
+        "-ёх"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "2",
+      "test": [
+        "а"
+      ],
+      "mods": [
+        "-ух",
+        "-ум",
+        ".",
+        "-умя",
+        "-ух"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "1",
+      "test": [
+        "ин"
+      ],
+      "mods": [
+        "--ного",
+        "--ному",
+        ".",
+        "--ним",
+        "--ном"
       ]
     }
   ]

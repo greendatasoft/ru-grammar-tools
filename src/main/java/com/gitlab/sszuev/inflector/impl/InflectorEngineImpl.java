@@ -28,19 +28,36 @@ public class InflectorEngineImpl implements InflectorEngine {
             return word;
         }
         if (type == WordType.REGULAR_TERM) {
-            return inflectPosition(word, declension);
+            return inflectRegularTerm(word, declension);
+        }
+        if (type == WordType.NUMERALS) {
+            return inflectNumeral(word, gender, declension);
         }
         return process(word, type, gender == null ? Gender.MALE : gender, declension);
     }
 
     /**
+     * Inflects the numeral.
+     *
+     * @param number     {@code String}, not {@code null}
+     * @param gender     {@link Gender} some numerals have gender (e.g. {@code "oдин"\"одна"\"одно"}),
+     *                   but usually it is {@link Gender#NEUTER}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @return {@code String} -  a numeral phrase in the selected case
+     */
+    public String inflectNumeral(String number, Gender gender, Case declension) {
+        return process(number, WordType.NUMERALS, gender, declension);
+    }
+
+    /**
      * Inflects the job-title (profession).
      *
-     * @param phrase     {@code String}. not {@code null}
+     * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a phrase in the selected case
      */
-    protected String inflectPosition(String phrase, Case declension) {
+    @Override
+    public String inflectRegularTerm(String phrase, Case declension) {
         String[] parts = Objects.requireNonNull(phrase).trim().split("\\s+");
 
         Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.
@@ -131,9 +148,9 @@ public class InflectorEngineImpl implements InflectorEngine {
         return res.toString();
     }
 
-    private String process(String name, WordType type, Gender gender, Case declension) {
-        Rule rule = findRule(name, gender, chooseRuleSet(type));
-        return rule == null ? name : applyMod(rule.mode(declension), name);
+    private String process(String phrase, WordType type, Gender gender, Case declension) {
+        Rule rule = findRule(phrase, gender, chooseRuleSet(type));
+        return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
     }
 
     private RuleSet chooseRuleSet(WordType type) {
@@ -172,9 +189,9 @@ public class InflectorEngineImpl implements InflectorEngine {
         return result;
     }
 
-    public static Rule findRule(String name, Gender gender, RuleSet rules) {
-        Rule exceptionRule = findRule(rules.exceptions(), gender, name);
-        Rule suffixRule = findRule(rules.suffixes(), gender, name);
+    public static Rule findRule(String phrase, Gender gender, RuleSet rules) {
+        Rule exceptionRule = findRule(rules.exceptions(), gender, phrase);
+        Rule suffixRule = findRule(rules.suffixes(), gender, phrase);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;
         }
@@ -184,10 +201,10 @@ public class InflectorEngineImpl implements InflectorEngine {
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule findRule(Stream<Rule> rules, Gender gender, String name) {
-        String lcName = name.toLowerCase();
+    private static Rule findRule(Stream<Rule> rules, Gender gender, String word) {
+        String lcWord = word.toLowerCase();
         return rules.filter(rule -> rule.test()
-                        .anyMatch(test -> (rule.gender == Gender.NEUTER || rule.gender == gender) && lcName.endsWith(test)))
+                        .anyMatch(test -> (rule.gender == Gender.NEUTER || rule.gender == gender) && lcWord.endsWith(test)))
                 .findFirst().orElse(null);
     }
 }

@@ -11,7 +11,8 @@ public interface InflectorEngine {
      *
      * @param word       {@code String} not {@code null}
      * @param type       {@link WordType} (part of FPS or profession), not {@code null}
-     * @param gender     {@link Gender}, russian feminine, masculine or neuter, by default {@link Gender#MALE}
+     * @param gender     {@link Gender}, russian feminine, masculine or neuter,
+     *                   {@code null} to choose automatically (usually it is {@link Gender#MALE})
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String}
      */
@@ -25,12 +26,12 @@ public interface InflectorEngine {
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a phrase in the selected case
      */
-    default String inflect(String word, Case declension) {
+    default String inflectRegularTerm(String word, Case declension) {
         return inflect(word, WordType.REGULAR_TERM, Gender.MALE, declension);
     }
 
     /**
-     * Declines the given {@code number} into the specified declension case.
+     * Declines the given {@code number} (i.e. numeral phrase) into the specified declension case.
      *
      * @param number     {@code String} not {@code null}, e.g.{@code "пятьсот"}
      * @param declension {@link Case declension case}, not {@code null}
