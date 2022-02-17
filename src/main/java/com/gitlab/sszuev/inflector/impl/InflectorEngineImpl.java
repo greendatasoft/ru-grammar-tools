@@ -5,9 +5,11 @@ import com.gitlab.sszuev.inflector.Gender;
 import com.gitlab.sszuev.inflector.InflectorEngine;
 import com.gitlab.sszuev.inflector.WordType;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -191,21 +193,36 @@ public class InflectorEngineImpl implements InflectorEngine {
     }
 
     public static Rule findRule(String phrase, Gender gender, RuleSet rules) {
-        Rule exceptionRule = findRule(rules.exceptions(), gender, phrase);
-        Rule suffixRule = findRule(rules.suffixes(), gender, phrase);
+        Rule exceptionRule = selectRule(rules.exceptions(), gender, phrase);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;
         }
+        Rule suffixRule = selectRule(rules.suffixes(), gender, phrase);
         if (suffixRule != null && suffixRule.gender == gender) {
             return suffixRule;
         }
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule findRule(Stream<Rule> rules, Gender gender, String word) {
+    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word) {
         String lcWord = word.toLowerCase();
-        return rules.filter(rule -> rule.test()
-                        .anyMatch(test -> (rule.gender == Gender.NEUTER || rule.gender == gender) && lcWord.endsWith(test)))
-                .findFirst().orElse(null);
+        List<Rule> res = rules.filter(rule -> (rule.gender == Gender.NEUTER || rule.gender == gender)
+                        && rule.test().anyMatch(lcWord::endsWith))
+                .collect(Collectors.toList());
+        if (res.isEmpty()) {
+            return null;
+        }
+        if (res.size() == 1) {
+            return res.get(0);
+        }
+        Rule rule = res.stream().filter(x -> x.gender == gender).findFirst().orElse(null);
+        if (rule != null) {
+            return rule;
+        }
+        rule = res.stream().filter(x -> x.gender == Gender.NEUTER).findFirst().orElse(null);
+        if (rule != null) {
+            return rule;
+        }
+        throw new IllegalStateException();
     }
 }
