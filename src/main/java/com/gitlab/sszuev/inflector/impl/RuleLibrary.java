@@ -66,17 +66,17 @@ public class RuleLibrary {
      * @see <a href='https://raw.githubusercontent.com/petrovich/petrovich-rules/master/rules.json'>rules.json</a>
      */
     private static RulesBean loadNamesBean() {
-        return loadJsonBean(RulesBean.class, "/rules.json");
+        return loadJsonBean(RulesBean.class, "/name-rules.json");
     }
 
     /**
      * Loads (from the class-path) a core library (rules-json) for inflecting Russian regular terms.
-     * Initially, it was identical to the declension rules for surnames from {@link #loadNamesBean() rules.json}.
+     * Initially, it was identical to the declension rules for surnames from {@link #loadNamesBean() name-rules.json}.
      *
      * @return {@link NameBean}
      */
     private static NameBean loadRegularBean() {
-        return loadJsonBean(NameBean.class, "/regular.json");
+        return loadJsonBean(NameBean.class, "/regular-rules.json");
     }
 
     /**
@@ -89,7 +89,6 @@ public class RuleLibrary {
     }
 
     private static <X> X loadJsonBean(Class<X> type, String file) {
-
         try (InputStream in = RuleLibrary.class.getResourceAsStream(file)) {
             return new ObjectMapper().readValue(in, type);
         } catch (IOException e) {
