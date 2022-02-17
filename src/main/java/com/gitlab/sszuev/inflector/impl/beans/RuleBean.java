@@ -9,9 +9,9 @@ import java.util.List;
 public class RuleBean {
     private String gender;
     private String description;
+    private boolean plural;
     private List<String> mods;
     private List<String> test;
-
     private List<String> tags;
 
     public String getGender() {
@@ -52,6 +52,14 @@ public class RuleBean {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isPlural() {
+        return plural;
+    }
+
+    public void setPlural(boolean plural) {
+        this.plural = plural;
     }
 
     @Override

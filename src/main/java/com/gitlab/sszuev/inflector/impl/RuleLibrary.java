@@ -41,7 +41,7 @@ public class RuleLibrary {
     }
 
     private static Rule map(RuleBean bean) {
-        return new Rule(map(bean.getGender()), bean.getTest().toArray(new String[0]), bean.getMods().toArray(new String[0]));
+        return new Rule(bean.getTest().toArray(new String[0]), bean.getMods().toArray(new String[0]), map(bean.getGender()), bean.isPlural());
     }
 
     private static Gender map(String name) {

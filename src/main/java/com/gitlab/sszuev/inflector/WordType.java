@@ -10,5 +10,4 @@ public enum WordType {
     PATRONYMIC_NAME,
     REGULAR_TERM, // anything
     NUMERALS, // like 'пятьсот'
-    ;
 }

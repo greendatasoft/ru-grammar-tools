@@ -45,24 +45,24 @@ public class NumeralRuleTest {
     @Test
     @DisplayName("[test] ::: один")
     public void testNumeralMaleOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.MALE, c), "один", "одного", "одному", "один", "одним", "одном");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.MALE, false), "один", "одного", "одному", "один", "одним", "одном");
     }
 
     @Test
     @DisplayName("[test] ::: одна")
     public void testNumeralFemaleOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.FEMALE, c), "одна", "одной", "одной", "одну", "одной", "одной");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false), "одна", "одной", "одной", "одну", "одной", "одной");
     }
 
     @Test
     @DisplayName("[test] ::: одно")
     public void testNumeralNeuterOne() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.NEUTER, c), "одно", "одного", "одному", "одно", "одним", "одном");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.NEUTER, false), "одно", "одного", "одному", "одно", "одним", "одном");
     }
 
     @Test
     @DisplayName("[test] ::: тысяча")
     public void testNumeralThousand() {
-        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, Gender.FEMALE, c), "тысяча", "тысячи", "тысяче", "тысячу", "тысячей", "тысяче");
+        testNumerical((s, c) -> engine.inflect(s, WordType.NUMERALS, c, Gender.FEMALE, false), "тысяча", "тысячи", "тысяче", "тысячу", "тысячей", "тысяче");
     }
 }

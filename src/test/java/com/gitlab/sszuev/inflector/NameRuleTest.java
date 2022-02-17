@@ -23,7 +23,7 @@ public class NameRuleTest {
     }
 
     private void checkName(String expected, String given, WordType type, Gender gender, Case declension) {
-        String actual = engine.inflect(given, type, gender, declension);
+        String actual = engine.inflect(given, type, declension, gender, false);
         actual = actual.replace("ё", "е");
         expected = expected.replace("ё", "е");
         Assertions.assertEquals(expected, actual, String.format("%s case, %s", declension, gender));

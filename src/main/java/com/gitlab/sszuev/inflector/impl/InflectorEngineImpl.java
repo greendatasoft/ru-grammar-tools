@@ -16,26 +16,27 @@ import java.util.stream.Stream;
  * The engine impl.
  * <p>
  * Created by @ssz on 27.11.2020.
- *
- * @see <a href='https://github.com/petrovich4j/petrovich4j'>petrovich4j</a>
  */
 public class InflectorEngineImpl implements InflectorEngine {
 
     @Override
-    public String inflect(String word, WordType type, Gender gender, Case declension) {
+    public String inflect(String word, WordType type, Case declension, Gender gender, boolean plural) {
         if (word == null || word.isEmpty()) {
             throw new IllegalArgumentException("No name is given");
+        }
+        if (declension == null) {
+            throw new IllegalArgumentException("No declension is given");
         }
         if (declension == Case.NOMINATIVE) {
             return word;
         }
         if (type == WordType.REGULAR_TERM) {
-            return inflectRegularTerm(word, declension);
+            return inflectRegularTerm(word, declension, plural);
         }
         if (type == WordType.NUMERALS) {
-            return inflectNumeral(word, gender, declension);
+            return inflectNumeral(word, gender, declension, plural);
         }
-        return process(word, type, gender == null ? Gender.MALE : gender, declension);
+        return process(word, type, gender == null ? Gender.MALE : gender, declension, plural);
     }
 
     /**
@@ -45,10 +46,11 @@ public class InflectorEngineImpl implements InflectorEngine {
      * @param gender     {@link Gender} some numerals have gender (e.g. {@code "oдин"\"одна"\"одно"}),
      *                   but usually it is {@link Gender#NEUTER}
      * @param declension {@link Case declension case}, not {@code null}
+     * @param plural     {@code boolean}
      * @return {@code String} -  a numeral phrase in the selected case
      */
-    public String inflectNumeral(String number, Gender gender, Case declension) {
-        return process(number, WordType.NUMERALS, gender, declension);
+    public String inflectNumeral(String number, Gender gender, Case declension, boolean plural) {
+        return process(number, WordType.NUMERALS, gender, Objects.requireNonNull(declension), plural);
     }
 
     /**
@@ -56,10 +58,10 @@ public class InflectorEngineImpl implements InflectorEngine {
      *
      * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
+     * @param plural     {@code boolean}
      * @return {@code String} -  a phrase in the selected case
      */
-    @Override
-    public String inflectRegularTerm(String phrase, Case declension) {
+    public String inflectRegularTerm(String phrase, Case declension, boolean plural) {
         Objects.requireNonNull(declension);
         String[] parts = Objects.requireNonNull(phrase).trim().split("\\s+");
 
@@ -111,7 +113,7 @@ public class InflectorEngineImpl implements InflectorEngine {
             end = noun;
         }
         for (int i = 0; i <= end; i++) {
-            parts[i] = processWithHyphen(parts[i], WordType.REGULAR_TERM, gender, declension);
+            parts[i] = processWithHyphen(parts[i], WordType.REGULAR_TERM, gender, declension, plural);
         }
         return String.join(" ", parts);
     }
@@ -135,24 +137,24 @@ public class InflectorEngineImpl implements InflectorEngine {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private String processWithHyphen(String input, WordType type, Gender gender, Case declension) {
+    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, boolean plural) {
         StringBuilder res = new StringBuilder();
         int prev = 0;
         Matcher m = Pattern.compile("-").matcher(input);
         Gender g = gender;
         while (m.find()) {
-            String txt = process(input.substring(prev, m.start()), type, g, declension);
+            String txt = process(input.substring(prev, m.start()), type, g, declension, plural);
             res.append(txt).append(m.group());
             prev = m.end();
             // the second part is usually in the masculine gender (e.g. "сестра-анестезист")
             g = Gender.MALE;
         }
-        res.append(process(input.substring(prev), type, g, declension));
+        res.append(process(input.substring(prev), type, g, declension, plural));
         return res.toString();
     }
 
-    private String process(String phrase, WordType type, Gender gender, Case declension) {
-        Rule rule = findRule(phrase, gender, chooseRuleSet(type));
+    private String process(String phrase, WordType type, Gender gender, Case declension, boolean plural) {
+        Rule rule = findRule(phrase, gender, plural, chooseRuleSet(type));
         return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
     }
 
@@ -192,21 +194,22 @@ public class InflectorEngineImpl implements InflectorEngine {
         return result;
     }
 
-    public static Rule findRule(String phrase, Gender gender, RuleSet rules) {
-        Rule exceptionRule = selectRule(rules.exceptions(), gender, phrase);
+    public static Rule findRule(String phrase, Gender gender, boolean plural, RuleSet rules) {
+        Rule exceptionRule = selectRule(rules.exceptions(), gender, phrase, plural);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;
         }
-        Rule suffixRule = selectRule(rules.suffixes(), gender, phrase);
+        Rule suffixRule = selectRule(rules.suffixes(), gender, phrase, plural);
         if (suffixRule != null && suffixRule.gender == gender) {
             return suffixRule;
         }
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word) {
+    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word, boolean plural) {
         String lcWord = word.toLowerCase();
-        List<Rule> res = rules.filter(rule -> (rule.gender == Gender.NEUTER || rule.gender == gender)
+        List<Rule> res = rules.filter(rule -> plural == rule.plural
+                        && (rule.gender == Gender.NEUTER || rule.gender == gender)
                         && rule.test().anyMatch(lcWord::endsWith))
                 .collect(Collectors.toList());
         if (res.isEmpty()) {
@@ -219,6 +222,7 @@ public class InflectorEngineImpl implements InflectorEngine {
         if (rule != null) {
             return rule;
         }
+        // if nothing found try neuter
         rule = res.stream().filter(x -> x.gender == Gender.NEUTER).findFirst().orElse(null);
         if (rule != null) {
             return rule;
