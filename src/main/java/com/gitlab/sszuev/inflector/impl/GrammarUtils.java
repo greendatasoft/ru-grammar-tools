@@ -79,7 +79,7 @@ public class GrammarUtils {
             of("дой", "слюдой")
     );
 
-    private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи");
+    private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
     private static final Set<String> MALE_NUMERALS = Set.of("один");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
