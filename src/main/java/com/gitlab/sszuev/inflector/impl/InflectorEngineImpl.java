@@ -20,7 +20,7 @@ import java.util.stream.Stream;
 public class InflectorEngineImpl implements InflectorEngine {
 
     @Override
-    public String inflect(String word, WordType type, Case declension, Gender gender, boolean plural) {
+    public String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural) {
         if (word == null || word.isEmpty()) {
             throw new IllegalArgumentException("No name is given");
         }
@@ -31,39 +31,50 @@ public class InflectorEngineImpl implements InflectorEngine {
             return word;
         }
         if (type == WordType.REGULAR_TERM) {
-            return inflectRegularTerm(word, declension, plural);
+            return inflectRegularTerm(word, declension);
         }
         if (type == WordType.NUMERALS) {
-            return inflectNumeral(word, gender, declension, plural);
+            return inflectNumeral(word, declension, gender, plural);
         }
         return process(word, type, gender == null ? Gender.MALE : gender, declension, plural);
+    }
+
+    @Override
+    public String inflectNumeral(String number, Case declension) {
+        Objects.requireNonNull(declension);
+        String[] parts = checkAndSplit(number);
+        for (int i = 0; i < parts.length; i++) {
+            String w = parts[i];
+            parts[i] = inflectNumeral(w, declension, GrammarUtils.getNumeralGender(w), null);
+        }
+        return String.join(" ", parts);
     }
 
     /**
      * Inflects the numeral.
      *
      * @param number     {@code String}, not {@code null}
+     * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender} some numerals have gender (e.g. {@code "oдин"\"одна"\"одно"}),
      *                   but usually it is {@link Gender#NEUTER}
-     * @param declension {@link Case declension case}, not {@code null}
      * @param plural     {@code boolean}
      * @return {@code String} -  a numeral phrase in the selected case
      */
-    public String inflectNumeral(String number, Gender gender, Case declension, boolean plural) {
+    public String inflectNumeral(String number, Case declension, Gender gender, Boolean plural) {
         return process(number, WordType.NUMERALS, gender, Objects.requireNonNull(declension), plural);
     }
 
     /**
-     * Inflects the job-title (profession).
+     * Inflects a regular-term (the job-title righ not).
      *
      * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
-     * @param plural     {@code boolean}
      * @return {@code String} -  a phrase in the selected case
      */
-    public String inflectRegularTerm(String phrase, Case declension, boolean plural) {
+    @Override
+    public String inflectRegularTerm(String phrase, Case declension) {
         Objects.requireNonNull(declension);
-        String[] parts = Objects.requireNonNull(phrase).trim().split("\\s+");
+        String[] parts = checkAndSplit(phrase);
 
         Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.
         int noun = 0; // the position of the main word in the phrase
@@ -113,9 +124,17 @@ public class InflectorEngineImpl implements InflectorEngine {
             end = noun;
         }
         for (int i = 0; i <= end; i++) {
-            parts[i] = processWithHyphen(parts[i], WordType.REGULAR_TERM, gender, declension, plural);
+            parts[i] = processWithHyphen(parts[i], WordType.REGULAR_TERM, gender, declension, false);
         }
         return String.join(" ", parts);
+    }
+
+    private static String[] checkAndSplit(String phrase) {
+        String[] res = Objects.requireNonNull(phrase).trim().split("\\s+");
+        if (res.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        return res;
     }
 
     private static boolean canBeAdjective(String word, Gender gender) {
@@ -137,7 +156,7 @@ public class InflectorEngineImpl implements InflectorEngine {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, boolean plural) {
+    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, Boolean plural) {
         StringBuilder res = new StringBuilder();
         int prev = 0;
         Matcher m = Pattern.compile("-").matcher(input);
@@ -153,7 +172,7 @@ public class InflectorEngineImpl implements InflectorEngine {
         return res.toString();
     }
 
-    private String process(String phrase, WordType type, Gender gender, Case declension, boolean plural) {
+    private String process(String phrase, WordType type, Gender gender, Case declension, Boolean plural) {
         Rule rule = findRule(phrase, gender, plural, chooseRuleSet(type));
         return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
     }
@@ -194,7 +213,7 @@ public class InflectorEngineImpl implements InflectorEngine {
         return result;
     }
 
-    public static Rule findRule(String phrase, Gender gender, boolean plural, RuleSet rules) {
+    public static Rule findRule(String phrase, Gender gender, Boolean plural, RuleSet rules) {
         Rule exceptionRule = selectRule(rules.exceptions(), gender, phrase, plural);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;
@@ -206,11 +225,12 @@ public class InflectorEngineImpl implements InflectorEngine {
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word, boolean plural) {
+    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word, Boolean plural) {
         String lcWord = word.toLowerCase();
-        List<Rule> res = rules.filter(rule -> plural == rule.plural
-                        && (rule.gender == Gender.NEUTER || rule.gender == gender)
-                        && rule.test().anyMatch(lcWord::endsWith))
+        List<Rule> res = rules.filter(rule ->
+                        (plural == null || rule.plural == plural)
+                                && (rule.gender == Gender.NEUTER || rule.gender == gender)
+                                && rule.test().anyMatch(lcWord::endsWith))
                 .collect(Collectors.toList());
         if (res.isEmpty()) {
             return null;

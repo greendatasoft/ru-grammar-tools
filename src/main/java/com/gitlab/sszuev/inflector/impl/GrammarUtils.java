@@ -1,5 +1,7 @@
 package com.gitlab.sszuev.inflector.impl;
 
+import com.gitlab.sszuev.inflector.Gender;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
@@ -77,6 +79,9 @@ public class GrammarUtils {
             of("дой", "слюдой")
     );
 
+    private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи");
+    private static final Set<String> MALE_NUMERALS = Set.of("один");
+
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
     }
@@ -151,6 +156,23 @@ public class GrammarUtils {
      */
     public static boolean canBeNonDerivativePreposition(String word) {
         return NON_DERIVATIVE_PREPOSITION.contains(normalize(word));
+    }
+
+    /**
+     * Returns the gender of the specified numeral.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@link Gender}
+     */
+    public static Gender getNumeralGender(String word) {
+        word = normalize(word);
+        if (MALE_NUMERALS.contains(word)) {
+            return Gender.MALE;
+        }
+        if (FEMALE_NUMERALS.contains(word)) {
+            return Gender.FEMALE;
+        }
+        return Gender.NEUTER;
     }
 
     private static String normalize(String s) {

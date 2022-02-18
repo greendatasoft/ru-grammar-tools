@@ -215,7 +215,8 @@
       "gender": "androgynous",
       "description": "2",
       "test": [
-        "два"
+        "два",
+        "две"
       ],
       "mods": [
         "-ух",
@@ -229,7 +230,7 @@
       "gender": "male",
       "description": "1",
       "test": [
-        "ин"
+        "один"
       ],
       "mods": [
         "--ного",
@@ -243,7 +244,7 @@
       "gender": "female",
       "description": "1",
       "test": [
-        "на"
+        "одна"
       ],
       "mods": [
         "-ой",
@@ -257,7 +258,7 @@
       "gender": "androgynous",
       "description": "1",
       "test": [
-        "но"
+        "одно"
       ],
       "mods": [
         "-ого",
@@ -324,6 +325,51 @@
         ".",
         "ом",
         "е"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "10^9",
+      "plural": true,
+      "test": [
+        "да"
+      ],
+      "mods": [
+        "-ов",
+        "-ам",
+        ".",
+        "-ами",
+        "-ах"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "10^6",
+      "plural": true,
+      "test": [
+        "ов"
+      ],
+      "mods": [
+        ".",
+        "--ам",
+        ".",
+        "--ами",
+        "--ах"
+      ]
+    },
+    {
+      "gender": "androgynous",
+      "description": "2 * 10^6",
+      "plural": true,
+      "test": [
+        "на"
+      ],
+      "mods": [
+        "-ов",
+        "м",
+        ".",
+        "ми",
+        "х"
       ]
     }
   ]
