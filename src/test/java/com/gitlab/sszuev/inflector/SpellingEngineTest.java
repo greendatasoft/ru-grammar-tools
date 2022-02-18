@@ -37,4 +37,18 @@ public class SpellingEngineTest {
         Assertions.assertEquals("один квадриллион три триллиона два миллиарда сорок две тысячи триста",
                 spellingEngine.spell(new BigDecimal(new BigInteger("1003002000042300"))));
     }
+
+    @Test
+    public void testFractionNumbers() {
+        Assertions.assertEquals("сорок две целых сорок две сотых", spellingEngine.spell(42.42));
+        Assertions.assertEquals("минус сто сорок пять целых три десятых", spellingEngine.spell(-145.3));
+        Assertions.assertEquals("одна целая три миллиона двести тридцать две тысячи триста пятьдесят шесть " +
+                "десятимиллионных", spellingEngine.spell(1.3232356));
+        Assertions.assertEquals("двадцать три целых девятьсот восемьдесят восемь тысяч восемьсот пятьдесят четыре " +
+                "миллиардных", spellingEngine.spell(23.000988854));
+        Assertions.assertEquals("ноль целых сорок четыре миллиарда четыреста одиннадцать миллионов сто тысяч сорок две " +
+                "стомиллиардных", spellingEngine.spell(0.44411100042));
+        Assertions.assertEquals("ноль целых десять стотриллионных", spellingEngine.spell(0.000_000_000_000_1));
+        Assertions.assertEquals("ноль целых сорок две квинтиллионных", spellingEngine.spell(0.000_000_000_000_000_042));
+    }
 }

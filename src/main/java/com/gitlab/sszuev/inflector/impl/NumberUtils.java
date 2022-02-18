@@ -29,9 +29,6 @@ public class NumberUtils {
             return BigDecimal.ZERO;
         }
         int scale = n.scale();
-        while (scale % 3 != 0) {
-            scale++;
-        }
         return n.remainder(BigDecimal.ONE, context).movePointRight(scale);
     }
 
@@ -56,4 +53,5 @@ public class NumberUtils {
     static boolean isEmpty(int[] t) {
         return t[2] == 0 && t[1] == 0 && t[0] == 0;
     }
+
 }

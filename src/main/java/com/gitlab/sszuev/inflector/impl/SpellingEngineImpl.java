@@ -29,7 +29,7 @@ public class SpellingEngineImpl implements SpellingEngine {
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%98%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5_%D0%BD%D0%B0%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D0%B5%D0%B9_%D1%82%D1%8B%D1%81%D1%8F%D1%87%D0%B8'>Именные названия степеней тысячи</a>
      */
     protected static final List<String> BIGS = List.of(
-            "миллион", "миллиард", "триллион", "квадриллион", "квинтиллион", "секстиллион", "септиллион",
+            "тысяча", "миллион", "миллиард", "триллион", "квадриллион", "квинтиллион", "секстиллион", "септиллион",
             "октиллион", "нониллион", "дециллион", "ундециллион", "дуодециллион", "тредециллион", "кваттордециллион",
             "квиндециллион", "седециллион", "септдециллион", "октодециллион", "новемдециллион", "вигинтиллион");
 
@@ -48,30 +48,44 @@ public class SpellingEngineImpl implements SpellingEngine {
     @Override
     public String spell(BigDecimal number) {
         StringJoiner res = new StringJoiner(" ");
-        if (number.signum() < 0) {
+        int signum = number.signum();
+        if (signum < 0) {
             res.add("минус");
-        } else if (number.signum() == 0) {
+        } else if (signum == 0) {
             return "ноль";
         }
         number = number.abs();
-        printIntegerTriples(res, NumberUtils.toTriples(number, context()));
+        BigDecimal fraction = NumberUtils.fraction(number, context());
+        boolean hasFraction = !NumberUtils.isZero(fraction);
+        int[] last = printIntegerTriples(res, NumberUtils.toTriples(number, context()), hasFraction);
+        if (hasFraction) {
+            if (NumberUtils.isEmpty(last)) {
+                res.add("ноль").add("целых");
+            } else {
+                res.add(last[2] == 1 ? "целая" : "целых");
+            }
+            int[] t = printIntegerTriples(res, NumberUtils.toTriples(fraction, context()), true);
+            res.add(getFractionDigit(t, number.scale()));
+        }
         return res.toString();
     }
 
-    protected void printIntegerTriples(StringJoiner res, List<Integer> triples) {
+    protected int[] printIntegerTriples(StringJoiner res, List<Integer> triples, boolean pluralEnding) {
+        int[] t = null;
         for (int i = 0; i < triples.size(); i++) {
-            int[] t = NumberUtils.toTriple(triples.get(i));
+            t = NumberUtils.toTriple(triples.get(i));
             if (NumberUtils.isEmpty(t)) {
                 continue;
             }
-            int index = triples.size() - 3 - i;
-            String s = tripleToString(t, index == -1);
+            int index = triples.size() - 2 - i;
+            String s = tripleToString(t, index == 0 || pluralEnding);
             res.add(s);
-            String big = getBigDigit(t, index);
+            String big = getIntegerDigit(t, index);
             if (big != null) {
                 res.add(big);
             }
         }
+        return t;
     }
 
     protected String tripleToString(int[] t, boolean isThousand) {
@@ -94,14 +108,14 @@ public class SpellingEngineImpl implements SpellingEngine {
         return res.toString();
     }
 
-    protected String getBigDigit(int[] t, int index) {
-        if (index >= 0) { // millions, trillions
+    protected String getIntegerDigit(int[] t, int index) {
+        if (index > 0) { // millions, trillions
             String big = BIGS.get(index);
             if (t[2] != 1) { // plural
                 big += isTwoThreeFour(t[2]) ? "а" : "ов";
             }
             return big;
-        } else if (index == -1) { // thousands
+        } else if (index == 0) { // thousands
             if (t[2] == 1) { // singular
                 return "тысяча";
             } else { // plural
@@ -111,12 +125,25 @@ public class SpellingEngineImpl implements SpellingEngine {
         return null;
     }
 
-    private boolean isTwoThreeFour(int t) {
-        return t == 2 || t == 3 || t == 4;
+    protected String getFractionDigit(int[] t, int numberOfDigits) {
+        int index = numberOfDigits / 3 - 1;
+        int y = numberOfDigits % 3;
+        String suffix = "";
+        if (y == 1) {
+            suffix = index < 0 ? "десятых" : "десяти";
+        } else if (y == 2) {
+            suffix = index < 0 ? "сотых" : "сто";
+        }
+        if (index == 0) {
+            suffix += t[2] == 1 ? "тысячная" : "тысячных";
+        } else if (index > 0) {
+            suffix += BIGS.get(index);
+            suffix += t[2] == 1 ? "ная" : "ных";
+        }
+        return suffix;
     }
 
-    @Override
-    public String spell(double number) {
-        return this.spell(new BigDecimal(number, context()));
+    private boolean isTwoThreeFour(int t) {
+        return t == 2 || t == 3 || t == 4;
     }
 }
