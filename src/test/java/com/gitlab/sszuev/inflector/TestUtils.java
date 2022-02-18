@@ -1,6 +1,7 @@
 package com.gitlab.sszuev.inflector;
 
 import com.gitlab.sszuev.inflector.impl.InflectionEngineImpl;
+import com.gitlab.sszuev.inflector.impl.SpellingEngineImpl;
 import org.junit.jupiter.api.Assertions;
 
 import java.io.IOException;
@@ -20,6 +21,10 @@ class TestUtils {
 
     static InflectionEngine createInflectorEngine() {
         return new InflectionEngineImpl();
+    }
+
+    static SpellingEngine createSpellingEngine() {
+        return new SpellingEngineImpl();
     }
 
     static Path file(String fileName) {
