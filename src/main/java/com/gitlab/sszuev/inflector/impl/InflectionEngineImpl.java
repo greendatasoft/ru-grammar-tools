@@ -2,7 +2,7 @@ package com.gitlab.sszuev.inflector.impl;
 
 import com.gitlab.sszuev.inflector.Case;
 import com.gitlab.sszuev.inflector.Gender;
-import com.gitlab.sszuev.inflector.InflectorEngine;
+import com.gitlab.sszuev.inflector.InflectionEngine;
 import com.gitlab.sszuev.inflector.WordType;
 
 import java.util.List;
@@ -17,7 +17,7 @@ import java.util.stream.Stream;
  * <p>
  * Created by @ssz on 27.11.2020.
  */
-public class InflectorEngineImpl implements InflectorEngine {
+public class InflectionEngineImpl implements InflectionEngine {
 
     @Override
     public String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural) {

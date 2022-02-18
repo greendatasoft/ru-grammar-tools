@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class ProfessionRuleTest {
 
-    private final InflectorEngine engine = TestUtils.createEngine();
+    private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
     public static List<String[]> data() {
         return TestUtils.load("profession.txt");

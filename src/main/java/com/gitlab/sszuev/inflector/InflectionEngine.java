@@ -4,7 +4,7 @@ package com.gitlab.sszuev.inflector;
  * An engine for running inflection process.
  * Created by @ssz on 27.11.2020.
  */
-public interface InflectorEngine {
+public interface InflectionEngine {
     /**
      * Declines the given {@code word} in accordance with the specified settings.
      * Good for Russian full-name (firstname patronymic surname, FPS).
