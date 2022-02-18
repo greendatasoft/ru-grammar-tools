@@ -12,12 +12,14 @@ import java.util.stream.Stream;
  */
 public class Rule {
     public final Gender gender;
+    public final boolean plural;
 
     private final String[] test;
     private final String[] mods;
 
-    public Rule(Gender gender, String[] test, String[] mods) {
+    public Rule(String[] test, String[] mods, Gender gender, boolean plural) {
         this.gender = Objects.requireNonNull(gender);
+        this.plural = plural;
         this.test = Objects.requireNonNull(test);
         this.mods = Objects.requireNonNull(mods);
     }

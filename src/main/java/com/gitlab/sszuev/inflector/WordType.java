@@ -8,6 +8,6 @@ public enum WordType {
     FIRST_NAME,
     FAMILY_NAME,
     PATRONYMIC_NAME,
-    REGULAR_TERM,
-    ;
+    REGULAR_TERM, // anything
+    NUMERALS, // like 'пятьсот'
 }

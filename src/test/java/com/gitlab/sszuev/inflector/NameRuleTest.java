@@ -12,7 +12,7 @@ import java.util.List;
  *
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/test/java/com/github/petrovich4j/PetrovichTests.java'>PetrovichTests</a>
  */
-public class ResourceDataTest {
+public class NameRuleTest {
     private final InflectorEngine engine = TestUtils.createEngine();
 
     private void check(WordType type, Gender gender, String... test) {
@@ -23,7 +23,7 @@ public class ResourceDataTest {
     }
 
     private void checkName(String expected, String given, WordType type, Gender gender, Case declension) {
-        String actual = engine.inflect(given, type, gender, declension);
+        String actual = engine.inflect(given, type, declension, gender, false);
         actual = actual.replace("ё", "е");
         expected = expected.replace("ё", "е");
         Assertions.assertEquals(expected, actual, String.format("%s case, %s", declension, gender));

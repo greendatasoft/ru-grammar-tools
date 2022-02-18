@@ -20,6 +20,7 @@ import java.util.Collection;
 public class RuleLibrary {
     private static final RulesBean NAMES_RULES_LIB = loadNamesBean();
     private static final NameBean REGULAR_RULES_LIB = loadRegularBean();
+    private static final NameBean NUMERALS_RULES_LIB = loadNumeralsBean();
 
     static final char KEEP_CHARACTER = '.';
     static final char REMOVE_CHARACTER = '-';
@@ -29,6 +30,7 @@ public class RuleLibrary {
     public static final RuleSet FIRST_NAME_RULES = map(NAMES_RULES_LIB.getFirstname());
     public static final RuleSet PATRONYMIC_NAME_RULES = map(NAMES_RULES_LIB.getMiddlename());
     public static final RuleSet REGULAR_TERM_RULES = map(REGULAR_RULES_LIB);
+    public static final RuleSet NUMERALS_RULES = map(NUMERALS_RULES_LIB);
 
     private static RuleSet map(NameBean bean) {
         return new RuleSet(map(bean.getExceptions()), map(bean.getSuffixes()));
@@ -39,7 +41,7 @@ public class RuleLibrary {
     }
 
     private static Rule map(RuleBean bean) {
-        return new Rule(map(bean.getGender()), bean.getTest().toArray(new String[0]), bean.getMods().toArray(new String[0]));
+        return new Rule(bean.getTest().toArray(new String[0]), bean.getMods().toArray(new String[0]), map(bean.getGender()), bean.isPlural());
     }
 
     private static Gender map(String name) {
@@ -64,21 +66,29 @@ public class RuleLibrary {
      * @see <a href='https://raw.githubusercontent.com/petrovich/petrovich-rules/master/rules.json'>rules.json</a>
      */
     private static RulesBean loadNamesBean() {
-        return loadJsonBean(RulesBean.class, "/rules.json");
+        return loadJsonBean(RulesBean.class, "/name-rules.json");
     }
 
     /**
      * Loads (from the class-path) a core library (rules-json) for inflecting Russian regular terms.
-     * Initially, it was identical to the declension rules for surnames from {@link #loadNamesBean() rules.json}.
+     * Initially, it was identical to the declension rules for surnames from {@link #loadNamesBean() name-rules.json}.
      *
      * @return {@link NameBean}
      */
     private static NameBean loadRegularBean() {
-        return loadJsonBean(NameBean.class, "/regular.json");
+        return loadJsonBean(NameBean.class, "/regular-rules.json");
+    }
+
+    /**
+     * Loads numerals library for inflecting Russian numerical terms (such as {@code "пятьсот"}).
+     *
+     * @return {@link NameBean}
+     */
+    private static NameBean loadNumeralsBean() {
+        return loadJsonBean(NameBean.class, "/numerals-rules.json");
     }
 
     private static <X> X loadJsonBean(Class<X> type, String file) {
-
         try (InputStream in = RuleLibrary.class.getResourceAsStream(file)) {
             return new ObjectMapper().readValue(in, type);
         } catch (IOException e) {
