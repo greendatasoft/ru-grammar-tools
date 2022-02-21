@@ -1,7 +1,11 @@
 package com.gitlab.sszuev.inflector.impl;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import com.gitlab.sszuev.inflector.Gender;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -12,15 +16,17 @@ import java.util.stream.Stream;
  */
 public class GrammarUtils {
 
-    // список субстантивных существительных женского рода, которые выглядят как прилагательные
-    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = of(
+    // collection of substantive feminine nouns that look like adjectives
+    // (субстантивные существительные женского рода, которые выглядят как прилагательные)
+    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of(
             "буровая",
             "горничная",
             "заведующая",
             "заправочная"
     );
-    // список субстантивных существительных мужского рода, которые выглядят как прилагательные
-    private static final Collection<String> MASCULINE_SUBSTANTIVAT_NOUNS = of(
+    // collection of substantive masculine nouns that look like adjectives
+    // (субстантивные существительные мужского рода, которые выглядят как прилагательные)
+    private static final Collection<String> MASCULINE_SUBSTANTIVAT_NOUNS = Set.of(
             "вентилевой", "верховой", "выпускающий",
             "горновой", "горнорабочий",
             "дверевой", "дежурный", "дневальный",
@@ -32,51 +38,57 @@ public class GrammarUtils {
             "торфорабочий",
             "уполномоченный", "управляющий" // "ученый" как прилагательное ("ученый секретарь")
     );
-    // список простых предлогов
-    private static final Collection<String> NON_DERIVATIVE_PREPOSITION = of(
+    // collection simple prepositions
+    private static final Collection<String> NON_DERIVATIVE_PREPOSITION = Set.of(
             "без", "в", "для", "до", "за", "из", "к", "на", "над", "о", "об", "от", "перед", "по", "под", "при", "про", "с", "у", "через"
     );
 
+    // collection of words that are definitely not adjectives
     // список слов, которые точно не являются прилагательными. собран по ОКПДТР.
-    // TODO: временное решение!
-    private static final Map<String, Collection<String>> DEFINITELY_NOT_ADJECTIVES = new HashMap<String, Collection<String>>() {
-        {
-            put("вая", of("трамвая"));
-            put("пий", of("фильмокопий"));
-            put("рий", of("аварий", "территорий"));
-            put("сий", of("профессий", "экскурсий", "эмульсий"));
-            put("тий", of("партий", "покрытий", "предприятий"));
-            put("ций", of("декораций", "коллекций", "композиций", "конструкций", "лоций", "металлоконструкций",
-                    "организаций", "секций", "ситуаций", "станций", "электростанций"));
-            put("бий", of("пособий"));
-            put("зой", of("базой", "фильмобазой"));
-            put("вий", of("путешествий", "условий"));
-            put("дий", of("орудий"));
-            put("кой", of("аптекой", "библиотекой", "видеотекой", "выставкой", "диспетчерской",
+    // TODO: temporal solution!
+    private static final Map<String, Collection<String>> DEFINITELY_NOT_ADJECTIVES = Map.ofEntries(
+            of("вая", "трамвая"),
+            of("пий", "фильмокопий"),
+            of("рий", "аварий", "территорий"),
+            of("сий", "профессий", "экскурсий", "эмульсий"),
+            of("тий", "партий", "покрытий", "предприятий"),
+            of("ций", "декораций", "коллекций", "композиций", "конструкций", "лоций", "металлоконструкций",
+                    "организаций", "секций", "ситуаций", "станций", "электростанций"),
+            of("бий", "пособий"),
+            of("зой", "базой", "фильмобазой"),
+            of("вий", "путешествий", "условий"),
+            of("дий", "орудий"),
+            of("кой", "аптекой", "библиотекой", "видеотекой", "выставкой", "диспетчерской",
                     "клиникой", "корректорской", "мастерской", "намоткой",
                     "парикмахерской", "пленкой", "площадкой", "подготовкой", "практикой",
-                    "свалкой", "смолкой", "техникой", "установкой", "фильмотекой"));
-            put("мой", of("платформой"));
-            put("ной", of("заправочной", "костюмерной", "котельной",
-                    "портной", "прачечной", "приемной", "процедурной", "резиной", "турбиной"));
-            put("пой", of("группой", "труппой"));
-            put("рой", of("аспирантурой", "геокамерой", "докторантурой",
-                    "камерой", "кафедрой", "конторой", "ординатурой", "физкультурой"));
-            put("лий", of("изделий", "металлоизделий", "сетеизделий", "специзделий", "стеклоизделий"));
-            put("той", of("кислотой", "комнатой"));
-            put("ний", of("декалькоманий", "зданий", "излучений", "измерений", "испытаний", "исследований", "линий",
+                    "свалкой", "смолкой", "техникой", "установкой", "фильмотекой"),
+            of("мой", "платформой"),
+            of("ной", "заправочной", "костюмерной", "котельной",
+                    "портной", "прачечной", "приемной", "процедурной", "резиной", "турбиной"),
+            of("пой", "группой", "труппой"),
+            of("рой", "аспирантурой", "геокамерой", "докторантурой",
+                    "камерой", "кафедрой", "конторой", "ординатурой", "физкультурой"),
+            of("лий", "изделий", "металлоизделий", "сетеизделий", "специзделий", "стеклоизделий"),
+            of("той", "кислотой", "комнатой"),
+            of("ний", "декалькоманий", "зданий", "излучений", "измерений", "испытаний", "исследований", "линий",
                     "месторождений", "оснований", "отделений", "отправлений",
                     "подразделений", "помещений", "поручений", "приспособлений", "произведений",
-                    "расписаний", "растений", "соединений", "сооружений", "строений", "термсоединений", "учреждений"));
-            put("вой", of("буровой", "вентилевой", "верховой", "горновой", "дверевой", "душевой", "кладовой",
-                    "люковой", "миксеровой", "печевой", "скиповой", "стволовой"));
-            put("дой", of("слюдой"));
-        }
-    };
+                    "расписаний", "растений", "соединений", "сооружений", "строений", "термсоединений", "учреждений"),
+            of("вой", "буровой", "вентилевой", "верховой", "горновой", "дверевой", "душевой", "кладовой",
+                    "люковой", "миксеровой", "печевой", "скиповой", "стволовой"),
+            of("дой", "слюдой")
+    );
+
+    private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
+    private static final Set<String> MALE_NUMERALS = Set.of("один");
+
+    private static Map.Entry<String, Set<String>> of(String key, String... values) {
+        return Map.entry(key, Set.of(values));
+    }
 
     /**
-     * Определяет, может ли переданное слово ({@code word}) быть прилагательным в мужском роде,
-     * единственном числе и именительном падеже.
+     * Determines whether the specified {@code word} can be a singular nominative masculine adjective
+     * (i.e. является ли слово {@code прилагательным в мужском роде, единственном числе и именительном падеже}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -86,8 +98,8 @@ public class GrammarUtils {
     }
 
     /**
-     * Определяет, может ли переданное слово ({@code word}) быть прилагательным в женском роде,
-     * единственном числе и именительном падеже.
+     * Determines whether the specified {@code word} can be a singular nominative feminine adjective
+     * (i.e. является ли слово {@code прилагательным в женском роде, единственном числе и именительном падеже}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -102,8 +114,8 @@ public class GrammarUtils {
     }
 
     /**
-     * Определяет, может ли переданное слово ({@code word}) быть
-     * существительным-субстантиватом из прилагательного в мужском роде.
+     * Determines whether the specified {@code word} can be a noun-substantive from a masculine adjective
+     * (i.e. является ли слово {@code существительным-субстантиватом из прилагательного в мужском роде}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -113,8 +125,8 @@ public class GrammarUtils {
     }
 
     /**
-     * Определяет, может ли переданное слово ({@code word}) быть
-     * существительным-субстантиватом из прилагательного в женском роде.
+     * Determines whether the given {@code word} can be a noun-substantive from a feminine adjective
+     * (i.e. является ли слово {@code существительным-субстантиватом из прилагательного в женском роде}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -124,8 +136,8 @@ public class GrammarUtils {
     }
 
     /**
-     * Определяет (неточно), может ли переданное слово ({@code word}) быть существительным в женском роде,
-     * единственном числе и имменительным падеже.
+     * Determines (not very accurately) whether the given {@code word} can be a singular and nominative feminine noun
+     * (i.e. является ли слово {@code существительным в женском роде единственном числе и имменительном падеже}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -135,7 +147,8 @@ public class GrammarUtils {
     }
 
     /**
-     * Определяет (достаточно точно), может ли переданное слово ({@code word}) быть непроизводным предлогом.
+     * Determines (quite accurately) whether the given {@code word}
+     * can be a non-derivative preposition (i.e. является ли слово {@code непроизводным предлогом}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
@@ -145,12 +158,24 @@ public class GrammarUtils {
         return NON_DERIVATIVE_PREPOSITION.contains(normalize(word));
     }
 
-    private static String normalize(String s) {
-        return s.trim().toLowerCase();
+    /**
+     * Returns the gender of the specified numeral.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@link Gender}
+     */
+    public static Gender getNumeralGender(String word) {
+        word = normalize(word);
+        if (MALE_NUMERALS.contains(word)) {
+            return Gender.MALE;
+        }
+        if (FEMALE_NUMERALS.contains(word)) {
+            return Gender.FEMALE;
+        }
+        return Gender.NEUTER;
     }
 
-    @SafeVarargs
-    private static <X> Set<X> of(X... values) {
-        return Arrays.stream(values).collect(Collectors.toSet());
+    private static String normalize(String s) {
+        return s.trim().toLowerCase();
     }
 }

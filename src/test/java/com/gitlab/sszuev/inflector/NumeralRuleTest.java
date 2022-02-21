@@ -17,7 +17,7 @@ import java.util.function.BiFunction;
  */
 public class NumeralRuleTest {
 
-    private final InflectorEngine engine = TestUtils.createEngine();
+    private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
     public static List<String[]> data() {
         return TestUtils.load("numerals.txt");
