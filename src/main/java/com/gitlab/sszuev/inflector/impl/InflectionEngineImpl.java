@@ -6,7 +6,6 @@ import com.gitlab.sszuev.inflector.InflectionEngine;
 import com.gitlab.sszuev.inflector.WordType;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,33 +20,69 @@ public class InflectionEngineImpl implements InflectionEngine {
 
     @Override
     public String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural) {
-        if (word == null || word.isEmpty()) {
-            throw new IllegalArgumentException("No name is given");
-        }
-        if (declension == null) {
-            throw new IllegalArgumentException("No declension is given");
-        }
+        require(word, "word");
+        require(declension, "declension case");
+        require(type, "rule type");
         if (declension == Case.NOMINATIVE) {
             return word;
-        }
-        if (type == WordType.REGULAR_TERM) {
-            return inflectRegularTerm(word, declension);
-        }
-        if (type == WordType.NUMERALS) {
-            return inflectNumeral(word, declension, gender, plural);
         }
         return process(word, type, gender == null ? Gender.MALE : gender, declension, plural);
     }
 
     @Override
+    public String inflectNumeral(String number, String unit, Case declension) {
+        require(unit, "unit");
+        return inflectNumeral(require(number, "numeral"), require(declension, "declension")) + " " + inclineUnit(unit, number, declension);
+    }
+
+    protected String inclineUnit(String unit, String number, Case declension) {
+        if (GrammarUtils.isZeroNumeral(number)) {
+            // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
+            // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
+            return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, true);
+        }
+        if (GrammarUtils.isFractionNumeral(number)) {
+            // рубля
+            return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null);
+        }
+        if (GrammarUtils.isNumeralEndWithNumberOne(number)) {
+            // NOMINATIVE,GENITIVE,    DATIVE,      ACCUSATIVE,INSTRUMENTAL,PREPOSITIONAL
+            // один рубль,одного рубля,одному рублю,один рубль,одним рублём,одном рубле
+            return inflect(unit, WordType.GENERIC_NOUN, declension, Gender.MALE, null);
+        }
+        if (GrammarUtils.isNumeralEndWithTwoThreeFour(number)) {
+            // NOMINATIVE,     GENITIVE,          DATIVE,            ACCUSATIVE,     INSTRUMENTAL,        PREPOSITIONAL
+            // сорок два рубля,сорока двух рублей,сорока двум рублям,сорок два рубля,сорока двумя рублями,сорока двух рублях
+            if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
+                return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null);
+            } else {
+                return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, declension, Gender.MALE, true);
+            }
+        }
+        // NOMINATIVE,   GENITIVE,     DATIVE,       ACCUSATIVE,   INSTRUMENTAL,   PREPOSITIONAL
+        // десять рублей,десяти рублей,десяти рублям,десять рублей,десятью рублями,десяти рублях
+        if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
+            declension = Case.GENITIVE;
+        }
+        return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, declension, Gender.MALE, true);
+    }
+
+    @Override
     public String inflectNumeral(String number, Case declension) {
-        Objects.requireNonNull(declension);
+        if (require(declension, "declension case") == Case.NOMINATIVE) {
+            return number;
+        }
         String[] parts = checkAndSplit(number);
+        String[] res = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             String w = parts[i];
-            parts[i] = inflectNumeral(w, declension, GrammarUtils.getNumeralGender(w), null);
+            if (i > 0 && "целых".equals(w) && "ноль".equals(parts[i - 1])) {
+                res[i] = w; // special case
+                continue;
+            }
+            res[i] = inflectNumeral(w, declension, GrammarUtils.getNumeralGender(w), null);
         }
-        return String.join(" ", parts);
+        return String.join(" ", res);
     }
 
     /**
@@ -61,11 +96,11 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} -  a numeral phrase in the selected case
      */
     public String inflectNumeral(String number, Case declension, Gender gender, Boolean plural) {
-        return process(number, WordType.NUMERALS, gender, Objects.requireNonNull(declension), plural);
+        return process(require(number, "numeral"), WordType.NUMERALS, gender, require(declension, "declension"), plural);
     }
 
     /**
-     * Inflects a regular-term (the job-title righ not).
+     * Inflects a regular-term phrase (combination of words: job-title, organization name).
      *
      * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
@@ -73,7 +108,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension) {
-        Objects.requireNonNull(declension);
+        require(declension, "declension case");
         String[] parts = checkAndSplit(phrase);
 
         Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.
@@ -124,13 +159,13 @@ public class InflectionEngineImpl implements InflectionEngine {
             end = noun;
         }
         for (int i = 0; i <= end; i++) {
-            parts[i] = processWithHyphen(parts[i], WordType.REGULAR_TERM, gender, declension, false);
+            parts[i] = processWithHyphen(parts[i], WordType.GENERIC_NOUN, gender, declension, false);
         }
         return String.join(" ", parts);
     }
 
     private static String[] checkAndSplit(String phrase) {
-        String[] res = Objects.requireNonNull(phrase).trim().split("\\s+");
+        String[] res = require(phrase, "phrase").trim().split("\\s+");
         if (res.length == 0) {
             throw new IllegalArgumentException();
         }
@@ -185,7 +220,7 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return RuleLibrary.PATRONYMIC_NAME_RULES;
             case FAMILY_NAME:
                 return RuleLibrary.LAST_NAME_RULES;
-            case REGULAR_TERM:
+            case GENERIC_NOUN:
                 return RuleLibrary.REGULAR_TERM_RULES;
             case NUMERALS:
                 return RuleLibrary.NUMERALS_RULES;
@@ -248,5 +283,19 @@ public class InflectionEngineImpl implements InflectionEngine {
             return rule;
         }
         throw new IllegalStateException();
+    }
+
+    protected static String require(String string, String name) {
+        if (string == null || string.isEmpty()) {
+            throw new IllegalArgumentException("No " + name + " is given");
+        }
+        return string;
+    }
+
+    protected static <X> X require(X object, String name) {
+        if (object == null) {
+            throw new IllegalArgumentException("No " + name + " is given");
+        }
+        return object;
     }
 }

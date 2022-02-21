@@ -166,16 +166,48 @@ public class GrammarUtils {
      */
     public static Gender getNumeralGender(String word) {
         word = normalize(word);
-        if (MALE_NUMERALS.contains(word)) {
+        if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
             return Gender.MALE;
         }
-        if (FEMALE_NUMERALS.contains(word)) {
+        if (FEMALE_NUMERALS.contains(word) || word.endsWith("ая")) { // одна, десятая, сотая
             return Gender.FEMALE;
         }
         return Gender.NEUTER;
     }
 
+    public static boolean isFractionNumeral(String number) {
+        number = normalize(number);
+        return number.contains(" целых ") || number.contains("одна целая ");
+    }
+
+    public static boolean isNumeralEndWithNumberOne(String number) {
+        return endsWith(normalize(number), "один");
+    }
+
+    public static boolean isNumeralEndWithTwoThreeFour(String number) {
+        number = normalize(number);
+        return endsWith(number, "два") || endsWith(number, "три") || endsWith(number, "четыре");
+    }
+
+    public static boolean isZeroNumeral(String number) {
+        number = normalize(number);
+        return "ноль".equals(number);
+    }
+
+    public static String toPlural(String word) {
+        word = normalize(word);
+        if (word.endsWith("ль")) {
+            return word.substring(0, word.length() - 2) + "ли";
+        }
+        // TODO:
+        return word;
+    }
+
     private static String normalize(String s) {
         return s.trim().toLowerCase();
+    }
+
+    private static boolean endsWith(String phrase, String ending) {
+        return ending.equals(phrase) || phrase.endsWith(" " + ending);
     }
 }
