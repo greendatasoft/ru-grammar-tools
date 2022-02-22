@@ -207,7 +207,10 @@ public class GrammarUtils {
         if (nw.endsWith("ла") || nw.endsWith("за")) { // свекла, берёзы
             return replaceEnd(singular, 1, "ы");
         }
-        // TODO:
+        if (nw.endsWith("нт") || nw.endsWith("р")) { // цент,фунт,брезент,доллар
+            return appendEnd(singular, "ы");
+        }
+        // TODO: complete
         return singular;
     }
 
@@ -256,6 +259,10 @@ public class GrammarUtils {
 
     private static boolean endsWith(String phrase, String ending) {
         return ending.equals(phrase) || phrase.endsWith(" " + ending);
+    }
+
+    private static String appendEnd(String orig, String ending) {
+        return orig + toUpperCaseIfNeeded(orig, ending);
     }
 
     private static String replaceEnd(String orig, int numberToTrim, String replacement) {
