@@ -1,13 +1,13 @@
 package com.gitlab.sszuev.inflector;
 
 /**
- * The phrase type.
+ * The word type.
  * Created by @ssz on 27.11.2020.
  */
 public enum WordType {
-    FIRST_NAME,
-    FAMILY_NAME,
-    PATRONYMIC_NAME,
-    NUMERALS, // like 'пятьсот'
-    GENERIC_NOUN, // single anything
+    FIRST_NAME, // e.g. 'Петр'
+    PATRONYMIC_NAME, // e.g. 'Петрович'
+    FAMILY_NAME, // e.g. 'Петров'
+    NUMERALS, // e.g. 'пятьсот'
+    GENERIC_NOUN, // a singular noun in nominative case
 }
