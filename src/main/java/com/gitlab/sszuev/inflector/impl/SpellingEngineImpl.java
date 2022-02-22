@@ -13,6 +13,8 @@ import java.util.StringJoiner;
  */
 public class SpellingEngineImpl implements SpellingEngine {
     protected final MathContext context;
+    protected final boolean stripTrailingZeros;
+    protected final boolean trimFractionPart;
 
     protected static final List<String> HUNDREDS = List.of(
             "сто", "двести", "триста", "четыреста", "пятьсот", "шестьсот", "семьсот", "восемьсот", "девятьсот");
@@ -34,11 +36,13 @@ public class SpellingEngineImpl implements SpellingEngine {
             "квиндециллион", "седециллион", "септдециллион", "октодециллион", "новемдециллион", "вигинтиллион");
 
     public SpellingEngineImpl() {
-        this(MathContext.DECIMAL128);
+        this(MathContext.DECIMAL128, true, true);
     }
 
-    public SpellingEngineImpl(MathContext context) {
+    public SpellingEngineImpl(MathContext context, boolean stripTrailingZeros, boolean trimFractionPart) {
         this.context = Objects.requireNonNull(context);
+        this.stripTrailingZeros = stripTrailingZeros;
+        this.trimFractionPart = trimFractionPart;
     }
 
     protected MathContext context() {
@@ -55,16 +59,31 @@ public class SpellingEngineImpl implements SpellingEngine {
             return "ноль";
         }
         number = number.abs();
-        BigDecimal fraction = NumberUtils.fraction(number, context());
-        boolean hasFraction = !NumberUtils.isZero(fraction);
-        int[] last = printIntegerTriples(res, NumberUtils.toTriples(number, context()), hasFraction);
-        if (hasFraction) {
+        if (stripTrailingZeros) {
+            number = number.stripTrailingZeros();
+        }
+        List<Integer> integerTriples = NumberUtils.toTriples(number, context());
+        if (integerTriples.size() > BIGS.size() + 1) {
+            throw new IllegalArgumentException("The specified number is too big: " + number);
+        }
+
+        List<Integer> fractionTriples = NumberUtils.toTriples(NumberUtils.fraction(number, context()), context());
+        if (number.scale() > BIGS.size() * 3 + 2) {
+            if (!trimFractionPart || (integerTriples.size() == 1 && integerTriples.get(0) == 0)) { // no integer part
+                throw new IllegalArgumentException("The specified number is too small: " + number);
+            }
+            number = number.setScale(BIGS.size() * 3 + 2, context().getRoundingMode());
+            fractionTriples = NumberUtils.toTriples(NumberUtils.fraction(number, context()), context());
+        }
+
+        int[] last = printIntegerTriples(res, integerTriples, !fractionTriples.isEmpty());
+        if (!fractionTriples.isEmpty()) {
             if (NumberUtils.isEmpty(last)) {
                 res.add("ноль").add("целых");
             } else {
                 res.add(last[2] == 1 ? "целая" : "целых");
             }
-            int[] t = printIntegerTriples(res, NumberUtils.toTriples(fraction, context()), true);
+            int[] t = printIntegerTriples(res, fractionTriples, true);
             res.add(getFractionDigit(t, number.scale()));
         }
         return res.toString();
@@ -88,7 +107,7 @@ public class SpellingEngineImpl implements SpellingEngine {
         return t;
     }
 
-    protected String tripleToString(int[] t, boolean isThousand) {
+    protected String tripleToString(int[] t, boolean pluralEnding) {
         StringJoiner res = new StringJoiner(" ");
         if (t[0] != 0) {
             res.add(HUNDREDS.get(t[0] - 1));
@@ -97,9 +116,9 @@ public class SpellingEngineImpl implements SpellingEngine {
             res.add(TENS.get(t[1] - 2));
         }
         if (t[2] != 0) {
-            if (t[2] == 1 && isThousand) {
+            if (t[2] == 1 && pluralEnding) {
                 res.add("одна");
-            } else if (t[2] == 2 && isThousand) {
+            } else if (t[2] == 2 && pluralEnding) {
                 res.add("две");
             } else {
                 res.add(NUMBERS_UP_TO_TWENTY.get(t[2] - 1));

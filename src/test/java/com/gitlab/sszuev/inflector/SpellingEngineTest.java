@@ -21,6 +21,7 @@ public class SpellingEngineTest {
         Assertions.assertEquals("сто одиннадцать", spellingEngine.spell(111));
         Assertions.assertEquals("триста два", spellingEngine.spell(302));
         Assertions.assertEquals("пятьсот двадцать", spellingEngine.spell(520));
+        Assertions.assertEquals("ноль", spellingEngine.spell(new BigDecimal(0)));
     }
 
     @Test
@@ -48,7 +49,31 @@ public class SpellingEngineTest {
                 "миллиардных", spellingEngine.spell(23.000988854));
         Assertions.assertEquals("ноль целых сорок четыре миллиарда четыреста одиннадцать миллионов сто тысяч сорок две " +
                 "стомиллиардных", spellingEngine.spell(0.44411100042));
-        Assertions.assertEquals("ноль целых десять стотриллионных", spellingEngine.spell(0.000_000_000_000_1));
+        Assertions.assertEquals("ноль целых одна десятитриллионная", spellingEngine.spell(0.000_000_000_000_1));
+        Assertions.assertEquals("ноль целых девятьсот девяносто девять тысячных",
+                spellingEngine.spell(new BigDecimal("0.999000000000000000000000000000000000000000000000000000000000000000")));
+        Assertions.assertEquals("ноль", spellingEngine.spell(new BigDecimal("0.000")));
         Assertions.assertEquals("ноль целых сорок две квинтиллионных", spellingEngine.spell(0.000_000_000_000_000_042));
+    }
+
+    @Test
+    public void testOverflow() {
+        String tooBig = "999" + "0".repeat(63);
+        Assertions.assertEquals("девятьсот девяносто девять вигинтиллионов", spellingEngine.spell(new BigDecimal(tooBig)));
+        Assertions.assertEquals("девятьсот девяносто девять вигинтиллионов", spellingEngine.spell(new BigDecimal("0" + tooBig)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> spellingEngine.spell(new BigDecimal(tooBig + "0")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> spellingEngine.spell(new BigDecimal("1" + tooBig)));
+
+        String tooSmall = "0." + "0".repeat(65) + "1";
+        Assertions.assertEquals("ноль целых одна стовигинтиллионная", spellingEngine.spell(new BigDecimal("0." + tooSmall.substring(3))));
+        Assertions.assertEquals("ноль целых одна стовигинтиллионная", spellingEngine.spell(new BigDecimal("00." + tooSmall.substring(3))));
+        Assertions.assertEquals("ноль целых одна стовигинтиллионная", spellingEngine.spell(new BigDecimal("0." + tooSmall.substring(3) + "00")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> spellingEngine.spell(new BigDecimal(tooSmall)));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> spellingEngine.spell(new BigDecimal(tooSmall + "0")));
+        Assertions.assertThrows(IllegalArgumentException.class, () -> spellingEngine.spell(new BigDecimal("0" + tooSmall)));
+
+
+        String withLongFractionPart = "42." + "0".repeat(60) + "123456789";
+        System.out.println(spellingEngine.spell(new BigDecimal(withLongFractionPart)));
     }
 }
