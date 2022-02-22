@@ -181,9 +181,11 @@ public class GrammarUtils {
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
         String nw = normalize(singular);
-        if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за")) { // свинья, ладья, свекла, берёза
+        if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за") || nw.endsWith("ка")) {
+            // свинья, ладья, свекла, берёза, копейка
             return Gender.FEMALE;
         }
+        // TODO: complete
         // most common gender
         return Gender.MALE;
     }
@@ -199,7 +201,7 @@ public class GrammarUtils {
         if (nw.endsWith("ль")) { // корабль, рубль
             return replaceEnd(singular, 2, "ли");
         }
-        if (nw.endsWith("ья")) { // свинья, ладья
+        if (nw.endsWith("ья") || nw.endsWith("ка")) { // свинья, ладья, копейка
             return replaceEnd(singular, 1, "и");
         }
         if (nw.endsWith("ла") || nw.endsWith("за")) { // свекла, берёзы
