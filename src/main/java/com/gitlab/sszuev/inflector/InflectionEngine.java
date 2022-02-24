@@ -10,7 +10,7 @@ public interface InflectionEngine {
     /**
      * Declines the given {@code word} in accordance with the specified settings.
      * Good for Russian full-name (firstname patronymic surname, FPS).
-     * The generic method.
+     * This is a generic method.
      *
      * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
      * @param type       {@link WordType}, not {@code null}
@@ -18,14 +18,14 @@ public interface InflectionEngine {
      * @param gender     {@link Gender}, russian feminine, masculine or neuter,
      *                   {@code null} to choose automatically (usually it is {@link Gender#MALE})
      * @param plural     {@code boolean} if {@code true} then plural,
-     *                   {@code false} for singular, {@code null} if unspecified
+     *                   {@code false} for singular, {@code null} if unspecified or default
      * @return {@code String}
      */
     String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural);
 
     /**
-     * Declines the given {@code phrase} into the specified declension case.
-     * Good for declension of job-titles and professions.
+     * Declines the given {@code phrase} (combination of words: job-title, organization name)
+     * into the specified declension case.
      *
      * @param phrase     {@code String} not {@code null}
      * @param declension {@link Case declension case}, not {@code null}

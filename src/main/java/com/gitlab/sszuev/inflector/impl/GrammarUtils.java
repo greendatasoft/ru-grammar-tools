@@ -2,10 +2,7 @@ package com.gitlab.sszuev.inflector.impl;
 
 import com.gitlab.sszuev.inflector.Gender;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 /**
@@ -15,6 +12,7 @@ import java.util.stream.Stream;
  * Created by @ssz on 01.12.2020.
  */
 public class GrammarUtils {
+    private static final Locale LOCALE = new Locale("ru", "ru");
 
     // collection of substantive feminine nouns that look like adjectives
     // (субстантивные существительные женского рода, которые выглядят как прилагательные)
@@ -161,11 +159,11 @@ public class GrammarUtils {
     /**
      * Returns the gender of the specified numeral.
      *
-     * @param word {@code String}, not {@code null}
+     * @param standaloneNumeral {@code String}, not {@code null}
      * @return {@link Gender}
      */
-    public static Gender getNumeralGender(String word) {
-        word = normalize(word);
+    public static Gender guessGenderOfSingleNumeral(String standaloneNumeral) {
+        String word = normalize(standaloneNumeral);
         if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
             return Gender.MALE;
         }
@@ -173,6 +171,67 @@ public class GrammarUtils {
             return Gender.FEMALE;
         }
         return Gender.NEUTER;
+    }
+
+    /**
+     * Returns the gender of the specified noun (not accurate).
+     *
+     * @param singular {@code String}, a singular noun in nominative case, not {@code null}
+     * @return {@link Gender}
+     */
+    public static Gender guessGenderOfSingularNoun(String singular) {
+        String nw = normalize(singular);
+        if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за") || nw.endsWith("ка")) {
+            // свинья, ладья, свекла, берёза, копейка
+            return Gender.FEMALE;
+        }
+        // TODO: complete
+        // most common gender
+        return Gender.MALE;
+    }
+
+    /**
+     * Attempts to create plural form from the specified singular.
+     *
+     * @param singular {@code String}, a singular noun in nominative case, not {@code null}
+     * @return {@code String}
+     */
+    public static String toPluralNoun(String singular) {
+        String nw = normalize(singular);
+        if (nw.endsWith("ль")) { // корабль, рубль
+            return replaceEnd(singular, 2, "ли");
+        }
+        if (nw.endsWith("ья") || nw.endsWith("ка")) { // свинья, ладья, копейка
+            return replaceEnd(singular, 1, "и");
+        }
+        if (nw.endsWith("ла") || nw.endsWith("за")) { // свекла, берёзы
+            return replaceEnd(singular, 1, "ы");
+        }
+        if (nw.endsWith("нт") || nw.endsWith("р")) { // цент,фунт,брезент,доллар
+            return appendEnd(singular, "ы");
+        }
+        // TODO: complete
+        return singular;
+    }
+
+    /**
+     * Tries to determine correct gender form of the specified numeral word.
+     *
+     * @param neuterNumeral {@code String}, a numeral in nominative case, not {@code null}
+     * @param gender        {@link Gender}
+     * @return {@code String}
+     */
+    public static String changeGenderFormOfNumeral(String neuterNumeral, Gender gender) {
+        String nw = normalize(neuterNumeral);
+        if (gender == Gender.FEMALE) {
+            switch (nw) {
+                case "один":
+                    return toUpperCaseIfNeeded(nw, "одна");
+                case "два":
+                    return toUpperCaseIfNeeded(nw, "две");
+            }
+        }
+        return neuterNumeral;
     }
 
     public static boolean isFractionNumeral(String number) {
@@ -194,20 +253,34 @@ public class GrammarUtils {
         return "ноль".equals(number);
     }
 
-    public static String toPlural(String word) {
-        word = normalize(word);
-        if (word.endsWith("ль")) {
-            return word.substring(0, word.length() - 2) + "ли";
-        }
-        // TODO:
-        return word;
-    }
-
     private static String normalize(String s) {
         return s.trim().toLowerCase();
     }
 
     private static boolean endsWith(String phrase, String ending) {
         return ending.equals(phrase) || phrase.endsWith(" " + ending);
+    }
+
+    private static String appendEnd(String orig, String ending) {
+        return orig + toUpperCaseIfNeeded(orig, ending);
+    }
+
+    private static String replaceEnd(String orig, int numberToTrim, String replacement) {
+        if (isUpperCase(orig, orig.length() - numberToTrim, orig.length())) {
+            replacement = replacement.toUpperCase(LOCALE);
+        }
+        return orig.substring(0, orig.length() - numberToTrim) + replacement;
+    }
+
+    private static boolean isUpperCase(String s, int start, int end) {
+        return s.substring(start, end).chars().allMatch(Character::isUpperCase);
+    }
+
+    private static boolean isUpperCase(String s) {
+        return s.chars().allMatch(Character::isUpperCase);
+    }
+
+    private static String toUpperCaseIfNeeded(String origin, String res) {
+        return isUpperCase(origin) ? res.toUpperCase(LOCALE) : res;
     }
 }

@@ -74,6 +74,7 @@ public class SpellingEngineTest {
 
 
         String withLongFractionPart = "42." + "0".repeat(60) + "123456789";
-        System.out.println(spellingEngine.spell(new BigDecimal(withLongFractionPart)));
+        Assertions.assertEquals("сорок две целых двенадцать тысяч триста сорок шесть стовигинтиллионных",
+                spellingEngine.spell(new BigDecimal(withLongFractionPart)));
     }
 }

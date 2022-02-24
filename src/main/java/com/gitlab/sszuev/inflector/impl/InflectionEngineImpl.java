@@ -32,39 +32,62 @@ public class InflectionEngineImpl implements InflectionEngine {
     @Override
     public String inflectNumeral(String number, String unit, Case declension) {
         require(unit, "unit");
-        return inflectNumeral(require(number, "numeral"), require(declension, "declension")) + " " + inclineUnit(unit, number, declension);
+        require(declension, "declension");
+        Gender gender = GrammarUtils.guessGenderOfSingularNoun(unit);
+        String[] parts = checkAndSplit(number);
+        int last = parts.length - 1;
+        parts[last] = GrammarUtils.changeGenderFormOfNumeral(parts[last], gender);
+        String res;
+        if (declension == Case.NOMINATIVE) {
+            res = String.join(" ", parts);
+        } else {
+            res = inflectNumeral(parts, declension);
+        }
+        return res + " " + inclineUnit(unit, number, declension, gender);
     }
 
-    protected String inclineUnit(String unit, String number, Case declension) {
+    /**
+     * Inflects unit.
+     *
+     * @param unit       {@code String}
+     * @param number     {@code String}
+     * @param declension {@link Case}
+     * @param gender     {@link Gender}
+     * @return {@code String}
+     * @see <a href='https://numeralonline.ru/10000'>Склонение 10000 по падежам</a>
+     */
+    protected String inclineUnit(String unit, String number, Case declension, Gender gender) {
         if (GrammarUtils.isZeroNumeral(number)) {
             // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
             // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
-            return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, true);
+            return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, Case.GENITIVE, gender, true);
         }
         if (GrammarUtils.isFractionNumeral(number)) {
             // рубля
-            return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null);
+            return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null);
         }
         if (GrammarUtils.isNumeralEndWithNumberOne(number)) {
             // NOMINATIVE,GENITIVE,    DATIVE,      ACCUSATIVE,INSTRUMENTAL,PREPOSITIONAL
             // один рубль,одного рубля,одному рублю,один рубль,одним рублём,одном рубле
-            return inflect(unit, WordType.GENERIC_NOUN, declension, Gender.MALE, null);
+            return inflect(unit, WordType.GENERIC_NOUN, declension, gender, null);
         }
         if (GrammarUtils.isNumeralEndWithTwoThreeFour(number)) {
             // NOMINATIVE,     GENITIVE,          DATIVE,            ACCUSATIVE,     INSTRUMENTAL,        PREPOSITIONAL
             // сорок два рубля,сорока двух рублей,сорока двум рублям,сорок два рубля,сорока двумя рублями,сорока двух рублях
             if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
-                return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null);
+                return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null);
             } else {
-                return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, declension, Gender.MALE, true);
+                return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, true);
             }
         }
         // NOMINATIVE,   GENITIVE,     DATIVE,       ACCUSATIVE,   INSTRUMENTAL,   PREPOSITIONAL
         // десять рублей,десяти рублей,десяти рублям,десять рублей,десятью рублями,десяти рублях
+        // NOMINATIVE,         GENITIVE,           DATIVE,               ACCUSATIVE,         INSTRUMENTAL,            PREPOSITIONAL
+        // десять тысяч рублей,десяти тысяч рублей,десяти тысячам рублям,десять тысяч рублей,десятью тысячами рублями,десяти тысячах рублях
         if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
             declension = Case.GENITIVE;
         }
-        return inflect(GrammarUtils.toPlural(unit), WordType.GENERIC_NOUN, declension, Gender.MALE, true);
+        return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, true);
     }
 
     @Override
@@ -73,6 +96,10 @@ public class InflectionEngineImpl implements InflectionEngine {
             return number;
         }
         String[] parts = checkAndSplit(number);
+        return inflectNumeral(parts, declension);
+    }
+
+    protected String inflectNumeral(String[] parts, Case declension) {
         String[] res = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             String w = parts[i];
@@ -80,7 +107,9 @@ public class InflectionEngineImpl implements InflectionEngine {
                 res[i] = w; // special case
                 continue;
             }
-            res[i] = inflectNumeral(w, declension, GrammarUtils.getNumeralGender(w), null);
+            // each part may have its own gender: "одна тысяча один"
+            Gender g = GrammarUtils.guessGenderOfSingleNumeral(w);
+            res[i] = inflectNumeral(w, declension, g, null);
         }
         return String.join(" ", res);
     }
