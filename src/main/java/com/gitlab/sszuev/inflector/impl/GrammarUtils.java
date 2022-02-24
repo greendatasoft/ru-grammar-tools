@@ -2,7 +2,10 @@ package com.gitlab.sszuev.inflector.impl;
 
 import com.gitlab.sszuev.inflector.Gender;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -12,7 +15,6 @@ import java.util.stream.Stream;
  * Created by @ssz on 01.12.2020.
  */
 public class GrammarUtils {
-    private static final Locale LOCALE = new Locale("ru", "ru");
 
     // collection of substantive feminine nouns that look like adjectives
     // (субстантивные существительные женского рода, которые выглядят как прилагательные)
@@ -267,7 +269,7 @@ public class GrammarUtils {
 
     private static String replaceEnd(String orig, int numberToTrim, String replacement) {
         if (isUpperCase(orig, orig.length() - numberToTrim, orig.length())) {
-            replacement = replacement.toUpperCase(LOCALE);
+            replacement = replacement.toUpperCase(Dictionary.LOCALE);
         }
         return orig.substring(0, orig.length() - numberToTrim) + replacement;
     }
@@ -281,6 +283,6 @@ public class GrammarUtils {
     }
 
     private static String toUpperCaseIfNeeded(String origin, String res) {
-        return isUpperCase(origin) ? res.toUpperCase(LOCALE) : res;
+        return isUpperCase(origin) ? res.toUpperCase(Dictionary.LOCALE) : res;
     }
 }
