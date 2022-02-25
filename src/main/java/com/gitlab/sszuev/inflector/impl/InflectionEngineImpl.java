@@ -238,9 +238,10 @@ public class InflectionEngineImpl implements InflectionEngine {
 
     private String process(String phrase, WordType type, Gender gender, Case declension, Boolean plural) {
         if (type == WordType.GENERIC_NOUN) {
-            String res = Dictionary.getInstance().inflect(phrase, declension, gender, null, plural);
+            // todo: making animated is a temporal solution
+            String res = Dictionary.getInstance().inflect(phrase, declension, gender, true, plural);
             if (res != null) {
-                return res;
+                return MiscStringUtils.toProperCase(phrase, res);
             }
         }
         Rule rule = findRule(phrase, gender, plural, chooseRuleSet(type));

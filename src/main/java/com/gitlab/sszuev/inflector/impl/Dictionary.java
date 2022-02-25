@@ -44,7 +44,7 @@ public class Dictionary {
     }
 
     /**
-     * Tries to find the correct form of the word from the dictionary.
+     * Tries to find the correct form of the word from the dictionary according the given parameters.
      *
      * @param word       {@code String}, not {@code null} - normalized (trimmed, lower-case)
      * @param declension {@link Case}, not {@code null}
@@ -54,11 +54,12 @@ public class Dictionary {
      * @return {@code String} or {@code null}
      */
     public String inflect(String word, Case declension, Gender gender, Boolean animated, Boolean plural) {
-        WordRecord record = contentMap().get(word);
+        String key = MiscStringUtils.normalize(word, LOCALE);
+        WordRecord record = contentMap().get(key);
         if (record == null) {
             return null;
         }
-        SingleWordRecord single = selectSingleRecord(record, gender, animated, plural);
+        SingleWordRecord single = selectSingleRecord(record, gender, animated);
         if (single.indeclinable != null && single.indeclinable) {
             return word;
         }
@@ -73,15 +74,14 @@ public class Dictionary {
         return selectLongestWord(w);
     }
 
-    protected SingleWordRecord selectSingleRecord(WordRecord record, Gender gender, Boolean animated, Boolean plural) {
+    protected SingleWordRecord selectSingleRecord(WordRecord record, Gender gender, Boolean animated) {
         if (record instanceof SingleWordRecord) {
             return (SingleWordRecord) record;
         }
         MultiWordRecord multi = (MultiWordRecord) record;
         List<SingleWordRecord> res = Arrays.stream(multi.words)
                 .filter(s -> (gender == null || s.gender == gender) &&
-                        (animated == null || s.animated == animated) &&
-                        (plural == null || s.plural != null == plural))
+                        (animated == null || s.animated == animated))
                 .collect(Collectors.toList());
         if (res.isEmpty()) { // can't select, choose first
             return multi.words[0];
@@ -206,7 +206,7 @@ public class Dictionary {
          */
         private static Map.Entry<String, WordRecord> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
-            String key = normalizeKey(Objects.requireNonNull(array[0]));
+            String key = MiscStringUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
             if (array.length < 5) {
                 return null;
             }
@@ -249,7 +249,7 @@ public class Dictionary {
                 return Gender.NEUTER;
             }
             if ("m".equals(array[4])) {
-                return Gender.NEUTER;
+                return Gender.MALE;
             }
             return null;
         }
@@ -264,12 +264,8 @@ public class Dictionary {
             return null;
         }
 
-        private static String normalizeKey(String key) {
-            return key.trim().toLowerCase(LOCALE);
-        }
-
         private static String normalizeValue(String value) {
-            return value.trim().toLowerCase(LOCALE).replace("'", "");
+            return MiscStringUtils.normalize(value, LOCALE).replace("'", "");
         }
 
         @Override
