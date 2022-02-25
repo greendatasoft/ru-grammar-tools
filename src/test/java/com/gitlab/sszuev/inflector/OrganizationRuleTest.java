@@ -7,20 +7,19 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.util.List;
 
 /**
- * Created by @ssz on 27.11.2020.
+ * Created by @ssz on 24.02.2022.
  */
-public class ProfessionRuleTest {
+public class OrganizationRuleTest {
 
     private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
     public static List<String[]> data() {
-        return TestUtils.load("profession.txt");
+        return TestUtils.load("organization.txt");
     }
 
     void assertName(String expected, String given, Case declension) {
-        String actual = engine.inflectRegularTerm(given, declension, true);
-        Assertions.assertTrue(TestUtils.equalsIgnoreSpecial(expected, actual),
-                String.format("Wrong result for case: %s, expected='%s', actual='%s'", declension, expected, actual));
+        Assertions.assertEquals(expected, engine.inflectRegularTerm(given, declension, false),
+                "Wrong result for case: " + declension);
     }
 
     @ParameterizedTest(name = "[{index}] ::: {0}")
@@ -32,5 +31,4 @@ public class ProfessionRuleTest {
         assertName(p5, p1, Case.INSTRUMENTAL);
         assertName(p6, p1, Case.PREPOSITIONAL);
     }
-
 }

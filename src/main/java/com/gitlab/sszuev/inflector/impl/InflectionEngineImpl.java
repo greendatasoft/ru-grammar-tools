@@ -19,14 +19,14 @@ import java.util.stream.Stream;
 public class InflectionEngineImpl implements InflectionEngine {
 
     @Override
-    public String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural) {
+    public String inflect(String word, WordType type, Case declension, Gender gender, Boolean animated, Boolean plural) {
         require(word, "word");
         require(declension, "declension case");
         require(type, "rule type");
         if (declension == Case.NOMINATIVE) {
             return word;
         }
-        return process(word, type, gender == null ? Gender.MALE : gender, declension, plural);
+        return process(word, type, gender == null ? Gender.MALE : gender, declension, animated, plural);
     }
 
     @Override
@@ -60,24 +60,24 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (GrammarUtils.isZeroNumeral(number)) {
             // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
             // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
-            return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, Case.GENITIVE, gender, true);
+            return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, Case.GENITIVE, gender, null, true);
         }
         if (GrammarUtils.isFractionNumeral(number)) {
             // рубля
-            return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null);
+            return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null, null);
         }
         if (GrammarUtils.isNumeralEndWithNumberOne(number)) {
             // NOMINATIVE,GENITIVE,    DATIVE,      ACCUSATIVE,INSTRUMENTAL,PREPOSITIONAL
             // один рубль,одного рубля,одному рублю,один рубль,одним рублём,одном рубле
-            return inflect(unit, WordType.GENERIC_NOUN, declension, gender, null);
+            return inflect(unit, WordType.GENERIC_NOUN, declension, gender, null, null);
         }
         if (GrammarUtils.isNumeralEndWithTwoThreeFour(number)) {
             // NOMINATIVE,     GENITIVE,          DATIVE,            ACCUSATIVE,     INSTRUMENTAL,        PREPOSITIONAL
             // сорок два рубля,сорока двух рублей,сорока двум рублям,сорок два рубля,сорока двумя рублями,сорока двух рублях
             if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
-                return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null);
+                return inflect(unit, WordType.GENERIC_NOUN, Case.GENITIVE, gender, null, null);
             } else {
-                return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, true);
+                return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, null, true);
             }
         }
         // NOMINATIVE,   GENITIVE,     DATIVE,       ACCUSATIVE,   INSTRUMENTAL,   PREPOSITIONAL
@@ -87,7 +87,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
             declension = Case.GENITIVE;
         }
-        return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, true);
+        return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC_NOUN, declension, gender, null, true);
     }
 
     @Override
@@ -125,18 +125,19 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} -  a numeral phrase in the selected case
      */
     public String inflectNumeral(String number, Case declension, Gender gender, Boolean plural) {
-        return process(require(number, "numeral"), WordType.NUMERALS, gender, require(declension, "declension"), plural);
+        return process(require(number, "numeral"), WordType.NUMERALS, gender, require(declension, "declension"), null, plural);
     }
 
     /**
-     * Inflects a regular-term phrase (combination of words: job-title, organization name).
+     * Inclines a regular-term phrase, which is a combination of words (e.g. job-title, organization name).
      *
      * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
-     * @return {@code String} -  a phrase in the selected case
+     * @param animated   - the names of organizations are usually inanimate, the names of professions are animate
+     * @return {@code String} - a phrase in the selected case
      */
     @Override
-    public String inflectRegularTerm(String phrase, Case declension) {
+    public String inflectRegularTerm(String phrase, Case declension, Boolean animated) {
         require(declension, "declension case");
         String[] parts = checkAndSplit(phrase);
 
@@ -188,7 +189,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             end = noun;
         }
         for (int i = 0; i <= end; i++) {
-            parts[i] = processWithHyphen(parts[i], WordType.GENERIC_NOUN, gender, declension, false);
+            parts[i] = processWithHyphen(parts[i], WordType.GENERIC_NOUN, gender, declension, animated, false);
         }
         return String.join(" ", parts);
     }
@@ -220,31 +221,31 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     @SuppressWarnings("SameParameterValue")
-    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, Boolean plural) {
+    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, Boolean animated, Boolean plural) {
         StringBuilder res = new StringBuilder();
         int prev = 0;
         Matcher m = Pattern.compile("-").matcher(input);
         Gender g = gender;
         while (m.find()) {
-            String txt = process(input.substring(prev, m.start()), type, g, declension, plural);
+            String txt = process(input.substring(prev, m.start()), type, g, declension, animated, plural);
             res.append(txt).append(m.group());
             prev = m.end();
             // the second part is usually in the masculine gender (e.g. "сестра-анестезист")
             g = Gender.MALE;
         }
-        res.append(process(input.substring(prev), type, g, declension, plural));
+        res.append(process(input.substring(prev), type, g, declension, animated, plural));
         return res.toString();
     }
 
-    private String process(String phrase, WordType type, Gender gender, Case declension, Boolean plural) {
+    protected String process(String phrase, WordType type, Gender gender, Case declension, Boolean animated, Boolean plural) {
         if (type == WordType.GENERIC_NOUN) {
-            // todo: making animated is a temporal solution
-            String res = Dictionary.getInstance().inflect(phrase, declension, gender, true, plural);
+            String res = Dictionary.getInstance().inflect(phrase, declension, gender, animated, plural);
             if (res != null) {
                 return MiscStringUtils.toProperCase(phrase, res);
             }
         }
-        Rule rule = findRule(phrase, gender, plural, chooseRuleSet(type));
+        String nw = MiscStringUtils.normalize(phrase, Dictionary.LOCALE);
+        Rule rule = findRule(nw, gender, animated, plural, chooseRuleSet(type));
         return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
     }
 
@@ -265,14 +266,14 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
     }
 
-    private static String applyMod(String mod, String name) { // the original method
+    private static String applyMod(String mod, String word) { // the original method
         if (mod.equals(RuleLibrary.KEEP_MOD)) {
-            return name;
+            return word;
         }
         if (mod.indexOf(RuleLibrary.REMOVE_CHARACTER) < 0) {
-            return name + mod;
+            return word + mod;
         }
-        String result = name;
+        String result = word;
         for (int i = 0; i < mod.length(); i++) {
             if (mod.charAt(i) == RuleLibrary.REMOVE_CHARACTER) {
                 result = result.substring(0, result.length() - 1);
@@ -284,24 +285,20 @@ public class InflectionEngineImpl implements InflectionEngine {
         return result;
     }
 
-    public static Rule findRule(String phrase, Gender gender, Boolean plural, RuleSet rules) {
-        Rule exceptionRule = selectRule(rules.exceptions(), gender, phrase, plural);
+    public static Rule findRule(String phrase, Gender gender, Boolean animated, Boolean plural, RuleSet rules) {
+        Rule exceptionRule = selectRule(rules.exceptions(), phrase, gender, animated, plural);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;
         }
-        Rule suffixRule = selectRule(rules.suffixes(), gender, phrase, plural);
+        Rule suffixRule = selectRule(rules.suffixes(), phrase, gender, animated, plural);
         if (suffixRule != null && suffixRule.gender == gender) {
             return suffixRule;
         }
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule selectRule(Stream<Rule> rules, Gender gender, String word, Boolean plural) {
-        String lcWord = word.toLowerCase();
-        List<Rule> res = rules.filter(rule ->
-                        (plural == null || rule.plural == plural)
-                                && (rule.gender == Gender.NEUTER || rule.gender == gender)
-                                && rule.test().anyMatch(lcWord::endsWith))
+    private static Rule selectRule(Stream<Rule> rules, String word, Gender gender, Boolean animated, Boolean plural) {
+        List<Rule> res = rules.filter(rule -> filterRule(rule, word, gender, animated, plural))
                 .collect(Collectors.toList());
         if (res.isEmpty()) {
             return null;
@@ -319,6 +316,13 @@ public class InflectionEngineImpl implements InflectionEngine {
             return rule;
         }
         throw new IllegalStateException();
+    }
+
+    private static boolean filterRule(Rule rule, String word, Gender gender, Boolean animated, Boolean plural) {
+        return (plural == null || rule.plural == plural) &&
+                (animated == null || rule.inanimate != animated) &&
+                (rule.gender == Gender.NEUTER || rule.gender == gender) &&
+                rule.test().anyMatch(word::endsWith);
     }
 
     protected static String require(String string, String name) {

@@ -13,13 +13,15 @@ import java.util.stream.Stream;
 public class Rule {
     public final Gender gender;
     public final boolean plural;
+    public final boolean inanimate;
 
     private final String[] test;
     private final String[] mods;
 
-    public Rule(String[] test, String[] mods, Gender gender, boolean plural) {
+    public Rule(String[] test, String[] mods, Gender gender, boolean inanimate, boolean plural) {
         this.gender = Objects.requireNonNull(gender);
         this.plural = plural;
+        this.inanimate = inanimate;
         this.test = Objects.requireNonNull(test);
         this.mods = Objects.requireNonNull(mods);
     }
