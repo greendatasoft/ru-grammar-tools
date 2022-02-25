@@ -2,11 +2,7 @@ package com.gitlab.sszuev.inflector.impl;
 
 import com.gitlab.sszuev.inflector.Gender;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
+import java.util.*;
 
 /**
  * Utilities for working with the Russian language, based on jobs-register (ОКПДТР, ~{@code 7860} records).
@@ -82,6 +78,9 @@ public class GrammarUtils {
     private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
     private static final Set<String> MALE_NUMERALS = Set.of("один");
 
+    private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
+    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
+
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
     }
@@ -94,7 +93,12 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeMasculineAdjective(String word) {
-        return Stream.of("ий", "ый", "ой").anyMatch(word::endsWith) && canBeSingularNominativeAdjective(word);
+        for (String end : MALE_ADJECTIVE_ENDINGS) {
+            if (word.endsWith(end)) {
+                return canBeSingularNominativeAdjective(word);
+            }
+        }
+        return false;
     }
 
     /**
@@ -105,7 +109,12 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeFeminineAdjective(String word) {
-        return Stream.of("ая", "яя").anyMatch(word::endsWith) && canBeSingularNominativeAdjective(word);
+        for (String end : FEMALE_ADJECTIVE_ENDINGS) {
+            if (word.endsWith(end)) {
+                return canBeSingularNominativeAdjective(word);
+            }
+        }
+        return false;
     }
 
     private static boolean canBeSingularNominativeAdjective(String word) {
