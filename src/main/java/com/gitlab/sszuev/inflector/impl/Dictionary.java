@@ -11,10 +11,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A dictionary, contains words from resources.
+ * A dictionary, it contains words from resources.
  * Created by @ssz on 24.02.2022.
  *
  * @see <a href='https://github.com/Badestrand/russian-dictionary'>Russian Dictionary Data</a>
@@ -22,13 +24,14 @@ import java.util.stream.Stream;
 public class Dictionary {
     public static final Locale LOCALE = new Locale("ru", "ru");
 
-    private final Path source;
+    private final Supplier<Map<String, WordRecord>> loader;
     // it is okay to have Map in memory: it is not so big (~20_000records),
     // but just in case store it as SoftReference:
-    private volatile SoftReference<Map<String, WordInfo>> content;
+    private volatile SoftReference<Map<String, WordRecord>> content;
 
     protected Dictionary(Path path) {
-        this.source = Objects.requireNonNull(path);
+        Objects.requireNonNull(path);
+        this.loader = () -> load(path);
     }
 
     /**
@@ -43,37 +46,68 @@ public class Dictionary {
     /**
      * Tries to find the correct form of the word from the dictionary.
      *
-     * @param word       {@code String}
-     * @param declension {@link Case}
-     * @param plural     {@code Boolean}
+     * @param word       {@code String}, not {@code null} - normalized (trimmed, lower-case)
+     * @param declension {@link Case}, not {@code null}
+     * @param gender     {@link  Gender}, can be {@code null}
+     * @param animated   {@code Boolean}, can be {@code null}
+     * @param plural     {@code Boolean}, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    public String inflect(String word, Case declension, Boolean plural) {
-        WordInfo res = contentMap().get(word);
-        if (res == null) {
+    public String inflect(String word, Case declension, Gender gender, Boolean animated, Boolean plural) {
+        WordRecord record = contentMap().get(word);
+        if (record == null) {
             return null;
         }
-        if (res.indeclinable != null && res.indeclinable) {
+        SingleWordRecord single = selectSingleRecord(record, gender, animated, plural);
+        if (single.indeclinable != null && single.indeclinable) {
             return word;
         }
         if (declension == Case.NOMINATIVE) {
-            return plural == Boolean.TRUE ? res.plural : word;
+            return plural == Boolean.TRUE ? single.plural : word;
         }
-        String[] cases = plural == Boolean.TRUE && res.pluralCases != null ? res.pluralCases : res.singularCases;
+        String[] cases = plural == Boolean.TRUE && single.pluralCases != null ? single.pluralCases : single.singularCases;
         if (cases == null) {
             return null;
         }
         String w = cases[declension.ordinal() - 1];
-        if (declension == Case.INSTRUMENTAL) {
-            // can have two forms, returns the first one
-            return w.split(",\\s*")[0];
-        }
-        return w;
+        return selectLongestWord(w);
     }
 
-    protected Map<String, WordInfo> contentMap() {
-        SoftReference<Map<String, WordInfo>> content = this.content;
-        Map<String, WordInfo> res;
+    protected SingleWordRecord selectSingleRecord(WordRecord record, Gender gender, Boolean animated, Boolean plural) {
+        if (record instanceof SingleWordRecord) {
+            return (SingleWordRecord) record;
+        }
+        MultiWordRecord multi = (MultiWordRecord) record;
+        List<SingleWordRecord> res = Arrays.stream(multi.words)
+                .filter(s -> (gender == null || s.gender == gender) &&
+                        (animated == null || s.animated == animated) &&
+                        (plural == null || s.plural != null == plural))
+                .collect(Collectors.toList());
+        if (res.isEmpty()) { // can't select, choose first
+            return multi.words[0];
+        }
+        return res.get(0);
+    }
+
+    protected String selectLongestWord(String w) {
+        if (!w.contains(",")) {
+            return w;
+        }
+        String[] array = w.split(",\\s*");
+        String res = null;
+        for (String s : array) {
+            if (res == null) {
+                res = s;
+            } else if (s.length() > res.length()) {
+                res = s;
+            }
+        }
+        return res;
+    }
+
+    protected Map<String, WordRecord> contentMap() {
+        SoftReference<Map<String, WordRecord>> content = this.content;
+        Map<String, WordRecord> res;
         if (content != null && (res = content.get()) != null) {
             return res;
         }
@@ -82,13 +116,34 @@ public class Dictionary {
             if (content != null && (res = content.get()) != null) {
                 return res;
             }
-            this.content = new SoftReference<>(res = loadSource());
+            this.content = new SoftReference<>(res = loader.get());
             return res;
         }
     }
 
-    protected Map<String, WordInfo> loadSource() {
-        return WordInfo.load(source);
+    /**
+     * Loads the {@link Dictionary} from the file system.
+     *
+     * @param source {@link Path} - resource
+     * @return immutable {@code Map}
+     */
+    @SuppressWarnings({"unchecked"})
+    protected static Map<String, WordRecord> load(Path source) {
+        Map<String, WordRecord> data = new HashMap<>(26900);
+        try (Stream<String> lines = Files.lines(source)) {
+            lines.forEach(record -> {
+                Map.Entry<String, WordRecord> e = SingleWordRecord.parse(record);
+                if (e == null) {
+                    return;
+                }
+                data.merge(e.getKey(), e.getValue(), MultiWordRecord::create);
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException("Can't load " + source, e);
+        }
+        // MapN must be faster:
+        Map.Entry<String, WordRecord>[] array = data.entrySet().toArray(Map.Entry[]::new);
+        return Map.ofEntries(array);
     }
 
     static class NounDictionaryLoader {
@@ -104,38 +159,41 @@ public class Dictionary {
         }
     }
 
-    static class WordInfo {
+    interface WordRecord {
+    }
+
+    static class MultiWordRecord implements WordRecord {
+        private final SingleWordRecord[] words;
+
+        MultiWordRecord(SingleWordRecord[] words) {
+            this.words = words;
+        }
+
+        static WordRecord create(WordRecord... records) {
+            List<SingleWordRecord> res = new ArrayList<>();
+            for (WordRecord w : records) {
+                if (w instanceof SingleWordRecord) {
+                    res.add((SingleWordRecord) w);
+                } else {
+                    res.addAll(Arrays.asList(((MultiWordRecord) w).words));
+                }
+            }
+            return new MultiWordRecord(res.toArray(SingleWordRecord[]::new));
+        }
+
+        @Override
+        public String toString() {
+            return String.format("{%s}", Arrays.toString(words));
+        }
+    }
+
+    static class SingleWordRecord implements WordRecord {
         private Gender gender;
         private Boolean animated;
         private Boolean indeclinable;
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
-
-        /**
-         * Loads the {@link Dictionary}.
-         *
-         * @param source {@link Path}
-         * @return immutable {@code Map}
-         */
-        @SuppressWarnings({"unchecked"})
-        public static Map<String, WordInfo> load(Path source) {
-            Map<String, WordInfo> data = new HashMap<>(26900);
-            try (Stream<String> s = Files.lines(source)) {
-                s.forEach(x -> {
-                    Map.Entry<String, WordInfo> e = parse(x);
-                    if (e == null) {
-                        return;
-                    }
-                    data.put(e.getKey(), e.getValue());
-                });
-            } catch (IOException e) {
-                throw new UncheckedIOException("Can't load " + source, e);
-            }
-            // MapN must be faster:
-            Map.Entry<String, WordInfo>[] array = data.entrySet().toArray(Map.Entry[]::new);
-            return Map.ofEntries(array);
-        }
 
         /**
          * Parses the csv-line.
@@ -146,13 +204,13 @@ public class Dictionary {
          * @param sourceLine {@code String}
          * @return a {@code Map.Entry}
          */
-        private static Map.Entry<String, WordInfo> parse(String sourceLine) {
+        private static Map.Entry<String, WordRecord> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = normalizeKey(Objects.requireNonNull(array[0]));
             if (array.length < 5) {
                 return null;
             }
-            WordInfo res = new WordInfo();
+            SingleWordRecord res = new SingleWordRecord();
             res.gender = parseGender(array);
             if (array.length < 7) {
                 return Map.entry(key, res);
@@ -216,14 +274,7 @@ public class Dictionary {
 
         @Override
         public String toString() {
-            return "WordInfo{" +
-                    "gender=" + gender +
-                    ", animated=" + animated +
-                    ", indeclinable=" + indeclinable +
-                    ", plural='" + plural + '\'' +
-                    ", singularCases=" + Arrays.toString(singularCases) +
-                    ", pluralCases=" + Arrays.toString(pluralCases) +
-                    '}';
+            return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}", gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
         }
     }
 }

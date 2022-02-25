@@ -237,6 +237,12 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     private String process(String phrase, WordType type, Gender gender, Case declension, Boolean plural) {
+        if (type == WordType.GENERIC_NOUN) {
+            String res = Dictionary.getInstance().inflect(phrase, declension, gender, null, plural);
+            if (res != null) {
+                return res;
+            }
+        }
         Rule rule = findRule(phrase, gender, plural, chooseRuleSet(type));
         return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
     }

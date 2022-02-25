@@ -18,7 +18,8 @@ public class ProfessionRuleTest {
     }
 
     void assertName(String expected, String given, Case declension) {
-        Assertions.assertEquals(expected, engine.inflectRegularTerm(given, declension), "Wrong result for case: " + declension);
+        String actual = engine.inflectRegularTerm(given, declension);
+        Assertions.assertTrue(TestUtils.equalsIgnoreSpecial(expected, actual), "Wrong result for case: " + declension);
     }
 
     @ParameterizedTest(name = "[{index}] ::: {0}")
