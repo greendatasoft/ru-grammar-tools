@@ -66,4 +66,41 @@ public interface InflectionEngine {
         // this is default rule, which works only for several cases
         return inflect(number, WordType.NUMERALS, declension, null, null, null);
     }
+
+    /**
+     * Declines the given {@code sfp} (full name) into the specified declension case.
+     *
+     * @param sfp        {@code String} - surname+firstname+patronymic with space as separator, surname is mandatory
+     * @param declension {@link Case declension case}, not {@code null}
+     * @return surname+firstname+patronymic in desired declension case
+     */
+    default String inflectFullName(String sfp, Case declension) {
+        return String.join(" ", inflectFullName(sfp.split("\\s+"), declension, null));
+    }
+
+    /**
+     * Declines the given {@code sfp} (full name) into the specified declension case.
+     *
+     * @param sfp        an {@code Array} with full name: either {@code [family_name]} (e.g. {@code "Петров"}),
+     *                   or {@code [family_name, first_name]} (e.g. {@code "Петров Петр"}),
+     *                   or {@code [family_name, patronymic_name, first_name]} (e.g. {@code "Петров Петр Петрович"})
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param gender     {@link Gender} or {@code null} to guess
+     * @return {@code Array} with full name in desired declension case
+     */
+    default String[] inflectFullName(String[] sfp, Case declension, Gender gender) {
+        if (sfp.length > 3 || sfp.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        String s = inflect(sfp[0], WordType.FAMILY_NAME, declension, gender, true, false);
+        if (sfp.length == 1) {
+            return new String[]{s};
+        }
+        String f = inflect(sfp[1], WordType.FIRST_NAME, declension, gender, true, false);
+        if (sfp.length == 2) {
+            return new String[]{s, f};
+        }
+        String p = inflect(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
+        return new String[]{s, f, p};
+    }
 }
