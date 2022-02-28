@@ -3,7 +3,6 @@ package com.gitlab.sszuev.inflector.impl;
 import com.gitlab.sszuev.inflector.Gender;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Utilities for working with the Russian language, based on jobs-register (ОКПДТР, ~{@code 7860} records).
@@ -12,7 +11,6 @@ import java.util.stream.Stream;
  * Created by @ssz on 01.12.2020.
  */
 public class GrammarUtils {
-    private static final Locale LOCALE = new Locale("ru", "ru");
 
     // collection of substantive feminine nouns that look like adjectives
     // (субстантивные существительные женского рода, которые выглядят как прилагательные)
@@ -80,6 +78,9 @@ public class GrammarUtils {
     private static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
     private static final Set<String> MALE_NUMERALS = Set.of("один");
 
+    private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
+    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
+
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
     }
@@ -92,7 +93,12 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeMasculineAdjective(String word) {
-        return Stream.of("ий", "ый", "ой").anyMatch(word::endsWith) && canBeSingularNominativeAdjective(word);
+        for (String end : MALE_ADJECTIVE_ENDINGS) {
+            if (word.endsWith(end)) {
+                return canBeSingularNominativeAdjective(word);
+            }
+        }
+        return false;
     }
 
     /**
@@ -103,7 +109,12 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeFeminineAdjective(String word) {
-        return Stream.of("ая", "яя").anyMatch(word::endsWith) && canBeSingularNominativeAdjective(word);
+        for (String end : FEMALE_ADJECTIVE_ENDINGS) {
+            if (word.endsWith(end)) {
+                return canBeSingularNominativeAdjective(word);
+            }
+        }
+        return false;
     }
 
     private static boolean canBeSingularNominativeAdjective(String word) {
@@ -119,7 +130,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeMasculineAdjectiveBasedSubstantivatNoun(String word) {
-        return MASCULINE_SUBSTANTIVAT_NOUNS.contains(normalize(word));
+        return MASCULINE_SUBSTANTIVAT_NOUNS.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -130,7 +141,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantivatNoun(String word) {
-        return FEMININE_SUBSTANTIVAT_NOUNS.contains(normalize(word));
+        return FEMININE_SUBSTANTIVAT_NOUNS.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -153,7 +164,7 @@ public class GrammarUtils {
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B3'>Предлог</a>
      */
     public static boolean canBeNonDerivativePreposition(String word) {
-        return NON_DERIVATIVE_PREPOSITION.contains(normalize(word));
+        return NON_DERIVATIVE_PREPOSITION.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -163,7 +174,7 @@ public class GrammarUtils {
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingleNumeral(String standaloneNumeral) {
-        String word = normalize(standaloneNumeral);
+        String word = MiscStringUtils.normalize(standaloneNumeral, Dictionary.LOCALE);
         if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
             return Gender.MALE;
         }
@@ -180,7 +191,7 @@ public class GrammarUtils {
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
-        String nw = normalize(singular);
+        String nw = MiscStringUtils.normalize(singular, Dictionary.LOCALE);
         if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за") || nw.endsWith("ка")) {
             // свинья, ладья, свекла, берёза, копейка
             return Gender.FEMALE;
@@ -197,18 +208,18 @@ public class GrammarUtils {
      * @return {@code String}
      */
     public static String toPluralNoun(String singular) {
-        String nw = normalize(singular);
+        String nw = MiscStringUtils.normalize(singular, Dictionary.LOCALE);
         if (nw.endsWith("ль")) { // корабль, рубль
-            return replaceEnd(singular, 2, "ли");
+            return MiscStringUtils.replaceEnd(singular, 2, "ли", Dictionary.LOCALE);
         }
         if (nw.endsWith("ья") || nw.endsWith("ка")) { // свинья, ладья, копейка
-            return replaceEnd(singular, 1, "и");
+            return MiscStringUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
         }
         if (nw.endsWith("ла") || nw.endsWith("за")) { // свекла, берёзы
-            return replaceEnd(singular, 1, "ы");
+            return MiscStringUtils.replaceEnd(singular, 1, "ы", Dictionary.LOCALE);
         }
         if (nw.endsWith("нт") || nw.endsWith("р")) { // цент,фунт,брезент,доллар
-            return appendEnd(singular, "ы");
+            return MiscStringUtils.appendEnd(singular, "ы", Dictionary.LOCALE);
         }
         // TODO: complete
         return singular;
@@ -222,65 +233,38 @@ public class GrammarUtils {
      * @return {@code String}
      */
     public static String changeGenderFormOfNumeral(String neuterNumeral, Gender gender) {
-        String nw = normalize(neuterNumeral);
+        String nw = MiscStringUtils.normalize(neuterNumeral, Dictionary.LOCALE);
         if (gender == Gender.FEMALE) {
             switch (nw) {
                 case "один":
-                    return toUpperCaseIfNeeded(nw, "одна");
+                    return MiscStringUtils.toProperCase(neuterNumeral, "одна");
                 case "два":
-                    return toUpperCaseIfNeeded(nw, "две");
+                    return MiscStringUtils.toProperCase(neuterNumeral, "две");
             }
         }
         return neuterNumeral;
     }
 
     public static boolean isFractionNumeral(String number) {
-        number = normalize(number);
+        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
         return number.contains(" целых ") || number.contains("одна целая ");
     }
 
     public static boolean isNumeralEndWithNumberOne(String number) {
-        return endsWith(normalize(number), "один");
+        return endsWith(MiscStringUtils.normalize(number, Dictionary.LOCALE), "один");
     }
 
     public static boolean isNumeralEndWithTwoThreeFour(String number) {
-        number = normalize(number);
+        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
         return endsWith(number, "два") || endsWith(number, "три") || endsWith(number, "четыре");
     }
 
     public static boolean isZeroNumeral(String number) {
-        number = normalize(number);
+        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
         return "ноль".equals(number);
     }
 
-    private static String normalize(String s) {
-        return s.trim().toLowerCase();
-    }
-
-    private static boolean endsWith(String phrase, String ending) {
-        return ending.equals(phrase) || phrase.endsWith(" " + ending);
-    }
-
-    private static String appendEnd(String orig, String ending) {
-        return orig + toUpperCaseIfNeeded(orig, ending);
-    }
-
-    private static String replaceEnd(String orig, int numberToTrim, String replacement) {
-        if (isUpperCase(orig, orig.length() - numberToTrim, orig.length())) {
-            replacement = replacement.toUpperCase(LOCALE);
-        }
-        return orig.substring(0, orig.length() - numberToTrim) + replacement;
-    }
-
-    private static boolean isUpperCase(String s, int start, int end) {
-        return s.substring(start, end).chars().allMatch(Character::isUpperCase);
-    }
-
-    private static boolean isUpperCase(String s) {
-        return s.chars().allMatch(Character::isUpperCase);
-    }
-
-    private static String toUpperCaseIfNeeded(String origin, String res) {
-        return isUpperCase(origin) ? res.toUpperCase(LOCALE) : res;
+    private static boolean endsWith(String phrase, String word) {
+        return word.equals(phrase) || phrase.endsWith(" " + word);
     }
 }

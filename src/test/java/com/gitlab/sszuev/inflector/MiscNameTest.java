@@ -12,11 +12,11 @@ public class MiscNameTest {
     private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
     private void checkName(WordType type, Gender gender, String p1, String p2, String p3, String p4, String p5, String p6) {
-        Assertions.assertEquals(p2, engine.inflect(p1, type, Case.GENITIVE, gender, false));
-        Assertions.assertEquals(p3, engine.inflect(p1, type, Case.DATIVE, gender, false));
-        Assertions.assertEquals(p4, engine.inflect(p1, type, Case.ACCUSATIVE, gender, false));
-        Assertions.assertEquals(p5, engine.inflect(p1, type, Case.INSTRUMENTAL, gender, false));
-        Assertions.assertEquals(p6, engine.inflect(p1, type, Case.PREPOSITIONAL, gender, false));
+        Assertions.assertEquals(p2, engine.inflect(p1, type, Case.GENITIVE, gender, true, false));
+        Assertions.assertEquals(p3, engine.inflect(p1, type, Case.DATIVE, gender, true, false));
+        Assertions.assertEquals(p4, engine.inflect(p1, type, Case.ACCUSATIVE, gender, true, false));
+        Assertions.assertEquals(p5, engine.inflect(p1, type, Case.INSTRUMENTAL, gender, true, false));
+        Assertions.assertEquals(p6, engine.inflect(p1, type, Case.PREPOSITIONAL, gender, true, false));
     }
 
     @Test

@@ -10,6 +10,7 @@ public class RuleBean {
     private String gender;
     private String description;
     private boolean plural;
+    private boolean inanimate;
     private List<String> mods;
     private List<String> test;
     private List<String> tags;
@@ -52,6 +53,14 @@ public class RuleBean {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public boolean isInanimate() {
+        return inanimate;
+    }
+
+    public void setInanimate(boolean inanimate) {
+        this.inanimate = inanimate;
     }
 
     public boolean isPlural() {

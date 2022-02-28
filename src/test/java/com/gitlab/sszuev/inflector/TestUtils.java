@@ -27,6 +27,28 @@ class TestUtils {
         return new SpellingEngineImpl();
     }
 
+    static boolean equalsIgnoreSpecial(String expected, String actual) {
+        if (expected.length() != actual.length()) {
+            return false;
+        }
+        char[] ex = expected.toCharArray();
+        char[] ac = expected.toCharArray();
+        for (int i = 0; i < ex.length; i++) {
+            if (ex[i] == ac[i]) {
+                continue;
+            }
+            if (isSpecial(ex[i]) && isSpecial(ac[i])) {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private static boolean isSpecial(char c) {
+        return c == 'ё' || c == 'е';
+    }
+
     static Path file(String fileName) {
         try {
             return Paths.get(Objects.requireNonNull(TestUtils.class.getResource("/" + fileName)).toURI());

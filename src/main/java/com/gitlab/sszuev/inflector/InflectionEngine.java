@@ -9,19 +9,20 @@ import java.util.Objects;
 public interface InflectionEngine {
     /**
      * Declines the given {@code word} in accordance with the specified settings.
-     * Good for Russian full-name (firstname patronymic surname, FPS).
-     * This is a generic method.
+     * This is the generic method.
      *
      * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
      * @param type       {@link WordType}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender}, russian feminine, masculine or neuter,
-     *                   {@code null} to choose automatically (usually it is {@link Gender#MALE})
-     * @param plural     {@code boolean} if {@code true} then plural,
-     *                   {@code false} for singular, {@code null} if unspecified or default
+     *                   {@code null} to choose automatically (usually it is {@link Gender#MALE}) or for undefined cases
+     * @param animated   {@code Boolean} can be specified if {@code type = } {@link WordType#GENERIC_NOUN},
+     *                   {@code null} for default behaviour
+     * @param plural     {@code Boolean} if {@code true} then plural,
+     *                   {@code false} for singular or {@code null} for default behaviour
      * @return {@code String}
      */
-    String inflect(String word, WordType type, Case declension, Gender gender, Boolean plural);
+    String inflect(String word, WordType type, Case declension, Gender gender, Boolean animated, Boolean plural);
 
     /**
      * Declines the given {@code phrase} (combination of words: job-title, organization name)
@@ -29,11 +30,12 @@ public interface InflectionEngine {
      *
      * @param phrase     {@code String} not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
+     * @param animated   {@code Boolean} the names of organizations are usually inanimate, the names of professions are animate
      * @return {@code String} -  a phrase in the selected case
      */
-    default String inflectRegularTerm(String phrase, Case declension) {
-        // this is default rule, which works only for several cases
-        return inflect(phrase, WordType.GENERIC_NOUN, declension, Gender.MALE, null);
+    default String inflectRegularTerm(String phrase, Case declension, Boolean animated) {
+        // this is the default rule, which works only for several simplest cases
+        return inflect(phrase, WordType.GENERIC_NOUN, declension, Gender.MALE, animated, false);
     }
 
     /**
@@ -48,7 +50,7 @@ public interface InflectionEngine {
     default String inflectNumeral(String number, String unit, Case declension) {
         // this is the default rule, it works only for numbers with fractions
         String word = Objects.requireNonNull(number) + " " + inflect(Objects.requireNonNull(unit),
-                WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null);
+                WordType.GENERIC_NOUN, Case.GENITIVE, Gender.MALE, null, null);
         return inflectNumeral(word, declension);
     }
 
@@ -62,6 +64,6 @@ public interface InflectionEngine {
      */
     default String inflectNumeral(String number, Case declension) {
         // this is default rule, which works only for several cases
-        return inflect(number, WordType.NUMERALS, declension, null, null);
+        return inflect(number, WordType.NUMERALS, declension, null, null, null);
     }
 }
