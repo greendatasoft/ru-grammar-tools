@@ -13,7 +13,7 @@ public class MiscRegularTermTest {
     private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
     public static List<String[]> data() {
-        return TestUtils.load("misc-term.txt");
+        return TestUtils.load("misc-terms.txt");
     }
 
     void assertName(String expected, String given, Case declension) {

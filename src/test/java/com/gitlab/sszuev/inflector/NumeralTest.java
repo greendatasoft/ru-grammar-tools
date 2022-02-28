@@ -15,7 +15,7 @@ import java.util.function.BiFunction;
  * @see <a href='https://numeralonline.ru/1'>Склонение числительных</a>
  * @see <a href='https://ru.wikipedia.org/wiki/%D0%98%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5_%D0%BD%D0%B0%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D0%B5%D0%B9_%D1%82%D1%8B%D1%81%D1%8F%D1%87%D0%B8'>Именные названия степеней тысячи</a>
  */
-public class NumeralRuleTest {
+public class NumeralTest {
 
     private final InflectionEngine engine = TestUtils.createInflectorEngine();
 
