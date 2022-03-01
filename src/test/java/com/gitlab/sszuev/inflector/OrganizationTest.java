@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class OrganizationTest {
 
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     public static List<String[]> data() {
         return TestUtils.load("organizations.txt");

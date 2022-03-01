@@ -17,7 +17,7 @@ import java.util.function.BiFunction;
  */
 public class NumeralTest {
 
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     public static List<String[]> data() {
         return TestUtils.load("numerals.txt");

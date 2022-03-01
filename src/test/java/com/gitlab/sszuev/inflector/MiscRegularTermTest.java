@@ -10,7 +10,7 @@ import java.util.List;
  * Created by @ssz on 25.02.2022.
  */
 public class MiscRegularTermTest {
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     public static List<String[]> miscTerms() {
         return TestUtils.load("misc_terms.txt");
