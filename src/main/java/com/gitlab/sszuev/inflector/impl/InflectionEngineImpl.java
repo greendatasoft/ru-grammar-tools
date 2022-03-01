@@ -43,7 +43,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         } else {
             res = inflectNumeral(parts, declension);
         }
-        return res + " " + inclineUnit(unit, number, declension, gender);
+        return res + " " + inflectUnit(unit, number, declension, gender);
     }
 
     /**
@@ -56,7 +56,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String}
      * @see <a href='https://numeralonline.ru/10000'>Склонение 10000 по падежам</a>
      */
-    protected String inclineUnit(String unit, String number, Case declension, Gender gender) {
+    protected String inflectUnit(String unit, String number, Case declension, Gender gender) {
         if (GrammarUtils.isZeroNumeral(number)) {
             // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
             // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
