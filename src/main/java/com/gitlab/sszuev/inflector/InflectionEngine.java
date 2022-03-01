@@ -75,7 +75,7 @@ public interface InflectionEngine {
      * @return surname+firstname+patronymic in desired declension case
      */
     default String inflectFullName(String sfp, Case declension) {
-        return String.join(" ", inflectFullName(sfp.split("\\s+"), declension, null));
+        return String.join(" ", inflectSPF(sfp.split("\\s+"), declension, null));
     }
 
     /**
@@ -88,7 +88,7 @@ public interface InflectionEngine {
      * @param gender     {@link Gender} or {@code null} to guess
      * @return {@code Array} with full name in desired declension case
      */
-    default String[] inflectFullName(String[] sfp, Case declension, Gender gender) {
+    default String[] inflectSPF(String[] sfp, Case declension, Gender gender) {
         if (sfp.length > 3 || sfp.length == 0) {
             throw new IllegalArgumentException();
         }
@@ -102,5 +102,21 @@ public interface InflectionEngine {
         }
         String p = inflect(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
         return new String[]{s, f, p};
+    }
+
+    /**
+     * Declines the given {@code phrase} into the specified declension case, guessing the phrase {@link WordType type}.
+     * Since need to guess, the accuracy of this method is less than others.
+     *
+     * @param phrase     {@code String} a phrase: fullname, profession, organization, etc
+     * @param declension {@link Case declension case}, not {@code null}
+     * @return {@code String} -  a phrase in the selected case
+     */
+    default String inflectAny(String phrase, Case declension) {
+        // this is default rule, which works only for several cases
+        if (phrase.split("\\s+").length < 4) {
+            return inflectFullName(phrase, declension);
+        }
+        return inflectRegularTerm(phrase, declension, null);
     }
 }

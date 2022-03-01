@@ -100,7 +100,7 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     @Override
-    public String[] inflectFullName(String[] sfp, Case declension, Gender gender) {
+    public String[] inflectSPF(String[] sfp, Case declension, Gender gender) {
         require(declension, "declension case");
         if (require(sfp, "sfp").length > 3 || sfp.length == 0) {
             throw new IllegalArgumentException();
@@ -118,6 +118,25 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
         String p = inflect(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
         return new String[]{s, f, p};
+    }
+
+    @Override
+    public String inflectAny(String phrase, Case declension) {
+        require(declension, "null case declension");
+        String[] parts = checkAndSplit(phrase);
+        if (parts.length < 4) { // then can be full name
+            if (parts.length > 1 && NameUtils.isFirstname(parts[1])) {
+                return inflectFullName(phrase, declension);
+            }
+            if (parts.length == 1 && NameUtils.canBeSurname(parts[0])) {
+                return inflectFullName(phrase, declension);
+            }
+            if (parts.length == 3 && NameUtils.canBePatronymic(parts[2]) && NameUtils.canBeSurname(parts[0])) {
+                return inflectFullName(phrase, declension);
+            }
+        }
+        // animated since it is more common case
+        return inflectRegularTerm(phrase, declension, null);
     }
 
     protected String inflectNumeral(String[] parts, Case declension) {
@@ -200,7 +219,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         // the words after - usually does not decline (we assume that some supplemental part goes next)
         int end = noun;
         for (int i = noun + 1; i < parts.length; i++) {
-            if (!canBeAdjective(parts[i], gender)) {
+            if (!GrammarUtils.canBeAdjective(parts[i], gender)) {
                 break;
             }
             end = i;
@@ -221,24 +240,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             throw new IllegalArgumentException();
         }
         return res;
-    }
-
-    private static boolean canBeAdjective(String word, Gender gender) {
-        if (gender == Gender.MALE)
-            return canBeMasculineAdjective(word);
-        if (gender == Gender.FEMALE)
-            return canBeFeminineAdjective(word);
-        return false;
-    }
-
-    private static boolean canBeMasculineAdjective(String word) {
-        return GrammarUtils.canBeSingularNominativeMasculineAdjective(word)
-                && !GrammarUtils.canBeMasculineAdjectiveBasedSubstantivatNoun(word);
-    }
-
-    private static boolean canBeFeminineAdjective(String word) {
-        return GrammarUtils.canBeSingularNominativeFeminineAdjective(word)
-                && !GrammarUtils.canBeFeminineAdjectiveBasedSubstantivatNoun(word);
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -378,7 +379,7 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     protected static String require(String string, String name) {
-        if (string == null || string.isEmpty()) {
+        if (string == null || string.isBlank()) {
             throw new IllegalArgumentException("No " + name + " is given");
         }
         return string;

@@ -86,6 +86,31 @@ public class GrammarUtils {
     }
 
     /**
+     * Determines whether the specified {@code word} can be a singular nominative adjective.
+     *
+     * @param word   {@code String} to test, not {@code null}
+     * @param gender {@link Gender}
+     * @return {@code boolean}
+     */
+    public static boolean canBeAdjective(String word, Gender gender) {
+        if (gender == Gender.MALE)
+            return canBeMasculineAdjective(word);
+        if (gender == Gender.FEMALE)
+            return canBeFeminineAdjective(word);
+        return false;
+    }
+
+    private static boolean canBeMasculineAdjective(String word) {
+        return canBeSingularNominativeMasculineAdjective(word)
+                && !canBeMasculineAdjectiveBasedSubstantivatNoun(word);
+    }
+
+    private static boolean canBeFeminineAdjective(String word) {
+        return canBeSingularNominativeFeminineAdjective(word)
+                && !canBeFeminineAdjectiveBasedSubstantivatNoun(word);
+    }
+
+    /**
      * Determines whether the specified {@code word} can be a singular nominative masculine adjective
      * (i.e. является ли слово {@code прилагательным в мужском роде, единственном числе и именительном падеже}?).
      *
@@ -267,4 +292,5 @@ public class GrammarUtils {
     private static boolean endsWith(String phrase, String word) {
         return word.equals(phrase) || phrase.endsWith(" " + word);
     }
+
 }
