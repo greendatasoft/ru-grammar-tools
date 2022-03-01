@@ -99,6 +99,27 @@ public class InflectionEngineImpl implements InflectionEngine {
         return inflectNumeral(parts, declension);
     }
 
+    @Override
+    public String[] inflectFullName(String[] sfp, Case declension, Gender gender) {
+        require(declension, "declension case");
+        if (require(sfp, "sfp").length > 3 || sfp.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        if (gender == null) {
+            gender = guessGenderByFullName(sfp);
+        }
+        String s = inflect(sfp[0], WordType.FAMILY_NAME, declension, gender, true, false);
+        if (sfp.length == 1) {
+            return new String[]{s};
+        }
+        String f = inflect(sfp[1], WordType.FIRST_NAME, declension, gender, true, false);
+        if (sfp.length == 2) {
+            return new String[]{s, f};
+        }
+        String p = inflect(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
+        return new String[]{s, f, p};
+    }
+
     protected String inflectNumeral(String[] parts, Case declension) {
         String[] res = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
@@ -237,16 +258,47 @@ public class InflectionEngineImpl implements InflectionEngine {
         return res.toString();
     }
 
-    protected String process(String phrase, WordType type, Gender gender, Case declension, Boolean animated, Boolean plural) {
+    /**
+     * Performs the case-inflection operation.
+     *
+     * @param word       {@code String}
+     * @param type       {@link WordType}
+     * @param gender     {@link Gender}, can be {@code null}
+     * @param declension {@link Case}
+     * @param animated   {@link Boolean}, can be {@code null}
+     * @param plural     {@link Boolean}, can be {@code null}
+     * @return {@code String}
+     */
+    protected String process(String word, WordType type, Gender gender, Case declension, Boolean animated, Boolean plural) {
         if (type == WordType.GENERIC_NOUN) {
-            String res = Dictionary.getInstance().inflect(phrase, declension, gender, animated, plural);
+            String res = Dictionary.getNounDictionary().inflect(word, declension, gender, animated, plural);
             if (res != null) {
-                return MiscStringUtils.toProperCase(phrase, res);
+                return MiscStringUtils.toProperCase(word, res);
             }
         }
-        String nw = MiscStringUtils.normalize(phrase, Dictionary.LOCALE);
+        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
         Rule rule = findRule(nw, gender, animated, plural, chooseRuleSet(type));
-        return rule == null ? phrase : applyMod(rule.mode(declension), phrase);
+        return rule == null ? word : applyMod(rule.mode(declension), word);
+    }
+
+    protected Gender guessGenderByFullName(String[] sfp) {
+        // by first name
+        Gender g;
+        if (sfp.length > 1) {
+            g = NameUtils.guessGenderByFirstName(sfp[1]);
+            if (g != null) {
+                return g;
+            }
+        }
+        // by patronymic
+        if (sfp.length > 2) {
+            g = NameUtils.guessGenderByPatronymicName(sfp[2]);
+            if (g != null) {
+                return g;
+            }
+        }
+        // family
+        return NameUtils.guessGenderBySurname(sfp[0]);
     }
 
     private RuleSet chooseRuleSet(WordType type) {
@@ -285,7 +337,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         return result;
     }
 
-    public static Rule findRule(String phrase, Gender gender, Boolean animated, Boolean plural, RuleSet rules) {
+    private static Rule findRule(String phrase, Gender gender, Boolean animated, Boolean plural, RuleSet rules) {
         Rule exceptionRule = selectRule(rules.exceptions(), phrase, gender, animated, plural);
         if (exceptionRule != null && exceptionRule.gender == gender) {
             return exceptionRule;

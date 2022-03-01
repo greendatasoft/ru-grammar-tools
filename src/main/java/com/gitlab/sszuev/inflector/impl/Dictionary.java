@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * A dictionary, it contains words from resources.
+ * A dictionary, it contains words from resources (csv-file).
  * Created by @ssz on 24.02.2022.
  *
  * @see <a href='https://github.com/Badestrand/russian-dictionary'>Russian Dictionary Data</a>
@@ -39,8 +39,8 @@ public class Dictionary {
      *
      * @return {@link Dictionary}
      */
-    public static Dictionary getInstance() {
-        return NounDictionaryLoader.DICTIONARY;
+    public static Dictionary getNounDictionary() {
+        return NounDictionaryLoader.NOUN_DICTIONARY;
     }
 
     /**
@@ -147,7 +147,7 @@ public class Dictionary {
     }
 
     static class NounDictionaryLoader {
-        private static final Dictionary DICTIONARY = load();
+        private static final Dictionary NOUN_DICTIONARY = load();
 
         private static Dictionary load() {
             try {

@@ -81,9 +81,9 @@ public interface InflectionEngine {
     /**
      * Declines the given {@code sfp} (full name) into the specified declension case.
      *
-     * @param sfp        an {@code Array} with full name: either {@code [family_name]} (e.g. {@code "Петров"}),
-     *                   or {@code [family_name, first_name]} (e.g. {@code "Петров Петр"}),
-     *                   or {@code [family_name, patronymic_name, first_name]} (e.g. {@code "Петров Петр Петрович"})
+     * @param sfp        an {@code Array} with full name: either {@code [surname]} (e.g. {@code "Петров"}),
+     *                   or {@code [surname, firstname]} (e.g. {@code "Петров Петр"}),
+     *                   or {@code [surname, firstname, patronymic]} (e.g. {@code "Петров Петр Петрович"})
      * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender} or {@code null} to guess
      * @return {@code Array} with full name in desired declension case
