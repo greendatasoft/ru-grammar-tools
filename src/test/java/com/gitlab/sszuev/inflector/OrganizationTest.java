@@ -9,12 +9,12 @@ import java.util.List;
 /**
  * Created by @ssz on 24.02.2022.
  */
-public class OrganizationRuleTest {
+public class OrganizationTest {
 
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     public static List<String[]> data() {
-        return TestUtils.load("organization.txt");
+        return TestUtils.load("organizations.txt");
     }
 
     void assertName(String expected, String given, Case declension) {

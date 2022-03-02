@@ -11,8 +11,8 @@ public class DictionaryTest {
 
     @Test
     public void testInflect() {
-        Assertions.assertEquals("стороны", Dictionary.getInstance().inflect("сторона", Case.GENITIVE, null, null, null));
-        Assertions.assertEquals("стороной", Dictionary.getInstance().inflect("сторона", Case.INSTRUMENTAL, null, null, false));
-        Assertions.assertEquals("сторонам", Dictionary.getInstance().inflect("сторона", Case.DATIVE, null, null, true));
+        Assertions.assertEquals("стороны", Dictionary.getNounDictionary().inflect("сторона", Case.GENITIVE, null, null, null));
+        Assertions.assertEquals("стороной", Dictionary.getNounDictionary().inflect("сторона", Case.INSTRUMENTAL, null, null, false));
+        Assertions.assertEquals("сторонам", Dictionary.getNounDictionary().inflect("сторона", Case.DATIVE, null, null, true));
     }
 }

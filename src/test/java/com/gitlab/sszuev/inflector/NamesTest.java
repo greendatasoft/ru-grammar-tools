@@ -12,8 +12,8 @@ import java.util.List;
  *
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/test/java/com/github/petrovich4j/PetrovichTests.java'>PetrovichTests</a>
  */
-public class NameRuleTest {
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+public class NamesTest {
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     private void check(WordType type, Gender gender, String... test) {
         for (Case c : Case.values()) {

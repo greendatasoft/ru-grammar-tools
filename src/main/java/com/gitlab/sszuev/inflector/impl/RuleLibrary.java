@@ -18,6 +18,10 @@ import java.util.Collection;
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/main/java/com/github/petrovich4j/Library.java'>com.github.petrovich4j.Library</a>
  */
 public class RuleLibrary {
+    /**
+     * Please update <a href='https://github.com/petrovich/petrovich-rules'>official rules</a> first
+     * and then copy-paste to the resources.
+     */
     private static final RulesBean NAMES_RULES_LIB = loadNamesBean();
     private static final NameBean REGULAR_RULES_LIB = loadRegularBean();
     private static final NameBean NUMERALS_RULES_LIB = loadNumeralsBean();

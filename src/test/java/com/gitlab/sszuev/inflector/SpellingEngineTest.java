@@ -11,7 +11,7 @@ import java.math.BigInteger;
  */
 public class SpellingEngineTest {
 
-    private final SpellingEngine spellingEngine = TestUtils.createSpellingEngine();
+    private final SpellingEngine spellingEngine = GrammarTools.getSpellingEngine();
 
     @Test
     public void testSmallIntegers() {

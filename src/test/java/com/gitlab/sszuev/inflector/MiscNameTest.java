@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/test/java/com/github/petrovich4j/RegressionTests.java'>com.github.petrovich4j.RegressionTests</a>
  */
 public class MiscNameTest {
-    private final InflectionEngine engine = TestUtils.createInflectorEngine();
+    private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     private void checkName(WordType type, Gender gender, String p1, String p2, String p3, String p4, String p5, String p6) {
         Assertions.assertEquals(p2, engine.inflect(p1, type, Case.GENITIVE, gender, true, false));
