@@ -270,7 +270,8 @@ public class Dictionary {
 
         @Override
         public String toString() {
-            return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}", gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
+            return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
+                    gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
         }
     }
 }

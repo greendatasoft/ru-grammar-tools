@@ -135,7 +135,6 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return inflectFullName(phrase, declension);
             }
         }
-        // animated since it is more common case
         return inflectRegularTerm(phrase, declension, null);
     }
 
