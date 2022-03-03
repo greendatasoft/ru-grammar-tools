@@ -1,6 +1,7 @@
 package com.gitlab.sszuev.inflector.impl;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +10,8 @@ import java.util.List;
  * Created by @ssz on 18.02.2022.
  */
 public class NumberUtils {
-    static final BigDecimal THOUSAND = BigDecimal.valueOf(1000);
+    static final BigDecimal BIG_DECIMAL_THOUSAND = BigDecimal.valueOf(1000);
+    static final BigInteger BIG_INTEGER_THOUSAND = BigInteger.valueOf(1000);
 
     public static List<Integer> toTriples(BigDecimal n, MathContext context) {
         if (isZero(n)) {
@@ -17,10 +19,23 @@ public class NumberUtils {
         }
         List<Integer> res = new ArrayList<>();
         do {
-            BigDecimal[] array = n.divideAndRemainder(THOUSAND, context);
+            BigDecimal[] array = n.divideAndRemainder(BIG_DECIMAL_THOUSAND, context);
             res.add(0, array[1].intValue());
             n = array[0];
         } while (!isZero(n));
+        return res;
+    }
+
+    public static List<Integer> toTriples(BigInteger n) {
+        if (BigInteger.ZERO.equals(n)) {
+            return List.of();
+        }
+        List<Integer> res = new ArrayList<>();
+        do {
+            BigInteger[] array = n.divideAndRemainder(BIG_INTEGER_THOUSAND);
+            res.add(0, array[1].intValue());
+            n = array[0];
+        } while (!BigInteger.ZERO.equals(n));
         return res;
     }
 
