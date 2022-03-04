@@ -145,6 +145,7 @@ public class SpellingEngineImpl implements SpellingEngine {
      * @return {@code String}
      * @see <a href='https://videotutor-rusyaz.ru/uchenikam/teoriya/146-pravopisanieimenchislitelnyh.html'>Правописание имен числительных</a>
      * @see <a href='http://new.gramota.ru/spravka/buro/search-answer?s=%D1%82%D1%8B%D1%81%D1%8F%D1%87%D0%BD%D1%8B%D0%B9'>тысячный? однатысячный? однотысячный?</a>
+     * @see <a href='http://new.gramota.ru/spravka/buro/search-answer/?s=309317'>gramota.ru</a>
      */
     @Override
     public String spellOrdinal(BigInteger number, Gender gender) {

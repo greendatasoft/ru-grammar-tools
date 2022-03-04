@@ -49,8 +49,8 @@ public class RuleLibrary {
                 bean.getTest().toArray(new String[0]),
                 bean.getMods().toArray(new String[0]),
                 map(bean.getGender()),
-                bean.isInanimate(),
-                bean.isPlural());
+                bean.getAnimate(),
+                bean.getPlural());
     }
 
     private static Gender map(String name) {

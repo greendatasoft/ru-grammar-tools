@@ -5,11 +5,8 @@ import com.gitlab.sszuev.inflector.Gender;
 import com.gitlab.sszuev.inflector.InflectionEngine;
 import com.gitlab.sszuev.inflector.WordType;
 
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * The engine impl.
@@ -177,7 +174,9 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension, Boolean animated) {
-        require(declension, "declension case");
+        if (require(declension, "declension case") == Case.NOMINATIVE) {
+            return phrase;
+        }
         String[] parts = checkAndSplit(phrase);
 
         Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.
@@ -277,8 +276,8 @@ public class InflectionEngineImpl implements InflectionEngine {
             }
         }
         String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
-        Rule rule = findRule(nw, gender, animated, plural, chooseRuleSet(type));
-        return rule == null ? word : applyMod(rule.mode(declension), word);
+        Rule rule = RuleSet.findRule(nw, gender, animated, plural, chooseRuleSet(type));
+        return rule == null ? word : rule.apply(declension, word);
     }
 
     protected Gender guessGenderByFullName(String[] sfp) {
@@ -316,65 +315,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             default:
                 throw new IllegalArgumentException("Wrong type " + type);
         }
-    }
-
-    private static String applyMod(String mod, String word) { // the original method
-        if (mod.equals(RuleLibrary.KEEP_MOD)) {
-            return word;
-        }
-        if (mod.indexOf(RuleLibrary.REMOVE_CHARACTER) < 0) {
-            return word + mod;
-        }
-        String result = word;
-        for (int i = 0; i < mod.length(); i++) {
-            if (mod.charAt(i) == RuleLibrary.REMOVE_CHARACTER) {
-                result = result.substring(0, result.length() - 1);
-            } else {
-                result += mod.substring(i);
-                break;
-            }
-        }
-        return result;
-    }
-
-    private static Rule findRule(String phrase, Gender gender, Boolean animated, Boolean plural, RuleSet rules) {
-        Rule exceptionRule = selectRule(rules.exceptions(), phrase, gender, animated, plural);
-        if (exceptionRule != null && exceptionRule.gender == gender) {
-            return exceptionRule;
-        }
-        Rule suffixRule = selectRule(rules.suffixes(), phrase, gender, animated, plural);
-        if (suffixRule != null && suffixRule.gender == gender) {
-            return suffixRule;
-        }
-        return exceptionRule != null ? exceptionRule : suffixRule;
-    }
-
-    private static Rule selectRule(Stream<Rule> rules, String word, Gender gender, Boolean animated, Boolean plural) {
-        List<Rule> res = rules.filter(rule -> filterRule(rule, word, gender, animated, plural))
-                .collect(Collectors.toList());
-        if (res.isEmpty()) {
-            return null;
-        }
-        if (res.size() == 1) {
-            return res.get(0);
-        }
-        Rule rule = res.stream().filter(x -> x.gender == gender).findFirst().orElse(null);
-        if (rule != null) {
-            return rule;
-        }
-        // if nothing found try neuter
-        rule = res.stream().filter(x -> x.gender == Gender.NEUTER).findFirst().orElse(null);
-        if (rule != null) {
-            return rule;
-        }
-        throw new IllegalStateException();
-    }
-
-    private static boolean filterRule(Rule rule, String word, Gender gender, Boolean animated, Boolean plural) {
-        return (plural == null || rule.plural == plural) &&
-                (animated == null || rule.inanimate != animated) &&
-                (rule.gender == Gender.NEUTER || rule.gender == gender) &&
-                rule.test().anyMatch(word::endsWith);
     }
 
     protected static String require(String string, String name) {
