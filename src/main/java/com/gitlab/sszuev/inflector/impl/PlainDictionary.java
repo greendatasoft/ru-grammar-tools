@@ -1,10 +1,10 @@
 package com.gitlab.sszuev.inflector.impl;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -19,10 +19,11 @@ public class PlainDictionary {
     public static final Set<String> MALE_NAMES = load("/male-names.txt");
 
     public static Set<String> load(String resource) {
-        URL url = Objects.requireNonNull(PlainDictionary.class.getResource(resource));
-        try (Stream<String> stream = Files.lines(Paths.get(url.toURI()))) {
+        try (InputStream in = Objects.requireNonNull(PlainDictionary.class.getResourceAsStream(resource));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+             Stream<String> stream = reader.lines()) {
             return Set.of(stream.toArray(String[]::new));
-        } catch (IOException | URISyntaxException e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Can't load " + resource, e);
         }
     }

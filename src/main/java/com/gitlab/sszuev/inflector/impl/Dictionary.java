@@ -3,13 +3,9 @@ package com.gitlab.sszuev.inflector.impl;
 import com.gitlab.sszuev.inflector.Case;
 import com.gitlab.sszuev.inflector.Gender;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.*;
 import java.lang.ref.SoftReference;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -24,23 +20,25 @@ import java.util.stream.Stream;
 public class Dictionary {
     public static final Locale LOCALE = new Locale("ru", "ru");
 
+    private static final Dictionary NOUN_DICTIONARY = new Dictionary("/nouns.csv");
+
     private final Supplier<Map<String, WordRecord>> loader;
     // it is okay to have Map in memory: it is not so big (~20_000records),
     // but just in case store it as SoftReference:
     private volatile SoftReference<Map<String, WordRecord>> content;
 
-    protected Dictionary(Path path) {
+    protected Dictionary(String path) {
         Objects.requireNonNull(path);
         this.loader = () -> load(path);
     }
 
     /**
-     * Singleton.
+     * Returns a dictionary, that contains nouns.
      *
      * @return {@link Dictionary}
      */
     public static Dictionary getNounDictionary() {
-        return NounDictionaryLoader.NOUN_DICTIONARY;
+        return NOUN_DICTIONARY;
     }
 
     /**
@@ -143,13 +141,15 @@ public class Dictionary {
     /**
      * Loads the {@link Dictionary} from the file system.
      *
-     * @param source {@link Path} - resource
+     * @param source {@code String} - resource
      * @return immutable {@code Map}
      */
     @SuppressWarnings({"unchecked"})
-    protected static Map<String, WordRecord> load(Path source) {
+    protected static Map<String, WordRecord> load(String source) {
         Map<String, WordRecord> data = new HashMap<>(26900);
-        try (Stream<String> lines = Files.lines(source)) {
+        try (InputStream in = Objects.requireNonNull(Dictionary.class.getResourceAsStream(source));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+             Stream<String> lines = reader.lines()) {
             lines.forEach(record -> {
                 Map.Entry<String, WordRecord> e = SingleWordRecord.parse(record);
                 if (e == null) {
@@ -165,24 +165,12 @@ public class Dictionary {
         return Map.ofEntries(array);
     }
 
-    static class NounDictionaryLoader {
-        private static final Dictionary NOUN_DICTIONARY = load();
-
-        private static Dictionary load() {
-            try {
-                Path src = Paths.get(Objects.requireNonNull(Dictionary.class.getResource("/nouns.csv")).toURI());
-                return new Dictionary(src);
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Can't load nouns dictionary");
-            }
-        }
-    }
-
     interface WordRecord {
     }
 
     public interface Word {
         Gender gender();
+
         Boolean animate();
     }
 
