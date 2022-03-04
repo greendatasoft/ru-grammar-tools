@@ -39,17 +39,19 @@ public interface InflectionEngine {
     }
 
     /**
-     * Declines the given {@code number} with the {@code unit} into the specified declension case.
+     * Declines the given {@code numeral} with the {@code unit} into the specified declension case.
      *
-     * @param number     {@code String} not {@code null}, a numeral in singular nominative case, e.g.{@code "пять"}
+     * @param numeral    {@code String} not {@code null},
+     *                   a quantitative numeral in singular nominative case, e.g.{@code "пять"}
+     *                   or ordinal numeral {@code "четвёртое"}
      * @param unit       {@code String} not {@code null}, a noun in singular nominative case, e.g.{@code "заяц"}
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a phrase in the selected case
      * @see SpellingEngine#spell(java.math.BigDecimal)
      */
-    default String inflectNumeral(String number, String unit, Case declension) {
+    default String inflectNumeral(String numeral, String unit, Case declension) {
         // this is the default rule, it works only for numbers with fractions
-        String word = Objects.requireNonNull(number) + " " + inflect(Objects.requireNonNull(unit),
+        String word = Objects.requireNonNull(numeral) + " " + inflect(Objects.requireNonNull(unit),
                 WordType.GENERIC, Case.GENITIVE, Gender.MALE, null, null);
         return inflectNumeral(word, declension);
     }

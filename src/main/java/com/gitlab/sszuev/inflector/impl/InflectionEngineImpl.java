@@ -6,6 +6,7 @@ import com.gitlab.sszuev.inflector.InflectionEngine;
 import com.gitlab.sszuev.inflector.WordType;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,17 +35,22 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
         String[] parts = checkAndSplit(numeral);
         if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
-            return inflectOrdinalNumeral(parts, declension);
+            return inflectOrdinalNumeral(parts, declension, false);
         }
         return inflectCardinalNumeral(parts, declension);
     }
 
     @Override
-    public String inflectNumeral(String number, String unit, Case declension) {
+    public String inflectNumeral(String numeral, String unit, Case declension) {
         require(unit, "unit");
         require(declension, "declension");
-        Gender gender = GrammarUtils.guessGenderOfSingularNoun(unit);
-        String[] parts = checkAndSplit(number);
+        String[] parts = checkAndSplit(numeral);
+        Optional<Dictionary.Word> info = Dictionary.getNounDictionary().wordInfo(unit);
+        Gender gender = info.map(Dictionary.Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(unit));
+        if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
+            String res = inflectOrdinalNumeral(parts, declension, gender, info.map(Dictionary.Word::animate).orElse(false));
+            return res + " " + inflect(unit, WordType.GENERIC, declension, gender, null, null);
+        }
         int last = parts.length - 1;
         parts[last] = GrammarUtils.changeGenderFormOfNumeral(parts[last], gender);
         String res;
@@ -53,7 +59,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         } else {
             res = inflectCardinalNumeral(parts, declension);
         }
-        return res + " " + inflectUnit(unit, number, declension, gender);
+        return res + " " + inflectUnit(unit, numeral, declension, gender);
     }
 
     /**
@@ -129,10 +135,14 @@ public class InflectionEngineImpl implements InflectionEngine {
         return process(require(number, "numeral"), WordType.NUMERALS, gender, require(declension, "declension"), null, plural);
     }
 
-    protected String inflectOrdinalNumeral(String[] parts, Case declension) {
+    protected String inflectOrdinalNumeral(String[] parts, Case declension, Boolean animate) {
+        Gender gender = Objects.requireNonNull(GrammarUtils.guessGenderOfSingleAdjective(parts[parts.length - 1]));
+        return inflectOrdinalNumeral(parts, declension, gender, animate);
+    }
+
+    protected String inflectOrdinalNumeral(String[] parts, Case declension, Gender gender, Boolean animate) {
         String w = parts[parts.length - 1];
-        Gender gender = Objects.requireNonNull(GrammarUtils.guessGenderOfSingleAdjective(w));
-        w = inflect(w, WordType.GENERIC, declension, gender, false, false);
+        w = inflect(w, WordType.GENERIC, declension, gender, animate, false);
         parts[parts.length - 1] = w;
         return String.join(" ", parts);
     }
@@ -181,7 +191,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      *
      * @param phrase     {@code String}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
-     * @param animate   - the names of organizations are usually inanimate, the names of professions are animate
+     * @param animate    - the names of organizations are usually inanimate, the names of professions are animate
      * @return {@code String} - a phrase in the selected case
      */
     @Override

@@ -483,6 +483,21 @@
     },
     {
       "gender": "male",
+      "animate": false,
+      "description": "второй",
+      "test": [
+        "ой"
+      ],
+      "mods": [
+        "-го",
+        "-му",
+        ".",
+        "--ым",
+        "-м"
+      ]
+    },
+    {
+      "gender": "male",
       "test": [
         "ах",
         "ав",
