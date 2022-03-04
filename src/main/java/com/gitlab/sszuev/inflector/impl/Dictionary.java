@@ -44,9 +44,28 @@ public class Dictionary {
     }
 
     /**
+     * Returns a word-info object.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return an {@code Optional} of {@link Word}
+     */
+    public Optional<Word> wordInfo(String word) {
+        String key = MiscStringUtils.normalize(word, LOCALE);
+        WordRecord record = contentMap().get(key);
+        if (record == null) {
+            return Optional.empty();
+        }
+        if (record instanceof SingleWordRecord) {
+            return Optional.of(((SingleWordRecord) record));
+        }
+        return Optional.empty();
+    }
+
+
+    /**
      * Tries to find the correct form of the word from the dictionary according the given parameters.
      *
-     * @param word       {@code String}, not {@code null} - normalized (trimmed, lower-case)
+     * @param word       {@code String}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param gender     {@link  Gender}, can be {@code null}
      * @param animated   {@code Boolean}, can be {@code null}
@@ -162,6 +181,11 @@ public class Dictionary {
     interface WordRecord {
     }
 
+    public interface Word {
+        Gender gender();
+        Boolean animate();
+    }
+
     static class MultiWordRecord implements WordRecord {
         private final SingleWordRecord[] words;
 
@@ -187,7 +211,7 @@ public class Dictionary {
         }
     }
 
-    static class SingleWordRecord implements WordRecord {
+    static class SingleWordRecord implements WordRecord, Word {
         private Gender gender;
         private Boolean animated;
         private Boolean indeclinable;
@@ -272,6 +296,16 @@ public class Dictionary {
         public String toString() {
             return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
                     gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
+        }
+
+        @Override
+        public Gender gender() {
+            return gender;
+        }
+
+        @Override
+        public Boolean animate() {
+            return animated;
         }
     }
 }
