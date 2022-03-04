@@ -8,6 +8,6 @@ public enum WordType {
     FIRST_NAME, // e.g. 'Петр'
     PATRONYMIC_NAME, // e.g. 'Петрович'
     FAMILY_NAME, // e.g. 'Петров'
-    NUMERALS, // e.g. 'пятьсот'
-    GENERIC_NOUN, // a singular noun in nominative case
+    NUMERALS, // a cardinal numeral, e.g. 'пятьсот'
+    GENERIC, // a regular singular noun or adjective in nominative case
 }

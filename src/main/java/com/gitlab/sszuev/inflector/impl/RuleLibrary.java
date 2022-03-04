@@ -101,7 +101,7 @@ public class RuleLibrary {
         try (InputStream in = RuleLibrary.class.getResourceAsStream(file)) {
             return new ObjectMapper().readValue(in, type);
         } catch (IOException e) {
-            throw new IllegalStateException("Can't load", e);
+            throw new IllegalStateException("Can't load " + file, e);
         }
     }
 

@@ -80,6 +80,9 @@ public class GrammarUtils {
 
     private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
     private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
+    private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
+
+    private static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ая", "ое");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
@@ -88,15 +91,20 @@ public class GrammarUtils {
     /**
      * Determines whether the specified {@code word} can be a singular nominative adjective.
      *
-     * @param word   {@code String} to test, not {@code null}
+     * @param word   {@code String} to test, in lower-case, not {@code null}
      * @param gender {@link Gender}
      * @return {@code boolean}
      */
     public static boolean canBeAdjective(String word, Gender gender) {
-        if (gender == Gender.MALE)
+        if (gender == Gender.MALE) {
             return canBeMasculineAdjective(word);
-        if (gender == Gender.FEMALE)
+        }
+        if (gender == Gender.FEMALE) {
             return canBeFeminineAdjective(word);
+        }
+        if (gender == Gender.NEUTER) {
+            return canBeSingularNominativeNeuterAdjective(word);
+        }
         return false;
     }
 
@@ -118,12 +126,17 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeMasculineAdjective(String word) {
-        for (String end : MALE_ADJECTIVE_ENDINGS) {
-            if (word.endsWith(end)) {
-                return canBeSingularNominativeAdjective(word);
-            }
-        }
-        return false;
+        return hasMaleAdjectiveEnding(word) && canBeSingularNominativeAdjective(word);
+    }
+
+    /**
+     * Determines whether the specified {@code word} can be a singular nominative neuter adjective.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeSingularNominativeNeuterAdjective(String word) {
+        return hasNeuterAdjectiveEnding(word);
     }
 
     /**
@@ -134,9 +147,31 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeSingularNominativeFeminineAdjective(String word) {
+        return hasFemaleAdjectiveEnding(word) && canBeSingularNominativeAdjective(word);
+    }
+
+    private static boolean hasMaleAdjectiveEnding(String word) {
+        for (String end : MALE_ADJECTIVE_ENDINGS) {
+            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasFemaleAdjectiveEnding(String word) {
         for (String end : FEMALE_ADJECTIVE_ENDINGS) {
-            if (word.endsWith(end)) {
-                return canBeSingularNominativeAdjective(word);
+            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean hasNeuterAdjectiveEnding(String word) {
+        for (String end : NEUTER_ADJECTIVE_ENDINGS) {
+            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
+                return true;
             }
         }
         return false;
@@ -192,21 +227,13 @@ public class GrammarUtils {
         return NON_DERIVATIVE_PREPOSITION.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
     }
 
-    /**
-     * Returns the gender of the specified numeral.
-     *
-     * @param standaloneNumeral {@code String}, not {@code null}
-     * @return {@link Gender}
-     */
-    public static Gender guessGenderOfSingleNumeral(String standaloneNumeral) {
-        String word = MiscStringUtils.normalize(standaloneNumeral, Dictionary.LOCALE);
-        if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
-            return Gender.MALE;
+    public static boolean canBeOrdinalNumeral(String word) {
+        for (String e : ORDINAL_NUMERAL_ENDINGS) {
+            if (MiscStringUtils.endsWithIgnoreCase(word, e)) {
+                return !isFractionNumeral(word);
+            }
         }
-        if (FEMALE_NUMERALS.contains(word) || word.endsWith("ая")) { // одна, десятая, сотая
-            return Gender.FEMALE;
-        }
-        return Gender.NEUTER;
+        return false;
     }
 
     /**
@@ -224,6 +251,42 @@ public class GrammarUtils {
         // TODO: complete
         // most common gender
         return Gender.MALE;
+    }
+
+    /**
+     * Returns the gender of the specified adjective.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@link Gender} or {@code null}
+     */
+    public static Gender guessGenderOfSingleAdjective(String word) {
+        if (hasFemaleAdjectiveEnding(word)) { // кривая, первая
+            return Gender.FEMALE;
+        }
+        if (hasNeuterAdjectiveEnding(word)) { // второе
+            return Gender.NEUTER;
+        }
+        if (hasMaleAdjectiveEnding(word)) { // нулевой
+            return Gender.MALE;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the gender of the specified numeral.
+     *
+     * @param standaloneNumeral {@code String}, not {@code null}
+     * @return {@link Gender}
+     */
+    public static Gender guessGenderOfSingleNumeral(String standaloneNumeral) {
+        String word = MiscStringUtils.normalize(standaloneNumeral, Dictionary.LOCALE);
+        if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
+            return Gender.MALE;
+        }
+        if (FEMALE_NUMERALS.contains(word) || word.endsWith("ая")) { // одна, десятая, сотая
+            return Gender.FEMALE;
+        }
+        return Gender.NEUTER;
     }
 
     /**
@@ -276,12 +339,12 @@ public class GrammarUtils {
     }
 
     public static boolean isNumeralEndWithNumberOne(String number) {
-        return endsWith(MiscStringUtils.normalize(number, Dictionary.LOCALE), "один");
+        return endsWithWord(MiscStringUtils.normalize(number, Dictionary.LOCALE), "один");
     }
 
     public static boolean isNumeralEndWithTwoThreeFour(String number) {
         number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
-        return endsWith(number, "два") || endsWith(number, "три") || endsWith(number, "четыре");
+        return endsWithWord(number, "два") || endsWithWord(number, "три") || endsWithWord(number, "четыре");
     }
 
     public static boolean isZeroNumeral(String number) {
@@ -289,7 +352,7 @@ public class GrammarUtils {
         return "ноль".equals(number);
     }
 
-    private static boolean endsWith(String phrase, String word) {
+    private static boolean endsWithWord(String phrase, String word) {
         return word.equals(phrase) || phrase.endsWith(" " + word);
     }
 

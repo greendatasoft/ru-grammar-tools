@@ -13,15 +13,15 @@ import java.util.stream.Stream;
 public class Rule {
     private final Gender gender;
     private final Boolean plural;
-    private final Boolean animated;
+    private final Boolean animate;
 
     private final String[] test;
     private final String[] mods;
 
-    public Rule(String[] test, String[] mods, Gender gender, Boolean animated, Boolean plural) {
+    public Rule(String[] test, String[] mods, Gender gender, Boolean animate, Boolean plural) {
         this.gender = Objects.requireNonNull(gender);
         this.plural = plural;
-        this.animated = animated;
+        this.animate = animate;
         this.test = Objects.requireNonNull(test);
         this.mods = Objects.requireNonNull(mods);
     }
@@ -61,13 +61,21 @@ public class Rule {
         return matchBoolean(plural, this.plural);
     }
 
-    public boolean matchAnimated(Boolean animated) {
-        return matchBoolean(animated, this.animated);
+    public boolean matchAnimate(Boolean animated) {
+        return matchBoolean(animated, this.animate);
     }
 
     public boolean matchGender(Gender gender) {
         // weird logic by historical reasons
         return this.gender == Gender.NEUTER || this.gender == gender;
+    }
+
+    public boolean matchPluralStrict(Boolean plural) {
+        return this.plural == plural;
+    }
+
+    public boolean matchAnimateStrict(Boolean animated) {
+        return this.animate == animated;
     }
 
     public boolean matchGenderStrict(Gender gender) {
@@ -87,6 +95,6 @@ public class Rule {
     @Override
     public String toString() {
         return String.format("Rule{gender=%s, plural=%s, animated=%s, test=%s, mods=%s}",
-                gender, plural, animated, Arrays.toString(test), Arrays.toString(mods));
+                gender, plural, animate, Arrays.toString(test), Arrays.toString(mods));
     }
 }
