@@ -227,6 +227,11 @@ public class InflectionEngineImpl implements InflectionEngine {
                 }
                 continue;
             }
+            // (neuter) skip leading adjectives
+            if ((gender == null || gender == Gender.NEUTER) && GrammarUtils.canBeSingularNominativeNeuterAdjective(w)) {
+                gender = Gender.NEUTER;
+                continue;
+            }
             noun = i;
             break;
         }
