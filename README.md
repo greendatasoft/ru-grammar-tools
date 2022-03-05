@@ -1,12 +1,8 @@
-## Ru-Grammar-Tools (a set of tools to work with russian grammar)
+## Ru-Grammar-Tools (a set of tools for working with russian grammar)
 
-#### A Java library for spelling and case-inflecting according to the rules of Russian declension cases.
+#### This is a java library intended for case declension Russian full-names (Surname, Firstname, Patronymic), official job-titles, legal organization names, regular terms and numerals, and also for spelling cardinal and ordinal numbers.
 
-#### It is suitable for declining of the Russian full-names (Surname Firstname Patronymic), official job-titles and organization names, numerals and for spelling numbers.
-
-Based of [petrovich-rules](https://github.com/petrovich) and on built-in
-OpenRussian [dictionary](https://github.com/Badestrand/russian-dictionary).
-Supports for declensions of names, general terms (job-titles, legal organization names) and numerics. 
+It is based on [petrovich-rules](https://github.com/petrovich) and [OpenRussian dictionary](https://github.com/Badestrand/russian-dictionary). 
 The library contains 1000+ test-cases.
 
 #### Examples:
