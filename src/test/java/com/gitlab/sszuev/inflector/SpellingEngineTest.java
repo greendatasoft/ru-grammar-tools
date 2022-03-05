@@ -77,4 +77,51 @@ public class SpellingEngineTest {
         Assertions.assertEquals("сорок две целых двенадцать тысяч триста сорок шесть стовигинтиллионных",
                 spellingEngine.spell(new BigDecimal(withLongFractionPart)));
     }
+
+    @Test
+    public void testOrdinalFemale() {
+        Assertions.assertEquals("нулевая", spellingEngine.spellOrdinal(0, Gender.FEMALE));
+        Assertions.assertEquals("вторая", spellingEngine.spellOrdinal(2, Gender.FEMALE));
+        Assertions.assertEquals("четвёртая", spellingEngine.spellOrdinal(4, Gender.FEMALE));
+        Assertions.assertEquals("десятая", spellingEngine.spellOrdinal(10, Gender.FEMALE));
+        Assertions.assertEquals("одиннадцатая", spellingEngine.spellOrdinal(11, Gender.FEMALE));
+        Assertions.assertEquals("сорок две тысячи восемьсот первая", spellingEngine.spellOrdinal(42801, Gender.FEMALE));
+        Assertions.assertEquals("один миллион сорокадвухтысячная", spellingEngine.spellOrdinal(1042000, Gender.FEMALE));
+        Assertions.assertEquals("сорокадвухвигинтиллионная",
+                spellingEngine.spellOrdinal(new BigInteger("42" + "0".repeat(63)), Gender.FEMALE));
+    }
+
+    @Test
+    public void testOrdinalNeuter() {
+        Assertions.assertEquals("нулевое", spellingEngine.spellOrdinal(0, Gender.NEUTER));
+        Assertions.assertEquals("четвёртое", spellingEngine.spellOrdinal(4, Gender.NEUTER));
+        Assertions.assertEquals("сорок второе", spellingEngine.spellOrdinal(42, Gender.NEUTER));
+        Assertions.assertEquals("стосемидесятиодномиллиардное", spellingEngine.spellOrdinal(171000000000L, Gender.NEUTER));
+        Assertions.assertEquals("сорок два миллиарда сорокадвухтысячное", spellingEngine.spellOrdinal(42000042000L, Gender.NEUTER));
+    }
+
+    @Test
+    public void testOrdinalMale() {
+        Assertions.assertEquals("нулевой", spellingEngine.spellOrdinal(0, Gender.MALE));
+        Assertions.assertEquals("первый", spellingEngine.spellOrdinal(1, Gender.MALE));
+        Assertions.assertEquals("девятый", spellingEngine.spellOrdinal(9, Gender.MALE));
+        Assertions.assertEquals("пятнадцатый", spellingEngine.spellOrdinal(15, Gender.MALE));
+        Assertions.assertEquals("девяностый", spellingEngine.spellOrdinal(90, Gender.MALE));
+        Assertions.assertEquals("сотый", spellingEngine.spellOrdinal(100, Gender.MALE));
+        Assertions.assertEquals("пятьсот сорок шестой", spellingEngine.spellOrdinal(546, Gender.MALE));
+        Assertions.assertEquals("одна тысяча двести пятьдесят четвёртый", spellingEngine.spellOrdinal(1254, Gender.MALE));
+        Assertions.assertEquals("сто сорок шесть тысяч двести восемьдесят шестой", spellingEngine.spellOrdinal(146286, Gender.MALE));
+        Assertions.assertEquals("двухмиллионный", spellingEngine.spellOrdinal(2000000, Gender.MALE));
+        Assertions.assertEquals("сто пятьдесят миллионов семьсот четвёртый", spellingEngine.spellOrdinal(150000704, Gender.MALE));
+        Assertions.assertEquals("два миллиарда одна тысяча второй", spellingEngine.spellOrdinal(2000001002, Gender.MALE));
+        Assertions.assertEquals("два миллиарда сто пятьдесят шесть миллионов девятьсот восемьдесят четыре тысячи триста пятьдесят седьмой",
+                spellingEngine.spellOrdinal(2156984357L, Gender.MALE));
+        Assertions.assertEquals("двухтысячный", spellingEngine.spellOrdinal(2000, Gender.MALE));
+        Assertions.assertEquals("стотрёхтысячный", spellingEngine.spellOrdinal(103000, Gender.MALE));
+        Assertions.assertEquals("двухсотоднотысячный", spellingEngine.spellOrdinal(201000, Gender.MALE));
+        Assertions.assertEquals("сорокадвухтысячный", spellingEngine.spellOrdinal(42000, Gender.MALE));
+        Assertions.assertEquals("сорокатысячный", spellingEngine.spellOrdinal(40000, Gender.MALE));
+        Assertions.assertEquals("шестидесятитысячный", spellingEngine.spellOrdinal(60000, Gender.MALE));
+    }
+
 }

@@ -17,7 +17,8 @@ GrammarTools.getInflectionEngine().inflectFullName("Петров Петр Пет
 GrammarTools.getInflectionEngine().inflectRegularTerm("Общество с ограниченной ответственностью Бёрнинг Мэн", Case.ACCUSATIVE, false);
 GrammarTools.getInflectionEngine().inflectRegularTerm("Вентилевой гидравлического пресса", Case.ACCUSATIVE, true);
 GrammarTools.getInflectionEngine().inflectNumeral("сорок два", "рубль", Case.INSTRUMENTAL);
-GrammarTools.getSpellingEngine().spell(42);
+GrammarTools.getSpellingEngine().spell(42.42);
+GrammarTools.getSpellingEngine().spellOrdinal(42, Gender.NEUTER);
 ```
 
 #### Related links:

@@ -9,8 +9,8 @@ import java.util.List;
 public class RuleBean {
     private String gender;
     private String description;
-    private boolean plural;
-    private boolean inanimate;
+    private Boolean plural;
+    private Boolean animate;
     private List<String> mods;
     private List<String> test;
     private List<String> tags;
@@ -55,20 +55,20 @@ public class RuleBean {
         this.description = description;
     }
 
-    public boolean isInanimate() {
-        return inanimate;
-    }
-
-    public void setInanimate(boolean inanimate) {
-        this.inanimate = inanimate;
-    }
-
-    public boolean isPlural() {
+    public Boolean getPlural() {
         return plural;
     }
 
-    public void setPlural(boolean plural) {
+    public void setPlural(Boolean plural) {
         this.plural = plural;
+    }
+
+    public Boolean getAnimate() {
+        return animate;
+    }
+
+    public void setAnimate(Boolean animate) {
+        this.animate = animate;
     }
 
     @Override

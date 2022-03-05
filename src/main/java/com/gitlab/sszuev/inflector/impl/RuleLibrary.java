@@ -49,8 +49,8 @@ public class RuleLibrary {
                 bean.getTest().toArray(new String[0]),
                 bean.getMods().toArray(new String[0]),
                 map(bean.getGender()),
-                bean.isInanimate(),
-                bean.isPlural());
+                bean.getAnimate(),
+                bean.getPlural());
     }
 
     private static Gender map(String name) {
@@ -101,7 +101,7 @@ public class RuleLibrary {
         try (InputStream in = RuleLibrary.class.getResourceAsStream(file)) {
             return new ObjectMapper().readValue(in, type);
         } catch (IOException e) {
-            throw new IllegalStateException("Can't load", e);
+            throw new IllegalStateException("Can't load " + file, e);
         }
     }
 

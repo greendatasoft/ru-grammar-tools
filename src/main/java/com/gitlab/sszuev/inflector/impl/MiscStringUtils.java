@@ -70,4 +70,12 @@ public class MiscStringUtils {
     public static boolean equalsIgnoreCase(char a, char b) {
         return a == b || Character.toUpperCase(a) == Character.toUpperCase(b);
     }
+
+    public static boolean endsWithIgnoreCase(String string, String ending) {
+        int index = string.length() - ending.length();
+        if (index < 0) {
+            return false;
+        }
+        return string.substring(index).equalsIgnoreCase(ending);
+    }
 }
