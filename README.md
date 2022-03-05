@@ -30,6 +30,8 @@ GrammarTools.getSpellingEngine().spellOrdinal(42, Gender.NEUTER);
   * https://github.com/petrovich/petrovich-java
   * https://github.com/petrovich4j/petrovich4j
 
+#### How to use:
+- https://jitpack.io/
 
 ##### Requirements:
 
