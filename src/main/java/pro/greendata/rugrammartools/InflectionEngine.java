@@ -69,7 +69,7 @@ public interface InflectionEngine {
      */
     default String inflectNumeral(String numeral, Case declension) {
         // this is default rule, which works only for several cases
-        return inflect(numeral, WordType.NUMERALS, declension, null, null, null);
+        return inflect(numeral, WordType.NUMERAL, declension, null, null, null);
     }
 
     /**

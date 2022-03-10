@@ -132,7 +132,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} -  a numeral phrase in the selected case
      */
     public String inflectNumeral(String number, Case declension, Gender gender, Boolean plural) {
-        return process(require(number, "numeral"), WordType.NUMERALS, gender, require(declension, "declension"), null, plural);
+        return process(require(number, "numeral"), WordType.NUMERAL, gender, require(declension, "declension"), null, plural);
     }
 
     protected String inflectOrdinalNumeral(String[] parts, Case declension, Boolean animate) {
@@ -337,7 +337,7 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return RuleLibrary.LAST_NAME_RULES;
             case GENERIC:
                 return RuleLibrary.REGULAR_TERM_RULES;
-            case NUMERALS:
+            case NUMERAL:
                 return RuleLibrary.NUMERALS_RULES;
             default:
                 throw new IllegalArgumentException("Wrong type " + type);
