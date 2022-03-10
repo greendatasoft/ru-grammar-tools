@@ -110,7 +110,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         String[] res = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             String w = parts[i];
-            if (i > 0 && "целых".equals(w) && "ноль".equals(parts[i - 1])) {
+            if (i > 0 && "целых".equals(w) && isBigOrZero(parts[i - 1])) {
                 res[i] = w; // special case
                 continue;
             }
@@ -119,6 +119,20 @@ public class InflectionEngineImpl implements InflectionEngine {
             res[i] = inflectNumeral(w, declension, g, null);
         }
         return String.join(" ", res);
+    }
+
+    private static boolean isBigOrZero(String w) {
+        if ("ноль".equals(w) || "тысячи".equals(w) || "тысяч".equals(w)) {
+            // ноль целых две десятых, десять тысяч целых тридцать три сотых
+            return true;
+        }
+        for (String s : SpellingEngineImpl.BIGS) {
+            // два миллиона целых две десятых, миллион целых одна сотая
+            if (w.startsWith(s)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
