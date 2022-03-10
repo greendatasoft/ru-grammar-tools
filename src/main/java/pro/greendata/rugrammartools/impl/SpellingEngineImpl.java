@@ -122,7 +122,10 @@ public class SpellingEngineImpl implements SpellingEngine {
         int[] last = printIntegerTriples(res, integerTriples, !fractionTriples.isEmpty());
         if (!fractionTriples.isEmpty()) {
             if (NumberUtils.isEmpty(last)) {
-                res.add("ноль").add("целых");
+                if (integerTriples.size() == 1) {
+                    res.add("ноль");
+                }
+                res.add("целых");
             } else {
                 res.add(last[2] == 1 ? "целая" : "целых");
             }
@@ -175,21 +178,21 @@ public class SpellingEngineImpl implements SpellingEngine {
         return res.toString();
     }
 
-    protected int[] printIntegerTriples(StringJoiner res, List<Integer> triples, boolean pluralEnding) {
-        return printIntegerTriples(res, triples, pluralEnding, triples.size());
+    protected int[] printIntegerTriples(StringJoiner res, List<Integer> triples, boolean hasFractionPart) {
+        return printIntegerTriples(res, triples, hasFractionPart, triples.size());
     }
 
-    protected int[] printIntegerTriples(StringJoiner res, List<Integer> triples, boolean pluralEnding, int maxExclusive) {
+    protected int[] printIntegerTriples(StringJoiner res, List<Integer> triples, boolean hasFractionPart, int maxExclusive) {
         int[] t = null;
         for (int i = 0; i < maxExclusive; i++) {
             t = NumberUtils.toTriple(triples.get(i));
             if (NumberUtils.isEmpty(t)) {
                 continue;
             }
-            int index = triples.size() - 2 - i;
-            String s = tripleToString(t, index == 0 || pluralEnding);
+            int bigIndex = triples.size() - 2 - i;
+            String s = tripleToString(t, bigIndex == 0 || (bigIndex < 0 && hasFractionPart));
             res.add(s);
-            String big = getIntegerDigit(t, index);
+            String big = getIntegerDigit(t, bigIndex);
             if (big != null) {
                 res.add(big);
             }
@@ -197,7 +200,7 @@ public class SpellingEngineImpl implements SpellingEngine {
         return t;
     }
 
-    protected String tripleToString(int[] t, boolean pluralEnding) {
+    protected String tripleToString(int[] t, boolean isFractionOrThousand) {
         StringJoiner res = new StringJoiner(" ");
         if (t[0] != 0) {
             res.add(HUNDREDS.get(t[0] - 1));
@@ -206,11 +209,11 @@ public class SpellingEngineImpl implements SpellingEngine {
             res.add(TENS.get(t[1] - 2));
         }
         if (t[2] != 0) {
-            if (t[2] == 1 && pluralEnding) {
+            if (t[2] == 1 && isFractionOrThousand) { // одна тысяча, одна целая одна десятая
                 res.add("одна");
-            } else if (t[2] == 2 && pluralEnding) {
+            } else if (t[2] == 2 && isFractionOrThousand) { // две тысячи, две целых две десятых
                 res.add("две");
-            } else {
+            } else { // один миллиард, два миллиона
                 res.add(NUMBERS_UP_TO_TWENTY.get(t[2] - 1));
             }
         }
@@ -293,9 +296,9 @@ public class SpellingEngineImpl implements SpellingEngine {
         int y = numberOfDigits % 3;
         String suffix = "";
         if (y == 1) {
-            suffix = index < 0 ? "десятых" : "десяти";
+            suffix = index < 0 ? (t[2] == 1 ? "десятая" : "десятых") : "десяти";
         } else if (y == 2) {
-            suffix = index < 0 ? "сотых" : "сто";
+            suffix = index < 0 ? (t[2] == 1 ? "сотая" : "сотых") : "сто";
         }
         if (index == 0) {
             suffix += t[2] == 1 ? "тысячная" : "тысячных";
