@@ -186,6 +186,7 @@
     {
       "gender": "androgynous",
       "description": "4",
+      "animate": false,
       "test": [
         "четыре"
       ],
@@ -199,7 +200,23 @@
     },
     {
       "gender": "androgynous",
+      "description": "4",
+      "animate": true,
+      "test": [
+        "четыре"
+      ],
+      "mods": [
+        "-ёх",
+        "-ём",
+        "-ёх",
+        "-ьмя",
+        "-ёх"
+      ]
+    },
+    {
+      "gender": "androgynous",
       "description": "3",
+      "animate": false,
       "test": [
         "три"
       ],
@@ -213,7 +230,23 @@
     },
     {
       "gender": "androgynous",
+      "description": "3",
+      "animate": true,
+      "test": [
+        "три"
+      ],
+      "mods": [
+        "-ёх",
+        "-ём",
+        "-ёх",
+        "-емя",
+        "-ёх"
+      ]
+    },
+    {
+      "gender": "androgynous",
       "description": "2",
+      "animate": false,
       "test": [
         "два",
         "две"
@@ -227,8 +260,25 @@
       ]
     },
     {
+      "gender": "androgynous",
+      "description": "2",
+      "animate": true,
+      "test": [
+        "два",
+        "две"
+      ],
+      "mods": [
+        "-ух",
+        "-ум",
+        "-ух",
+        "-умя",
+        "-ух"
+      ]
+    },
+    {
       "gender": "male",
       "description": "1",
+      "animate": false,
       "test": [
         "один"
       ],
@@ -236,6 +286,21 @@
         "--ного",
         "--ному",
         ".",
+        "--ним",
+        "--ном"
+      ]
+    },
+    {
+      "gender": "male",
+      "description": "1",
+      "animate": true,
+      "test": [
+        "один"
+      ],
+      "mods": [
+        "--ного",
+        "--ному",
+        "--ного",
         "--ним",
         "--ном"
       ]

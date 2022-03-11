@@ -37,7 +37,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
             return inflectOrdinalNumeral(parts, declension, false);
         }
-        return inflectCardinalNumeral(parts, declension);
+        return inflectCardinalNumeral(parts, declension, null);
     }
 
     @Override
@@ -47,6 +47,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         String[] parts = checkAndSplit(numeral);
         Optional<Dictionary.Word> info = Dictionary.getNounDictionary().wordInfo(unit);
         Gender gender = info.map(Dictionary.Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(unit));
+        Boolean animated = info.map(Dictionary.Word::animate).orElse(null);
         if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
             String res = inflectOrdinalNumeral(parts, declension, gender, info.map(Dictionary.Word::animate).orElse(false));
             return res + " " + inflect(unit, WordType.GENERIC, declension, gender, null, null);
@@ -57,9 +58,10 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE) {
             res = String.join(" ", parts);
         } else {
-            res = inflectCardinalNumeral(parts, declension);
+            // rule: Дробные числительные не сочетаются с одушевленными именами существительными: нельзя делить живое на части.
+            res = inflectCardinalNumeral(parts, declension, GrammarUtils.isFractionNumeral(numeral) ? Boolean.FALSE : animated);
         }
-        return res + " " + inflectUnit(unit, numeral, declension, gender);
+        return res + " " + inflectUnit(unit, numeral, declension, gender, animated);
     }
 
     /**
@@ -69,31 +71,32 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @param number     {@code String}
      * @param declension {@link Case}
      * @param gender     {@link Gender}
+     * @param animated   {@link Boolean}
      * @return {@code String}
      * @see <a href='https://numeralonline.ru/10000'>Склонение 10000 по падежам</a>
      */
-    protected String inflectUnit(String unit, String number, Case declension, Gender gender) {
+    protected String inflectUnit(String unit, String number, Case declension, Gender gender, Boolean animated) {
         if (GrammarUtils.isZeroNumeral(number)) {
             // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
             // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
-            return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC, Case.GENITIVE, gender, null, true);
+            return inflect(unit, WordType.GENERIC, Case.GENITIVE, gender, animated, true);
         }
         if (GrammarUtils.isFractionNumeral(number)) {
-            // рубля
-            return inflect(unit, WordType.GENERIC, Case.GENITIVE, gender, null, null);
+            // рубля (consider as inanimate)
+            return inflect(unit, WordType.GENERIC, Case.GENITIVE, gender, false, false);
         }
         if (GrammarUtils.isNumeralEndWithNumberOne(number)) {
             // NOMINATIVE,GENITIVE,    DATIVE,      ACCUSATIVE,INSTRUMENTAL,PREPOSITIONAL
             // один рубль,одного рубля,одному рублю,один рубль,одним рублём,одном рубле
-            return inflect(unit, WordType.GENERIC, declension, gender, null, null);
+            return inflect(unit, WordType.GENERIC, declension, gender, animated, false);
         }
         if (GrammarUtils.isNumeralEndWithTwoThreeFour(number)) {
             // NOMINATIVE,     GENITIVE,          DATIVE,            ACCUSATIVE,     INSTRUMENTAL,        PREPOSITIONAL
             // сорок два рубля,сорока двух рублей,сорока двум рублям,сорок два рубля,сорока двумя рублями,сорока двух рублях
-            if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
-                return inflect(unit, WordType.GENERIC, Case.GENITIVE, gender, null, null);
+            if (declension == Case.NOMINATIVE || ((animated == null || !animated) && declension == Case.ACCUSATIVE)) {
+                return inflect(unit, WordType.GENERIC, Case.GENITIVE, gender, animated, false);
             } else {
-                return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC, declension, gender, null, true);
+                return inflect(unit, WordType.GENERIC, declension, gender, animated, true);
             }
         }
         // NOMINATIVE,   GENITIVE,     DATIVE,       ACCUSATIVE,   INSTRUMENTAL,   PREPOSITIONAL
@@ -103,10 +106,10 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
             declension = Case.GENITIVE;
         }
-        return inflect(GrammarUtils.toPluralNoun(unit), WordType.GENERIC, declension, gender, null, true);
+        return inflect(unit, WordType.GENERIC, declension, gender, animated, true);
     }
 
-    protected String inflectCardinalNumeral(String[] parts, Case declension) {
+    protected String inflectCardinalNumeral(String[] parts, Case declension, Boolean animated) {
         String[] res = new String[parts.length];
         for (int i = 0; i < parts.length; i++) {
             String w = parts[i];
@@ -116,7 +119,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             }
             // each part may have its own gender: "одна тысяча один"
             Gender g = GrammarUtils.guessGenderOfSingleNumeral(w);
-            res[i] = inflectNumeral(w, declension, g, null);
+            res[i] = inflectCardinalNumeral(w, declension, g, animated);
         }
         return String.join(" ", res);
     }
@@ -142,11 +145,11 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender} some numerals have gender (e.g. {@code "oдин"\"одна"\"одно"}),
      *                   but usually it is {@link Gender#NEUTER}
-     * @param plural     {@code boolean}
+     * @param animated   {@link Boolean}
      * @return {@code String} -  a numeral phrase in the selected case
      */
-    public String inflectNumeral(String number, Case declension, Gender gender, Boolean plural) {
-        return process(require(number, "numeral"), WordType.NUMERAL, gender, require(declension, "declension"), null, plural);
+    protected String inflectCardinalNumeral(String number, Case declension, Gender gender, Boolean animated) {
+        return process(require(number, "numeral"), WordType.NUMERAL, gender, require(declension, "declension"), animated, null);
     }
 
     protected String inflectOrdinalNumeral(String[] parts, Case declension, Boolean animate) {
@@ -317,8 +320,15 @@ public class InflectionEngineImpl implements InflectionEngine {
             }
         }
         String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        if (plural != null && plural) {
+            nw = GrammarUtils.toPluralNoun(nw);
+        }
         Rule rule = RuleSet.findRule(nw, gender, animated, plural, chooseRuleSet(type));
-        return rule == null ? word : rule.apply(declension, word);
+        if (rule == null) {
+            return word;
+        }
+        String res = rule.apply(declension, word);
+        return MiscStringUtils.toProperCase(word, res);
     }
 
     protected Gender guessGenderByFullName(String[] sfp) {

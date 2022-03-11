@@ -56,6 +56,10 @@ public class Dictionary {
         if (record instanceof SingleWordRecord) {
             return Optional.of(((SingleWordRecord) record));
         }
+        if (record instanceof MultiWordRecord) {
+            // try best
+            return Optional.of(((MultiWordRecord) record).words[0]);
+        }
         return Optional.empty();
     }
 
