@@ -1,7 +1,5 @@
 package pro.greendata.rugrammartools;
 
-import java.util.Objects;
-
 /**
  * An engine for running inflection process.
  * Created by @ssz on 27.11.2020.
@@ -42,18 +40,17 @@ public interface InflectionEngine {
      * Declines the given {@code numeral} with the {@code unit} into the specified declension case.
      *
      * @param numeral    {@code String} not {@code null},
-     *                   a quantitative numeral in singular nominative case, e.g.{@code "пять"}
-     *                   or ordinal numeral {@code "четвёртое"}
+     *                   a singular quantitative numeral in nominative case, e.g.{@code "пять"}
+     *                   or a singular male ordinal numeral in nominative case, e.g. {@code "четвёртый"}
      * @param unit       {@code String} not {@code null}, a noun in singular nominative case, e.g.{@code "заяц"}
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a phrase in the selected case
      * @see SpellingEngine#spell(java.math.BigDecimal)
      */
     default String inflectNumeral(String numeral, String unit, Case declension) {
-        // this is the default rule, it works only for numbers with fractions
-        String word = Objects.requireNonNull(numeral) + " " + inflect(Objects.requireNonNull(unit),
-                WordType.GENERIC, Case.GENITIVE, Gender.MALE, null, null);
-        return inflectNumeral(word, declension);
+        // this is the default rule, it works only for several cases
+        return inflectNumeral(numeral, declension) + " " +
+                inflect(unit, WordType.GENERIC, Case.GENITIVE, Gender.MALE, null, null);
     }
 
     /**
