@@ -47,6 +47,7 @@ public interface InflectionEngine {
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a phrase in the selected case
      * @see SpellingEngine#spell(java.math.BigDecimal)
+     * @see SpellingEngine#spellOrdinal(java.math.BigInteger, Gender)
      */
     default String inflectNumeral(String numeral, String unit, Case declension) {
         // this is the default rule, it works only for several cases
@@ -64,10 +65,50 @@ public interface InflectionEngine {
      * @param declension {@link Case declension case}, not {@code null}
      * @return {@code String} -  a numeral phrase in the selected case
      * @see SpellingEngine#spell(java.math.BigDecimal)
+     * @see SpellingEngine#spellOrdinal(java.math.BigInteger, Gender)
      */
     default String inflectNumeral(String numeral, Case declension) {
         // this is default rule, which works only for several cases
         return inflect(numeral, WordType.NUMERAL, declension, null, null, null);
+    }
+
+    /**
+     * Declines the given {@code firstname} into the specified declension case.
+     *
+     * @param firstname  {@code String}, not {@code null}, e.g. {@code "Петра"}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param gender     {@link Gender#MALE masculine} or {@link Gender#FEMALE feminine},
+     *                   or {@code null} to choose automatically or for undefined cases
+     * @return {@code String} the firstname in the selected case
+     */
+    default String inflectFirstname(String firstname, Case declension, Gender gender) {
+        return inflect(firstname, WordType.FIRST_NAME, declension, gender, true, false);
+    }
+
+    /**
+     * Declines the given {@code middle} into the specified declension case.
+     *
+     * @param middlename {@code String}, not {@code null}, e.g. {@code "Петровна"}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param gender     {@link Gender#MALE masculine} or {@link Gender#FEMALE feminine},
+     *                   or {@code null} to choose automatically or for undefined cases
+     * @return {@code String} the middlename in the selected case
+     */
+    default String inflectPatronymic(String middlename, Case declension, Gender gender) {
+        return inflect(middlename, WordType.PATRONYMIC_NAME, declension, gender, true, false);
+    }
+
+    /**
+     * Declines the given {@code surname} into the specified declension case.
+     *
+     * @param surname    {@code String}, not {@code null}, e.g. {@code "Петрова"}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param gender     {@link Gender#MALE masculine} or {@link Gender#FEMALE feminine},
+     *                   or {@code null} to choose automatically or for undefined cases
+     * @return {@code String} the surname in the selected case
+     */
+    default String inflectSurname(String surname, Case declension, Gender gender) {
+        return inflect(surname, WordType.FAMILY_NAME, declension, gender, true, false);
     }
 
     /**
@@ -95,20 +136,20 @@ public interface InflectionEngine {
         if (sfp.length > 3 || sfp.length == 0) {
             throw new IllegalArgumentException();
         }
-        String s = inflect(sfp[0], WordType.FAMILY_NAME, declension, gender, true, false);
+        String s = inflectSurname(sfp[0], declension, gender);
         if (sfp.length == 1) {
             return new String[]{s};
         }
-        String f = inflect(sfp[1], WordType.FIRST_NAME, declension, gender, true, false);
+        String f = inflectFirstname(sfp[1], declension, gender);
         if (sfp.length == 2) {
             return new String[]{s, f};
         }
-        String p = inflect(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
+        String p = inflectPatronymic(sfp[2], declension, gender);
         return new String[]{s, f, p};
     }
 
     /**
-     * Declines the given {@code phrase} into the specified declension case, guessing the phrase {@link WordType type}.
+     * Declines the given {@code phrase} into the specified declension case, guessing the phrase word type.
      * Since need to guess, the accuracy of this method is less than others.
      *
      * @param phrase     {@code String} a phrase: fullname, profession, organization, etc
