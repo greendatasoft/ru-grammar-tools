@@ -24,7 +24,7 @@ public class OrganizationTest {
 
     @ParameterizedTest(name = "[{index}] ::: {0}")
     @MethodSource("data")
-    public void testProfession(String p1, String p2, String p3, String p4, String p5, String p6) {
+    public void testOrganization(String p1, String p2, String p3, String p4, String p5, String p6) {
         assertName(p2, p1, Case.GENITIVE);
         assertName(p3, p1, Case.DATIVE);
         assertName(p4, p1, Case.ACCUSATIVE);

@@ -3,7 +3,6 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
-import pro.greendata.rugrammartools.WordType;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -17,7 +16,22 @@ import java.util.regex.Pattern;
  */
 public class InflectionEngineImpl implements InflectionEngine {
 
-    @Override
+    /**
+     * Declines the given {@code word} in accordance with the specified settings.
+     * This is the generic method.
+     *
+     * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
+     * @param type       {@link WordType}, not {@code null}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param gender     {@link Gender} feminine, masculine or neuter,
+     *                   {@code null} to choose automatically (usually it is {@link Gender#MALE}) or for undefined cases
+     * @param animate    {@code Boolean} can be specified if {@code type = } {@link WordType#GENERIC},
+     *                   {@code null} for default behaviour
+     * @param plural     {@code Boolean} if {@code true} then plural,
+     *                   {@code false} for singular or {@code null} for default behaviour,
+     *                   makes sense only if {@code type = } {@link WordType#GENERIC}
+     * @return {@code String}
+     */
     public String inflect(String word, WordType type, Case declension, Gender gender, Boolean animate, Boolean plural) {
         require(word, "word");
         require(declension, "declension case");
@@ -38,12 +52,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             return inflectOrdinalNumeral(parts, declension, false);
         }
         return inflectCardinalNumeral(parts, declension, null);
-    }
-
-    @Override
-    public String inflectFullName(String sfp, Case declension) {
-        return String.join(" ", inflectSPF(require(sfp, "surname+firstname+patronymic").split("\\s+"),
-                require(declension, "declension"), null));
     }
 
     @Override
@@ -176,6 +184,30 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     @Override
+    public String inflectFirstname(String firstname, Case declension, Gender gender) {
+        gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderByFirstName(firstname));
+        return inflect(firstname, WordType.FIRST_NAME, declension, gender, true, false);
+    }
+
+    @Override
+    public String inflectPatronymic(String middlename, Case declension, Gender gender) {
+        gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderByPatronymicName(middlename));
+        return inflect(middlename, WordType.PATRONYMIC_NAME, declension, gender, true, false);
+    }
+
+    @Override
+    public String inflectSurname(String surname, Case declension, Gender gender) {
+        gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderBySurname(surname));
+        return inflect(surname, WordType.FAMILY_NAME, declension, gender, true, false);
+    }
+
+    @Override
+    public String inflectFullname(String sfp, Case declension) {
+        return String.join(" ", inflectSPF(require(sfp, "surname+firstname+patronymic").split("\\s+"),
+                require(declension, "declension"), null));
+    }
+
+    @Override
     public String[] inflectSPF(String[] sfp, Case declension, Gender gender) {
         require(declension, "declension case");
         if (require(sfp, "sfp").length > 3 || sfp.length == 0) {
@@ -202,13 +234,13 @@ public class InflectionEngineImpl implements InflectionEngine {
         String[] parts = checkAndSplit(phrase);
         if (parts.length < 4) { // then can be full name
             if (parts.length > 1 && NameUtils.isFirstname(parts[1])) {
-                return inflectFullName(phrase, declension);
+                return inflectFullname(phrase, declension);
             }
             if (parts.length == 1 && NameUtils.canBeSurname(parts[0])) {
-                return inflectFullName(phrase, declension);
+                return inflectFullname(phrase, declension);
             }
             if (parts.length == 3 && NameUtils.canBePatronymic(parts[2]) && NameUtils.canBeSurname(parts[0])) {
-                return inflectFullName(phrase, declension);
+                return inflectFullname(phrase, declension);
             }
         }
         return inflectRegularTerm(phrase, declension, null);

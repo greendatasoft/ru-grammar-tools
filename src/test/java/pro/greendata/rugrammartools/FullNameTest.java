@@ -18,13 +18,13 @@ public class FullNameTest {
     }
 
     void assertName(String expected, String given, Case declension) {
-        Assertions.assertEquals(expected, engine.inflectFullName(given, declension),
+        Assertions.assertEquals(expected, engine.inflectFullname(given, declension),
                 "Wrong result for case: " + declension);
     }
 
     @ParameterizedTest(name = "[{index}] ::: {0}")
     @MethodSource("data")
-    public void testProfession(String p1, String p2, String p3, String p4, String p5, String p6) {
+    public void testFullname(String p1, String p2, String p3, String p4, String p5, String p6) {
         assertName(p2, p1, Case.GENITIVE);
         assertName(p3, p1, Case.DATIVE);
         assertName(p4, p1, Case.ACCUSATIVE);

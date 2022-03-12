@@ -1,4 +1,4 @@
-package pro.greendata.rugrammartools;
+package pro.greendata.rugrammartools.impl;
 
 /**
  * The word type.
