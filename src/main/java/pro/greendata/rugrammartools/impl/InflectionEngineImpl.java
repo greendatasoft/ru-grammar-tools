@@ -54,17 +54,18 @@ public class InflectionEngineImpl implements InflectionEngine {
         Optional<Dictionary.Word> info = Dictionary.getNounDictionary().wordInfo(unit);
         Gender gender = info.map(Dictionary.Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(unit));
         Boolean animated = info.map(Dictionary.Word::animate).orElse(null);
-        if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
-            // todo: transfer to proper gender (e.g. "второй" -> "вторая")
-            if (declension == Case.NOMINATIVE) {
-                return numeral + " " + unit;
-            }
-            String res = inflectOrdinalNumeral(parts, declension, gender, info.map(Dictionary.Word::animate).orElse(false));
-            return res + " " + process(unit, WordType.GENERIC, declension, gender, null, null);
-        }
         int last = parts.length - 1;
-        parts[last] = GrammarUtils.changeGenderFormOfNumeral(parts[last], gender);
         String res;
+        if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
+            parts[last] = GrammarUtils.changeGenderOfOrdinalNumeral(parts[last], gender);
+            if (declension == Case.NOMINATIVE) {
+                res = String.join(" ", parts);
+            } else {
+                res = inflectOrdinalNumeral(parts, declension, gender, animated);
+            }
+            return res + " " + inflect(unit, WordType.GENERIC, declension, gender, animated, null);
+        }
+        parts[last] = GrammarUtils.changeGenderOfCardinalNumeral(parts[last], gender);
         if (declension == Case.NOMINATIVE) {
             res = String.join(" ", parts);
         } else {

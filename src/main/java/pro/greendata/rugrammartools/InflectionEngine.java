@@ -12,12 +12,13 @@ public interface InflectionEngine {
      * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
      * @param type       {@link WordType}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
-     * @param gender     {@link Gender}, russian feminine, masculine or neuter,
+     * @param gender     {@link Gender} feminine, masculine or neuter,
      *                   {@code null} to choose automatically (usually it is {@link Gender#MALE}) or for undefined cases
      * @param animate    {@code Boolean} can be specified if {@code type = } {@link WordType#GENERIC},
      *                   {@code null} for default behaviour
      * @param plural     {@code Boolean} if {@code true} then plural,
-     *                   {@code false} for singular or {@code null} for default behaviour
+     *                   {@code false} for singular or {@code null} for default behaviour,
+     *                   makes sense only if {@code type = } {@link WordType#GENERIC}
      * @return {@code String}
      */
     String inflect(String word, WordType type, Case declension, Gender gender, Boolean animate, Boolean plural);

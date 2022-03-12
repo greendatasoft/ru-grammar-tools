@@ -58,11 +58,10 @@ public class Dictionary {
         }
         if (record instanceof MultiWordRecord) {
             // try best
-            return Optional.of(((MultiWordRecord) record).words[0]);
+            return Optional.of(selectSingleRecord(record, null, null));
         }
         return Optional.empty();
     }
-
 
     /**
      * Tries to find the correct form of the word from the dictionary according the given parameters.
@@ -95,12 +94,21 @@ public class Dictionary {
         return selectLongestWord(w);
     }
 
+    /**
+     * Tries best to select the most appropriate word record according to the specified parameters.
+     *
+     * @param record   {@link WordRecord}
+     * @param gender   {@code Gender}
+     * @param animated {@code Boolean}
+     * @return {@link SingleWordRecord}
+     */
     protected SingleWordRecord selectSingleRecord(WordRecord record, Gender gender, Boolean animated) {
         if (record instanceof SingleWordRecord) {
             return (SingleWordRecord) record;
         }
         MultiWordRecord multi = (MultiWordRecord) record;
         List<SingleWordRecord> res = Arrays.stream(multi.words)
+                .sorted(Comparator.comparingInt(SingleWordRecord::fullness).reversed())
                 .filter(s -> (gender == null || s.gender == gender) &&
                         (animated == null || s.animated == animated))
                 .collect(Collectors.toList());
@@ -110,6 +118,12 @@ public class Dictionary {
         return res.get(0);
     }
 
+    /**
+     * Selects the longest word, if it has separator ',' (sometimes there is two or more correct forms).
+     *
+     * @param w {@code String}
+     * @return {@code String}
+     */
     protected String selectLongestWord(String w) {
         if (!w.contains(",")) {
             return w;
@@ -298,6 +312,16 @@ public class Dictionary {
         @Override
         public Boolean animate() {
             return animated;
+        }
+
+        /**
+         * Answers a degree of fullness.
+         *
+         * @return {@code int}
+         */
+        public int fullness() {
+            return Stream.of(gender, animated, indeclinable, plural, singularCases, pluralCases)
+                    .filter(Objects::nonNull).mapToInt(x -> 1).sum();
         }
     }
 }

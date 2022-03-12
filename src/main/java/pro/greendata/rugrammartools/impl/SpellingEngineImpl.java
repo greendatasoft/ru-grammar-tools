@@ -156,7 +156,7 @@ public class SpellingEngineImpl implements SpellingEngine {
             throw new IllegalArgumentException("Negative input");
         }
         if (BigInteger.ZERO.equals(number)) {
-            return select("нулевая", "нулевое", "нулевой", gender);
+            return GrammarUtils.select("нулевая", "нулевое", "нулевой", gender);
         }
 
         List<Integer> triples = NumberUtils.toTriples(number);
@@ -225,7 +225,7 @@ public class SpellingEngineImpl implements SpellingEngine {
         if (t[0] != 0) {
             int index = t[0] - 1;
             if (t[1] == 0 && t[2] == 0) {
-                res.add(select(ORDINAL_FEMALE_HUNDREDS, ORDINAL_NEUTER_HUNDREDS, ORDINAL_MALE_HUNDREDS, g).get(index));
+                res.add(GrammarUtils.select(ORDINAL_FEMALE_HUNDREDS, ORDINAL_NEUTER_HUNDREDS, ORDINAL_MALE_HUNDREDS, g).get(index));
                 return res.toString();
             }
             res.add(HUNDREDS.get(index));
@@ -233,12 +233,12 @@ public class SpellingEngineImpl implements SpellingEngine {
         if (t[1] != 0) {
             int index = t[1] - 2;
             if (t[2] == 0) {
-                res.add(select(ORDINAL_FEMALE_TENS, ORDINAL_NEUTER_TENS, ORDINAL_MALE_TENS, g).get(index));
+                res.add(GrammarUtils.select(ORDINAL_FEMALE_TENS, ORDINAL_NEUTER_TENS, ORDINAL_MALE_TENS, g).get(index));
                 return res.toString();
             }
             res.add(TENS.get(index));
         }
-        res.add(select(ORDINAL_FEMALE_NUMBERS_UP_TO_TWENTY, ORDINAL_NEUTER_NUMBERS_UP_TO_TWENTY,
+        res.add(GrammarUtils.select(ORDINAL_FEMALE_NUMBERS_UP_TO_TWENTY, ORDINAL_NEUTER_NUMBERS_UP_TO_TWENTY,
                 ORDINAL_MALE_NUMBERS_UP_TO_TWENTY, g).get(t[2] - 1));
         return res.toString();
     }
@@ -270,7 +270,7 @@ public class SpellingEngineImpl implements SpellingEngine {
         } else {
             res = BIGS.get(rank - 1);
         }
-        String ending = select("ная", "ное", "ный", g);
+        String ending = GrammarUtils.select("ная", "ное", "ный", g);
         return res + ending;
     }
 
@@ -313,13 +313,4 @@ public class SpellingEngineImpl implements SpellingEngine {
         return t == 2 || t == 3 || t == 4;
     }
 
-    private static <X> X select(X female, X neuter, X male, Gender gender) {
-        if (Gender.FEMALE == gender) {
-            return female;
-        }
-        if (Gender.NEUTER == gender) {
-            return neuter;
-        }
-        return male;
-    }
 }
