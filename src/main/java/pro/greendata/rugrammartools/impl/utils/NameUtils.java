@@ -1,6 +1,8 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.List;
 

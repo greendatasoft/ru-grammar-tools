@@ -2,6 +2,8 @@ package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.SpellingEngine;
+import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
+import pro.greendata.rugrammartools.impl.utils.NumberUtils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

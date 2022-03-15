@@ -2,8 +2,8 @@ package pro.greendata.rugrammartools;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import pro.greendata.rugrammartools.impl.Dictionary;
 import pro.greendata.rugrammartools.impl.Word;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 
 /**
  * Created by @ssz on 24.02.2022.

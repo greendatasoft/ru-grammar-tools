@@ -1,4 +1,4 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.dictionaries;
 
 import java.io.BufferedReader;
 import java.io.IOException;

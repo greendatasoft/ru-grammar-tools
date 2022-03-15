@@ -1,6 +1,8 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.Word;
+import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
 
 import java.io.*;
 import java.lang.ref.SoftReference;

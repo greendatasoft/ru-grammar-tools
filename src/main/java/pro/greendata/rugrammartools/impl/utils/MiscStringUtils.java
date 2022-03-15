@@ -1,4 +1,4 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.utils;
 
 import java.util.Locale;
 

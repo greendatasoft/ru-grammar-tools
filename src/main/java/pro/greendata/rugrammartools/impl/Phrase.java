@@ -1,6 +1,9 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
+import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -56,7 +59,7 @@ public class Phrase {
         List<String> words = new ArrayList<>();
         List<Word> details = new ArrayList<>();
         List<String> separators = new ArrayList<>();
-        Optional<Word> info = Dictionary.getNounDictionary().wordDetails(key, gender, animate);
+        Optional<Word> info = pro.greendata.rugrammartools.impl.dictionaries.Dictionary.getNounDictionary().wordDetails(key, gender, animate);
         if (info.isPresent()) {
             keys.add(toKey(word));
             words.add(word);

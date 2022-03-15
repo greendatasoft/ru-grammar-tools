@@ -3,13 +3,17 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
+import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
+import pro.greendata.rugrammartools.impl.utils.NameUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static pro.greendata.rugrammartools.impl.Dictionary.WordRecord;
+import static pro.greendata.rugrammartools.impl.dictionaries.Dictionary.WordRecord;
 
 /**
  * The engine impl.
