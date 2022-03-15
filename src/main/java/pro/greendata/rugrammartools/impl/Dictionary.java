@@ -1,6 +1,5 @@
 package pro.greendata.rugrammartools.impl;
 
-import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 
 import java.io.*;
@@ -22,10 +21,10 @@ public class Dictionary {
 
     private static final Dictionary NOUN_DICTIONARY = new Dictionary("/nouns.csv");
 
-    private final Supplier<Map<String, WordRecord>> loader;
-    // it is okay to have Map in memory: it is not so big (~20_000records),
+    private final Supplier<Map<String, Record>> loader;
+    // it is okay to have Map in memory: it is not so big (~20_000 records (file size = 8MB),
     // but just in case store it as SoftReference:
-    private volatile SoftReference<Map<String, WordRecord>> content;
+    private volatile SoftReference<Map<String, Record>> content;
 
     protected Dictionary(String path) {
         Objects.requireNonNull(path);
@@ -42,73 +41,74 @@ public class Dictionary {
     }
 
     /**
+     * Loads the {@link Dictionary} from the file system.
+     *
+     * @param source {@code String} - resource
+     * @return immutable {@code Map}
+     */
+    @SuppressWarnings({"unchecked"})
+    protected static Map<String, Record> load(String source) {
+        Map<String, Record> data = new HashMap<>(26900);
+        try (InputStream in = Objects.requireNonNull(Dictionary.class.getResourceAsStream(source));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+             Stream<String> lines = reader.lines()) {
+            lines.forEach(record -> {
+                Map.Entry<String, Record> e = WordRecord.parse(record);
+                if (e == null) {
+                    return;
+                }
+                data.merge(e.getKey(), e.getValue(), MultiRecord::create);
+            });
+        } catch (IOException e) {
+            throw new UncheckedIOException("Can't load " + source, e);
+        }
+        // MapN must be faster:
+        Map.Entry<String, Record>[] array = data.entrySet().toArray(Map.Entry[]::new);
+        return Map.ofEntries(array);
+    }
+
+    /**
      * Returns a word-info object.
      *
      * @param word {@code String}, not {@code null}
      * @return an {@code Optional} of {@link Word}
      */
-    public Optional<Word> wordInfo(String word) {
-        String key = MiscStringUtils.normalize(word, LOCALE);
-        WordRecord record = contentMap().get(key);
-        if (record == null) {
-            return Optional.empty();
-        }
-        if (record instanceof SingleWordRecord) {
-            return Optional.of(((SingleWordRecord) record));
-        }
-        if (record instanceof MultiWordRecord) {
-            // try best
-            return Optional.of(selectSingleRecord(record, null, null));
-        }
-        return Optional.empty();
+    public Optional<Word> wordDetails(String word) {
+        return wordDetails(word, null, null);
     }
 
     /**
-     * Tries to find the correct form of the word from the dictionary according the given parameters.
+     * Tries to find the most suitable word record object.
      *
-     * @param word       {@code String}, not {@code null}
-     * @param declension {@link Case}, not {@code null}
-     * @param gender     {@link  Gender}, can be {@code null}
-     * @param animated   {@code Boolean}, can be {@code null}
-     * @param plural     {@code Boolean}, can be {@code null}
-     * @return {@code String} or {@code null}
+     * @param word    {@code String}, the key, not {@code null}
+     * @param gender  {@link Gender} a filter parameter, can be {@code null}
+     * @param animate {@code Boolean}a filter parameter, can be {@code null}
+     * @return an {@code Optional} of {@link Word}
      */
-    public String inflect(String word, Case declension, Gender gender, Boolean animated, Boolean plural) {
+    public Optional<Word> wordDetails(String word, Gender gender, Boolean animate) {
         String key = MiscStringUtils.normalize(word, LOCALE);
-        WordRecord record = contentMap().get(key);
+        Record record = contentMap().get(key);
         if (record == null) {
-            return null;
+            return Optional.empty();
         }
-        SingleWordRecord single = selectSingleRecord(record, gender, animated);
-        if (single.indeclinable != null && single.indeclinable) {
-            return word;
-        }
-        if (declension == Case.NOMINATIVE) {
-            return plural == Boolean.TRUE ? single.plural : word;
-        }
-        String[] cases = plural == Boolean.TRUE && single.pluralCases != null ? single.pluralCases : single.singularCases;
-        if (cases == null) {
-            return null;
-        }
-        String w = cases[declension.ordinal() - 1];
-        return selectLongestWord(w);
+        return Optional.of(selectSingleRecord(record, gender, animate));
     }
 
     /**
      * Tries best to select the most appropriate word record according to the specified parameters.
      *
-     * @param record   {@link WordRecord}
+     * @param record   {@link Record}
      * @param gender   {@code Gender}
      * @param animated {@code Boolean}
-     * @return {@link SingleWordRecord}
+     * @return {@link WordRecord}
      */
-    protected SingleWordRecord selectSingleRecord(WordRecord record, Gender gender, Boolean animated) {
-        if (record instanceof SingleWordRecord) {
-            return (SingleWordRecord) record;
+    protected WordRecord selectSingleRecord(Record record, Gender gender, Boolean animated) {
+        if (record instanceof WordRecord) {
+            return (WordRecord) record;
         }
-        MultiWordRecord multi = (MultiWordRecord) record;
-        List<SingleWordRecord> res = Arrays.stream(multi.words)
-                .sorted(Comparator.comparingInt(SingleWordRecord::fullness).reversed())
+        MultiRecord multi = (MultiRecord) record;
+        List<WordRecord> res = Arrays.stream(multi.words)
+                .sorted(Comparator.comparingInt(WordRecord::fullness).reversed())
                 .filter(s -> (gender == null || s.gender == gender) &&
                         (animated == null || s.animated == animated))
                 .collect(Collectors.toList());
@@ -118,31 +118,9 @@ public class Dictionary {
         return res.get(0);
     }
 
-    /**
-     * Selects the longest word, if it has separator ',' (sometimes there is two or more correct forms).
-     *
-     * @param w {@code String}
-     * @return {@code String}
-     */
-    protected String selectLongestWord(String w) {
-        if (!w.contains(",")) {
-            return w;
-        }
-        String[] array = w.split(",\\s*");
-        String res = null;
-        for (String s : array) {
-            if (res == null) {
-                res = s;
-            } else if (s.length() > res.length()) {
-                res = s;
-            }
-        }
-        return res;
-    }
-
-    protected Map<String, WordRecord> contentMap() {
-        SoftReference<Map<String, WordRecord>> content = this.content;
-        Map<String, WordRecord> res;
+    protected Map<String, Record> contentMap() {
+        SoftReference<Map<String, Record>> content = this.content;
+        Map<String, Record> res;
         if (content != null && (res = content.get()) != null) {
             return res;
         }
@@ -156,59 +134,26 @@ public class Dictionary {
         }
     }
 
-    /**
-     * Loads the {@link Dictionary} from the file system.
-     *
-     * @param source {@code String} - resource
-     * @return immutable {@code Map}
-     */
-    @SuppressWarnings({"unchecked"})
-    protected static Map<String, WordRecord> load(String source) {
-        Map<String, WordRecord> data = new HashMap<>(26900);
-        try (InputStream in = Objects.requireNonNull(Dictionary.class.getResourceAsStream(source));
-             BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-             Stream<String> lines = reader.lines()) {
-            lines.forEach(record -> {
-                Map.Entry<String, WordRecord> e = SingleWordRecord.parse(record);
-                if (e == null) {
-                    return;
-                }
-                data.merge(e.getKey(), e.getValue(), MultiWordRecord::create);
-            });
-        } catch (IOException e) {
-            throw new UncheckedIOException("Can't load " + source, e);
-        }
-        // MapN must be faster:
-        Map.Entry<String, WordRecord>[] array = data.entrySet().toArray(Map.Entry[]::new);
-        return Map.ofEntries(array);
+    interface Record {
     }
 
-    interface WordRecord {
-    }
+    static class MultiRecord implements Record {
+        private final WordRecord[] words;
 
-    public interface Word {
-        Gender gender();
-
-        Boolean animate();
-    }
-
-    static class MultiWordRecord implements WordRecord {
-        private final SingleWordRecord[] words;
-
-        MultiWordRecord(SingleWordRecord[] words) {
+        MultiRecord(WordRecord[] words) {
             this.words = words;
         }
 
-        static WordRecord create(WordRecord... records) {
-            List<SingleWordRecord> res = new ArrayList<>();
-            for (WordRecord w : records) {
-                if (w instanceof SingleWordRecord) {
-                    res.add((SingleWordRecord) w);
+        static Record create(Record... records) {
+            List<WordRecord> res = new ArrayList<>();
+            for (Record w : records) {
+                if (w instanceof WordRecord) {
+                    res.add((WordRecord) w);
                 } else {
-                    res.addAll(Arrays.asList(((MultiWordRecord) w).words));
+                    res.addAll(Arrays.asList(((MultiRecord) w).words));
                 }
             }
-            return new MultiWordRecord(res.toArray(SingleWordRecord[]::new));
+            return new MultiRecord(res.toArray(WordRecord[]::new));
         }
 
         @Override
@@ -217,7 +162,7 @@ public class Dictionary {
         }
     }
 
-    static class SingleWordRecord implements WordRecord, Word {
+    public static class WordRecord implements Record, Word {
         private Gender gender;
         private Boolean animated;
         private Boolean indeclinable;
@@ -226,7 +171,7 @@ public class Dictionary {
         private String[] pluralCases;
 
         /**
-         * Parses the csv-line.
+         * Parses the csv-line (for noun).
          * The header:
          * {@code bare,accented,translations_en,translations_de,gender,partner,animate,indeclinable,sg_only,pl_only,
          * sg_nom,sg_gen,sg_dat,sg_acc,sg_inst,sg_prep,pl_nom,pl_gen,pl_dat,pl_acc,pl_inst,pl_prep}
@@ -234,13 +179,13 @@ public class Dictionary {
          * @param sourceLine {@code String}
          * @return a {@code Map.Entry}
          */
-        private static Map.Entry<String, WordRecord> parse(String sourceLine) {
+        private static Map.Entry<String, Record> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = MiscStringUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
             if (array.length < 5) {
                 return null;
             }
-            SingleWordRecord res = new SingleWordRecord();
+            WordRecord res = new WordRecord();
             res.gender = parseGender(array);
             if (array.length < 7) {
                 return Map.entry(key, res);
@@ -299,12 +244,6 @@ public class Dictionary {
         }
 
         @Override
-        public String toString() {
-            return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
-                    gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
-        }
-
-        @Override
         public Gender gender() {
             return gender;
         }
@@ -312,6 +251,23 @@ public class Dictionary {
         @Override
         public Boolean animate() {
             return animated;
+        }
+
+        public String[] singularCases() {
+            return singularCases;
+        }
+
+        public String plural() {
+            return plural;
+        }
+
+        public String[] pluralCases() {
+            return pluralCases;
+        }
+
+        @Override
+        public boolean isIndeclinable() {
+            return indeclinable != null && indeclinable;
         }
 
         /**
@@ -322,6 +278,12 @@ public class Dictionary {
         public int fullness() {
             return Stream.of(gender, animated, indeclinable, plural, singularCases, pluralCases)
                     .filter(Objects::nonNull).mapToInt(x -> 1).sum();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
+                    gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
         }
     }
 }

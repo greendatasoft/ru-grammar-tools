@@ -1,10 +1,11 @@
 package pro.greendata.rugrammartools.impl;
 
 /**
- * The word type.
+ * The petrovich rule types.
+ * <p>
  * Created by @ssz on 27.11.2020.
  */
-public enum WordType {
+public enum RuleType {
     FIRST_NAME, // e.g. 'Петр'
     PATRONYMIC_NAME, // e.g. 'Петрович'
     FAMILY_NAME, // e.g. 'Петров'

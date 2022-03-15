@@ -237,6 +237,22 @@
     },
     {
       "gender": "androgynous",
+      "description": "общество,колесо",
+      "animate": false,
+      "test": [
+        "во",
+        "со"
+      ],
+      "mods": [
+        "-а",
+        "-у",
+        "-о",
+        "м",
+        "-е"
+      ]
+    },
+    {
+      "gender": "androgynous",
       "test": [
         "о",
         "е",
@@ -361,7 +377,23 @@
     },
     {
       "gender": "female",
+      "description": "третья",
+      "animate": false,
+      "test": [
+        "тья"
+      ],
+      "mods": [
+        "-ей",
+        "-ей",
+        "-ю",
+        "-ей",
+        "-ей"
+      ]
+    },
+    {
+      "gender": "female",
       "description": "свинья",
+      "animate": true,
       "test": [
         "ья"
       ],
@@ -700,6 +732,21 @@
         "у",
         "а",
         "ем",
+        "е"
+      ]
+    },
+    {
+      "gender": "male",
+      "description": "департамент",
+      "animate": false,
+      "test": [
+        "нт"
+      ],
+      "mods": [
+        "а",
+        "у",
+        ".",
+        "ом",
         "е"
       ]
     },

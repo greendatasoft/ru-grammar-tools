@@ -206,13 +206,25 @@ public class GrammarUtils {
 
     /**
      * Determines (not very accurately) whether the given {@code word} can be a singular and nominative feminine noun
-     * (i.e. является ли слово {@code существительным в женском роде единственном числе и имменительном падеже}?).
+     * (i.e. является ли слово {@code существительным в женском роде единственном числе и именительном падеже}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
      */
     public static boolean canBeFeminineNoun(String word) {
         return canBeFeminineAdjectiveBasedSubstantivatNoun(word);
+    }
+
+    /**
+     * Determines (not very accurately) whether the given {@code word} can be a singular and nominative neuter noun
+     * (i.e. является ли слово {@code существительным в среднем роде единственном числе и именительном падеже}?).
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeNeuterNoun(String word) {
+        // солнце, облако, дерево
+        return MiscStringUtils.endsWithIgnoreCase(word, "о") || MiscStringUtils.endsWithIgnoreCase(word, "е");
     }
 
     /**

@@ -4,10 +4,12 @@ import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import static pro.greendata.rugrammartools.impl.Dictionary.WordRecord;
 
 /**
  * The engine impl.
@@ -17,29 +19,31 @@ import java.util.regex.Pattern;
 public class InflectionEngineImpl implements InflectionEngine {
 
     /**
-     * Declines the given {@code word} in accordance with the specified settings.
+     * Declines the given {@code word} in accordance with the specified settings using petrovich rules.
      * This is the generic method.
      *
      * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
-     * @param type       {@link WordType}, not {@code null}
+     * @param type       {@link RuleType}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender} feminine, masculine or neuter,
      *                   {@code null} to choose automatically (usually it is {@link Gender#MALE}) or for undefined cases
-     * @param animate    {@code Boolean} can be specified if {@code type = } {@link WordType#GENERIC},
+     * @param animate    {@code Boolean} can be specified if {@code type = } {@link RuleType#GENERIC},
      *                   {@code null} for default behaviour
      * @param plural     {@code Boolean} if {@code true} then plural,
      *                   {@code false} for singular or {@code null} for default behaviour,
-     *                   makes sense only if {@code type = } {@link WordType#GENERIC}
+     *                   makes sense only if {@code type = } {@link RuleType#GENERIC}
      * @return {@code String}
      */
-    public String inflect(String word, WordType type, Case declension, Gender gender, Boolean animate, Boolean plural) {
+    public String inflect(String word, RuleType type, Case declension, Gender gender, Boolean animate, Boolean plural) {
         require(word, "word");
         require(declension, "declension case");
         require(type, "rule type");
         if (declension == Case.NOMINATIVE) {
             return word;
         }
-        return process(word, type, declension, gender == null ? Gender.MALE : gender, animate, plural);
+        String res = processRule(MiscStringUtils.normalize(word, Dictionary.LOCALE),
+                type, declension, gender == null ? Gender.MALE : gender, animate, plural);
+        return res == null ? word : MiscStringUtils.toProperCase(word, res);
     }
 
     @Override
@@ -59,63 +63,59 @@ public class InflectionEngineImpl implements InflectionEngine {
         require(unit, "unit");
         require(declension, "declension");
         String[] parts = checkAndSplit(numeral);
-        Optional<Dictionary.Word> info = Dictionary.getNounDictionary().wordInfo(unit);
-        Gender gender = info.map(Dictionary.Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(unit));
-        Boolean animated = info.map(Dictionary.Word::animate).orElse(null);
+        Phrase phrase = Phrase.parse(unit, null, null);
         int last = parts.length - 1;
         String res;
         if (GrammarUtils.canBeOrdinalNumeral(numeral)) {
-            parts[last] = GrammarUtils.changeGenderOfOrdinalNumeral(parts[last], gender);
+            parts[last] = GrammarUtils.changeGenderOfOrdinalNumeral(parts[last], phrase.gender());
             if (declension == Case.NOMINATIVE) {
                 res = String.join(" ", parts);
             } else {
-                res = inflectOrdinalNumeral(parts, declension, gender, animated);
+                res = inflectOrdinalNumeral(parts, declension, phrase.gender(), phrase.animate());
             }
-            return res + " " + inflect(unit, WordType.GENERIC, declension, gender, animated, null);
+            return res + " " + inflectPhrase(phrase, declension, null);
         }
-        parts[last] = GrammarUtils.changeGenderOfCardinalNumeral(parts[last], gender);
+        parts[last] = GrammarUtils.changeGenderOfCardinalNumeral(parts[last], phrase.gender());
         if (declension == Case.NOMINATIVE) {
             res = String.join(" ", parts);
         } else {
             // rule: Дробные числительные не сочетаются с одушевленными именами существительными: нельзя делить живое на части.
-            res = inflectCardinalNumeral(parts, declension, GrammarUtils.isFractionNumeral(numeral) ? Boolean.FALSE : animated);
+            res = inflectCardinalNumeral(parts, declension, GrammarUtils.isFractionNumeral(numeral) ? Boolean.FALSE : phrase.animate());
         }
-        return res + " " + inflectUnit(unit, numeral, declension, gender, animated);
+        return res + " " + inflectUnit(phrase, numeral, declension);
     }
 
     /**
      * Inflects unit.
      *
-     * @param unit       {@code String}
+     * @param unit       {@link Phrase}
      * @param number     {@code String}
      * @param declension {@link Case}
-     * @param gender     {@link Gender}
-     * @param animated   {@link Boolean}
      * @return {@code String}
      * @see <a href='https://numeralonline.ru/10000'>Склонение 10000 по падежам</a>
      */
-    protected String inflectUnit(String unit, String number, Case declension, Gender gender, Boolean animated) {
+    protected String inflectUnit(Phrase unit, String number, Case declension) {
         if (GrammarUtils.isZeroNumeral(number)) {
             // NOMINATIVE, GENITIVE,   DATIVE,     ACCUSATIVE, INSTRUMENTAL,PREPOSITIONAL
             // ноль рублей,ноля рублей,нолю рублей,ноль рублей,нолём рублей,ноле рублей
-            return process(unit, WordType.GENERIC, Case.GENITIVE, gender, animated, true);
+            return inflectPhrase(unit, Case.GENITIVE, true);
         }
         if (GrammarUtils.isFractionNumeral(number)) {
             // рубля (consider as inanimate)
-            return process(unit, WordType.GENERIC, Case.GENITIVE, gender, false, false);
+            return inflectPhrase(unit, Case.GENITIVE, false);
         }
         if (GrammarUtils.isNumeralEndWithNumberOne(number)) {
             // NOMINATIVE,GENITIVE,    DATIVE,      ACCUSATIVE,INSTRUMENTAL,PREPOSITIONAL
             // один рубль,одного рубля,одному рублю,один рубль,одним рублём,одном рубле
-            return process(unit, WordType.GENERIC, declension, gender, animated, false);
+            return inflectPhrase(unit, declension, false);
         }
         if (GrammarUtils.isNumeralEndWithTwoThreeFour(number)) {
             // NOMINATIVE,     GENITIVE,          DATIVE,            ACCUSATIVE,     INSTRUMENTAL,        PREPOSITIONAL
             // сорок два рубля,сорока двух рублей,сорока двум рублям,сорок два рубля,сорока двумя рублями,сорока двух рублях
-            if (declension == Case.NOMINATIVE || ((animated == null || !animated) && declension == Case.ACCUSATIVE)) {
-                return process(unit, WordType.GENERIC, Case.GENITIVE, gender, animated, false);
+            if (declension == Case.NOMINATIVE || ((unit.animate() == null || !unit.animate()) && declension == Case.ACCUSATIVE)) {
+                return inflectPhrase(unit, Case.GENITIVE, false);
             } else {
-                return process(unit, WordType.GENERIC, declension, gender, animated, true);
+                return inflectPhrase(unit, declension, true);
             }
         }
         // NOMINATIVE,   GENITIVE,     DATIVE,       ACCUSATIVE,   INSTRUMENTAL,   PREPOSITIONAL
@@ -125,7 +125,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE || declension == Case.ACCUSATIVE) {
             declension = Case.GENITIVE;
         }
-        return process(unit, WordType.GENERIC, declension, gender, animated, true);
+        return inflectPhrase(unit, declension, true);
     }
 
     protected String inflectCardinalNumeral(String[] parts, Case declension, Boolean animated) {
@@ -168,7 +168,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} -  a numeral phrase in the selected case
      */
     protected String inflectCardinalNumeral(String number, Case declension, Gender gender, Boolean animated) {
-        return process(require(number, "numeral"), WordType.NUMERAL, require(declension, "declension"), gender, animated, null);
+        return inflect(number, RuleType.NUMERAL, require(declension, "declension"), gender, animated, null);
     }
 
     protected String inflectOrdinalNumeral(String[] parts, Case declension, Boolean animate) {
@@ -178,7 +178,8 @@ public class InflectionEngineImpl implements InflectionEngine {
 
     protected String inflectOrdinalNumeral(String[] parts, Case declension, Gender gender, Boolean animate) {
         String w = parts[parts.length - 1];
-        w = process(w, WordType.GENERIC, declension, gender, animate, false);
+        //w = inflect(w, RuleType.GENERIC, declension, gender, animate, false);
+        w = inflectPhrase(w, declension, gender, animate, false);
         parts[parts.length - 1] = w;
         return String.join(" ", parts);
     }
@@ -186,19 +187,19 @@ public class InflectionEngineImpl implements InflectionEngine {
     @Override
     public String inflectFirstname(String firstname, Case declension, Gender gender) {
         gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderByFirstName(firstname));
-        return inflect(firstname, WordType.FIRST_NAME, declension, gender, true, false);
+        return inflect(firstname, RuleType.FIRST_NAME, declension, gender, true, false);
     }
 
     @Override
     public String inflectPatronymic(String middlename, Case declension, Gender gender) {
         gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderByPatronymicName(middlename));
-        return inflect(middlename, WordType.PATRONYMIC_NAME, declension, gender, true, false);
+        return inflect(middlename, RuleType.PATRONYMIC_NAME, declension, gender, true, false);
     }
 
     @Override
     public String inflectSurname(String surname, Case declension, Gender gender) {
         gender = Optional.ofNullable(gender).orElseGet(() -> NameUtils.guessGenderBySurname(surname));
-        return inflect(surname, WordType.FAMILY_NAME, declension, gender, true, false);
+        return inflect(surname, RuleType.FAMILY_NAME, declension, gender, true, false);
     }
 
     @Override
@@ -216,15 +217,15 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (gender == null) {
             gender = guessGenderByFullName(sfp);
         }
-        String s = process(sfp[0], WordType.FAMILY_NAME, declension, gender, true, false);
+        String s = inflect(sfp[0], RuleType.FAMILY_NAME, declension, gender, true, false);
         if (sfp.length == 1) {
             return new String[]{s};
         }
-        String f = process(sfp[1], WordType.FIRST_NAME, declension, gender, true, false);
+        String f = inflect(sfp[1], RuleType.FIRST_NAME, declension, gender, true, false);
         if (sfp.length == 2) {
             return new String[]{s, f};
         }
-        String p = process(sfp[2], WordType.PATRONYMIC_NAME, declension, gender, true, false);
+        String p = inflect(sfp[2], RuleType.PATRONYMIC_NAME, declension, gender, true, false);
         return new String[]{s, f, p};
     }
 
@@ -256,125 +257,140 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension, Boolean animate) {
-        if (require(declension, "declension case") == Case.NOMINATIVE) {
-            return phrase;
-        }
-        String[] parts = checkAndSplit(phrase);
-
-        Gender gender = null; // the gender of word is determined by the phrase; may not match the true gender of the wearer.
-        int noun = 0; // the position of the main word in the phrase
-        for (int i = 0; i < parts.length; i++) {
-            String w = parts[i];
-            // preposition
-            if (GrammarUtils.canBeNonDerivativePreposition(w)) {
-                break;
-            }
-            // (masculine) skip leading adjectives
-            if ((gender == null || gender == Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
-                gender = Gender.MALE;
-                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantivatNoun(w)) {
-                    noun = i;
-                    break;
-                }
-                continue;
-            }
-            // (feminine) skip leading adjectives
-            if ((gender == null || gender == Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
-                gender = Gender.FEMALE;
-                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantivatNoun(w)) {
-                    noun = i;
-                    break;
-                }
-                continue;
-            }
-            // (neuter) skip leading adjectives
-            if ((gender == null || gender == Gender.NEUTER) && GrammarUtils.canBeSingularNominativeNeuterAdjective(w)) {
-                gender = Gender.NEUTER;
-                continue;
-            }
-            noun = i;
-            break;
-        }
-        if (gender == null) {
-            // the masculine gender is most common in russian job-titles
-            gender = parts.length == 1 && GrammarUtils.canBeFeminineNoun(parts[0]) ? Gender.FEMALE : Gender.MALE;
-        }
-
-        // only the first part of the phrase is declined - the main word (noun) and the adjectives surrounding it;
-        // the words after - usually does not decline (we assume that some supplemental part goes next)
-        int end = noun;
-        for (int i = noun + 1; i < parts.length; i++) {
-            if (!GrammarUtils.canBeAdjective(parts[i], gender)) {
-                break;
-            }
-            end = i;
-        }
-        if (end != noun && end != parts.length - 1) {
-            // TODO: phrases with two nouns are ignored for now
-            end = noun;
-        }
-        for (int i = 0; i <= end; i++) {
-            parts[i] = processWithHyphen(parts[i], WordType.GENERIC, gender, declension, animate, false);
-        }
-        return String.join(" ", parts);
-    }
-
-    private static String[] checkAndSplit(String phrase) {
-        String[] res = require(phrase, "phrase").trim().split("\\s+");
-        if (res.length == 0) {
-            throw new IllegalArgumentException();
-        }
-        return res;
-    }
-
-    @SuppressWarnings("SameParameterValue")
-    private String processWithHyphen(String input, WordType type, Gender gender, Case declension, Boolean animated, Boolean plural) {
-        StringBuilder res = new StringBuilder();
-        int prev = 0;
-        Matcher m = Pattern.compile("-").matcher(input);
-        Gender g = gender;
-        while (m.find()) {
-            String txt = process(input.substring(prev, m.start()), type, declension, g, animated, plural);
-            res.append(txt).append(m.group());
-            prev = m.end();
-            // the second part is usually in the masculine gender (e.g. "сестра-анестезист")
-            g = Gender.MALE;
-        }
-        res.append(process(input.substring(prev), type, declension, g, animated, plural));
-        return res.toString();
+        return inflectPhrase(phrase, declension, null, animate, false);
     }
 
     /**
-     * Performs the case-inflection operation.
+     * Inclines a regular-term phrase, which is a combination of words (e.g. job-title, organization name).
      *
-     * @param word       {@code String} - name part, cardinal numeral or singular noun
-     * @param type       {@link WordType}
-     * @param declension {@link Case}
+     * @param phrase     {@code String}, not {@code null}
+     * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender}, can be {@code null}
-     * @param animated   {@link Boolean}, can be {@code null}
-     * @param plural     {@link Boolean}, can be {@code null};
-     *                   if {@code true} and {@code type == WordType.GENERIC}
-     *                   then the method tries to change the given singular {@code word} to plural form.
-     * @return {@code String}
+     * @param animate    {@code Boolean} can be {@code null}
+     * @param plural     {@code Boolean}, can be {@code null}
+     * @return {@code String} - a phrase in the selected case
      */
-    protected String process(String word, WordType type, Case declension, Gender gender, Boolean animated, Boolean plural) {
-        if (type == WordType.GENERIC) {
-            String res = Dictionary.getNounDictionary().inflect(word, declension, gender, animated, plural);
+    public String inflectPhrase(String phrase, Case declension, Gender gender, Boolean animate, Boolean plural) {
+        if (require(declension, "declension case") == Case.NOMINATIVE) {
+            return phrase;
+        }
+        return inflectPhrase(Phrase.parse(phrase, gender, animate), declension, plural);
+    }
+
+    /**
+     * Inclines a regular-term phrase, which is a combination of words, separated by space.
+     *
+     * @param phrase     {@link Phrase}, not {@code null}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @param plural     {@code Boolean}
+     * @return {@code String} - a phrase in the selected case
+     */
+    public String inflectPhrase(Phrase phrase, Case declension, Boolean plural) {
+        if (require(declension, "declension case") == Case.NOMINATIVE) {
+            return phrase.raw();
+        }
+        List<String> res = new ArrayList<>();
+        for (int i = 0; i < phrase.length(); i++) {
+            Word detail = phrase.details(i);
+            String orig = phrase.original(i);
+            if (detail.isIndeclinable()) {
+                res.add(orig);
+                continue;
+            }
+            String k = phrase.key(i);
+            String w = processRegularWord(k, detail, declension, plural);
+            res.add(w == null ? orig : MiscStringUtils.toProperCase(orig, w));
+        }
+        return Phrase.compose(res, phrase.separators());
+    }
+
+    private static String[] checkAndSplit(String phrase) {
+        return Phrase.split(require(phrase, "phrase"));
+    }
+
+    /**
+     * Inflects a regular word (noun, adjective, etc).
+     *
+     * @param key        {@code String} a normalized word
+     * @param details    {@link Word}, not {@code null}
+     * @param declension {@link Case}, not {@code null}
+     * @param toPlural   {@code Boolean}
+     * @return {@code String} or {@code null}
+     */
+    protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
+        if (details instanceof WordRecord) {
+            String res = processDictionaryRecord((WordRecord) details, declension, toPlural);
+            // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
             if (res != null) {
-                return MiscStringUtils.toProperCase(word, res);
+                return res;
             }
         }
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
-        if (type == WordType.GENERIC && plural != null && plural) {
+        if (toPlural != null && toPlural) {
             // TODO: make rule for plural?
-            nw = GrammarUtils.toPluralNoun(nw);
+            key = GrammarUtils.toPluralNoun(key);
         }
-        Rule rule = RuleSet.findRule(nw, gender, animated, plural, chooseRuleSet(type));
+        return processRule(key, RuleType.GENERIC, declension, details.gender(), details.animate(), toPlural);
+    }
+
+    /**
+     * Inflects a word using petrovich rules.
+     *
+     * @param record     {@link WordRecord}, not {@code null}
+     * @param declension {@link Case}, not {@code null}
+     * @param plural     {@code Boolean}, filter parameter, can be {@code null}
+     * @return {@code String} or {@code null}
+     */
+    protected String processDictionaryRecord(WordRecord record, Case declension, Boolean plural) {
+        if (declension == Case.NOMINATIVE) {
+            return plural == Boolean.TRUE ? record.plural() : null;
+        }
+        String[] cases = plural == Boolean.TRUE && record.pluralCases() != null ? record.pluralCases() : record.singularCases();
+        if (cases == null) {
+            return null;
+        }
+        String w = cases[declension.ordinal() - 1];
+        return selectLongestWord(w);
+    }
+
+    /**
+     * Inflects a word using petrovich rules.
+     *
+     * @param normalized {@code String}, not {@code null}
+     * @param type       {@link RuleType}, not {@code null}
+     * @param declension {@link Case}, not {@code null}
+     * @param gender     {@link Gender}, filter parameter
+     * @param animate    {@code Boolean}, filter parameter, can be {@code null}
+     * @param plural     {@code Boolean}, filter parameter, can be {@code null}
+     * @return {@code String} or {@code null}
+     */
+    protected String processRule(String normalized, RuleType type, Case declension, Gender gender, Boolean animate, Boolean plural) {
+        Rule rule = RuleSet.findRule(normalized, gender, animate, plural, chooseRuleSet(type));
         if (rule == null) {
-            return word;
+            return null;
         }
-        String res = rule.apply(declension, word);
-        return MiscStringUtils.toProperCase(word, res);
+        return rule.apply(declension, normalized);
+    }
+
+    /**
+     * Selects the longest word, if it has separator ',' (sometimes there is two or more correct forms).
+     *
+     * @param w {@code String}
+     * @return {@code String}
+     */
+    private static String selectLongestWord(String w) {
+        if (!w.contains(",")) {
+            return w;
+        }
+        String[] array = w.split(",\\s*");
+        String res = null;
+        for (String s : array) {
+            if (res == null) {
+                res = s;
+            } else if (s.length() > res.length()) {
+                res = s;
+            }
+        }
+        return res;
     }
 
     protected Gender guessGenderByFullName(String[] sfp) {
@@ -397,7 +413,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         return NameUtils.guessGenderBySurname(sfp[0]);
     }
 
-    private RuleSet chooseRuleSet(WordType type) {
+    private RuleSet chooseRuleSet(RuleType type) {
         switch (type) {
             case FIRST_NAME:
                 return RuleLibrary.FIRST_NAME_RULES;
@@ -414,7 +430,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
     }
 
-    protected static String require(String string, String name) {
+    private static String require(String string, String name) {
         if (string == null || string.isBlank()) {
             throw new IllegalArgumentException("No " + name + " is given");
         }
@@ -427,4 +443,5 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
         return object;
     }
+
 }
