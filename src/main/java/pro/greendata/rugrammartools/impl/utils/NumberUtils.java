@@ -1,4 +1,4 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.utils;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -65,8 +65,8 @@ public class NumberUtils {
         return res;
     }
 
-    static boolean isEmpty(int[] t) {
-        return t[2] == 0 && t[1] == 0 && t[0] == 0;
+    public static boolean isEmpty(int[] triple) {
+        return triple[2] == 0 && triple[1] == 0 && triple[0] == 0;
     }
 
 }

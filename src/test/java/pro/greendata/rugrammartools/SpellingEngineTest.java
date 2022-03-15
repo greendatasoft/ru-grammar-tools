@@ -54,6 +54,14 @@ public class SpellingEngineTest {
                 spellingEngine.spell(new BigDecimal("0.999000000000000000000000000000000000000000000000000000000000000000")));
         Assertions.assertEquals("ноль", spellingEngine.spell(new BigDecimal("0.000")));
         Assertions.assertEquals("ноль целых сорок две квинтиллионных", spellingEngine.spell(0.000_000_000_000_000_042));
+
+        Assertions.assertEquals("один миллион целых одна сотая", spellingEngine.spell(1_000_000.01));
+        Assertions.assertEquals("один миллион двести двадцать две тысячи двести двадцать две целых двадцать две сотых",
+                spellingEngine.spell(1_222_222.22));
+        Assertions.assertEquals("сорок два миллиона целых сорок две сотых", spellingEngine.spell(42_000_000.42));
+        Assertions.assertEquals("одна целая одна десятая", spellingEngine.spell(1.1));
+        Assertions.assertEquals("сорок две целых одна миллионная", spellingEngine.spell(42.000001));
+        Assertions.assertEquals("двести сорок одна целая две тысячных", spellingEngine.spell(241.002));
     }
 
     @Test

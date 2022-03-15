@@ -2,7 +2,7 @@ package pro.greendata.rugrammartools;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import pro.greendata.rugrammartools.impl.MiscStringUtils;
+import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
 
 /**
  * Created by @ssz on 25.02.2022.

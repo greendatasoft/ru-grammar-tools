@@ -8,8 +8,9 @@ The library contains 1000+ test-cases.
 #### Examples:
 
 ```java
-GrammarTools.getInflectionEngine().inflect("Петрова", WordType.FAMILY_NAME, Case.PREPOSITIONAL, Gender.FEMALE, true, false);
-GrammarTools.getInflectionEngine().inflectFullName("Петров Петр Петрович", Case.DATIVE);
+GrammarTools.getInflectionEngine().inflectPatronymic("Петрович", Case.GENITIVE, Gender.MALE);
+GrammarTools.getInflectionEngine().inflectSurname("Петрова", Case.PREPOSITIONAL, Gender.FEMALE);
+GrammarTools.getInflectionEngine().inflectFullname("Петрова Петра Петровна", Case.DATIVE);
 GrammarTools.getInflectionEngine().inflectRegularTerm("Общество с ограниченной ответственностью Бёрнинг Мэн", Case.ACCUSATIVE, false);
 GrammarTools.getInflectionEngine().inflectRegularTerm("Вентилевой гидравлического пресса", Case.ACCUSATIVE, true);
 GrammarTools.getInflectionEngine().inflectNumeral("сорок два", "рубль", Case.INSTRUMENTAL);
@@ -20,6 +21,7 @@ GrammarTools.getSpellingEngine().spellOrdinal(42, Gender.NEUTER);
 #### Related links:
 
 - Petrovich online service for names: https://petrovich.nlpub.ru/
+- OpenRussian online service: https://en.openrussian.org/
 - Petrovich rules: https://github.com/petrovich/petrovich-rules
 - OpenRussian dictionary: https://github.com/Badestrand/russian-dictionary 
 - Other petrovich java libraries: 

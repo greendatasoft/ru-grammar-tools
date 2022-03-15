@@ -1,6 +1,7 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 
 import java.util.*;
 
@@ -82,7 +83,7 @@ public class GrammarUtils {
     private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
     private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
 
-    private static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ая", "ое");
+    private static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ий", "ая", "ое");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
@@ -206,13 +207,25 @@ public class GrammarUtils {
 
     /**
      * Determines (not very accurately) whether the given {@code word} can be a singular and nominative feminine noun
-     * (i.e. является ли слово {@code существительным в женском роде единственном числе и имменительном падеже}?).
+     * (i.e. является ли слово {@code существительным в женском роде единственном числе и именительном падеже}?).
      *
      * @param word {@code String}, not {@code null}
      * @return {@code boolean}
      */
     public static boolean canBeFeminineNoun(String word) {
         return canBeFeminineAdjectiveBasedSubstantivatNoun(word);
+    }
+
+    /**
+     * Determines (not very accurately) whether the given {@code word} can be a singular and nominative neuter noun
+     * (i.e. является ли слово {@code существительным в среднем роде единственном числе и именительном падеже}?).
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeNeuterNoun(String word) {
+        // солнце, облако, дерево
+        return MiscStringUtils.endsWithIgnoreCase(word, "о") || MiscStringUtils.endsWithIgnoreCase(word, "е");
     }
 
     /**
@@ -227,6 +240,12 @@ public class GrammarUtils {
         return NON_DERIVATIVE_PREPOSITION.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
     }
 
+    /**
+     * Determines whether the given {@code word} can be an ordinal numeral.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
     public static boolean canBeOrdinalNumeral(String word) {
         for (String e : ORDINAL_NUMERAL_ENDINGS) {
             if (MiscStringUtils.endsWithIgnoreCase(word, e)) {
@@ -314,23 +333,41 @@ public class GrammarUtils {
     }
 
     /**
-     * Tries to determine correct gender form of the specified numeral word.
+     * Changes the gender of the specified cardinal numeral word.
      *
-     * @param neuterNumeral {@code String}, a numeral in nominative case, not {@code null}
-     * @param gender        {@link Gender}
+     * @param numeral {@code String}, a cardinal numeral in nominative case, not {@code null}
+     * @param gender  {@link Gender}, not {@code null}
      * @return {@code String}
      */
-    public static String changeGenderFormOfNumeral(String neuterNumeral, Gender gender) {
-        String nw = MiscStringUtils.normalize(neuterNumeral, Dictionary.LOCALE);
-        if (gender == Gender.FEMALE) {
-            switch (nw) {
-                case "один":
-                    return MiscStringUtils.toProperCase(neuterNumeral, "одна");
-                case "два":
-                    return MiscStringUtils.toProperCase(neuterNumeral, "две");
-            }
+    public static String changeGenderOfCardinalNumeral(String numeral, Gender gender) {
+        String nw = MiscStringUtils.normalize(numeral, Dictionary.LOCALE);
+        switch (nw) {
+            case "один":
+                return MiscStringUtils.toProperCase(numeral, select("одна", "одно", "один", gender));
+            case "два":
+                return MiscStringUtils.toProperCase(numeral, select("две", "два", "два", gender));
         }
-        return neuterNumeral;
+        return numeral;
+    }
+
+    /**
+     * Changes the gender of the specified ordinal numeral word.
+     *
+     * @param numeral {@code String}, an ordinal numeral in nominative case, not {@code null}
+     * @param gender  {@link Gender}, not {@code null}
+     * @return {@code String}
+     */
+    public static String changeGenderOfOrdinalNumeral(String numeral, Gender gender) {
+        String nw = MiscStringUtils.normalize(numeral, Dictionary.LOCALE);
+        if ("третий".equals(nw)) {
+            return MiscStringUtils.toProperCase(numeral, select("третья", "третье", "третий", gender));
+        }
+        // одиннадцатый одиннадцатое одиннадцатая
+        // четвёртый четвёртое четвёртая
+        // седьмой седьмое седьмая
+        String ending = select("ая", "ое", nw.endsWith("ый") ? "ый" : "ой", gender);
+        String res = MiscStringUtils.replaceEnd(nw, 2, ending, Dictionary.LOCALE);
+        return MiscStringUtils.toProperCase(numeral, res);
     }
 
     public static boolean isFractionNumeral(String number) {
@@ -356,4 +393,13 @@ public class GrammarUtils {
         return word.equals(phrase) || phrase.endsWith(" " + word);
     }
 
+    public static <X> X select(X female, X neuter, X male, Gender gender) {
+        if (Gender.FEMALE == gender) {
+            return female;
+        }
+        if (Gender.NEUTER == gender) {
+            return neuter;
+        }
+        return male;
+    }
 }

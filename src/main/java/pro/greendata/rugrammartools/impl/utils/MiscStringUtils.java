@@ -1,4 +1,4 @@
-package pro.greendata.rugrammartools.impl;
+package pro.greendata.rugrammartools.impl.utils;
 
 import java.util.Locale;
 
@@ -47,7 +47,7 @@ public class MiscStringUtils {
         char[] resChars = string.toCharArray();
         int i = 0;
         boolean isUpperCase = false;
-        for (; i < origChars.length; i++) {
+        for (; i < Math.min(origChars.length, resChars.length); i++) {
             char origChar = origChars[i];
             char resChar = resChars[i];
             if (equalsIgnoreCase(origChar, resChar)) {
