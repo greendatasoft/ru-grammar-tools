@@ -1,5 +1,21 @@
 {
-  "exceptions": [],
+  "exceptions": [
+    {
+      "gender": "male",
+      "description": "старшина",
+      "animate": true,
+      "test": [
+        "на"
+      ],
+      "mods": [
+        "-ы",
+        "-е",
+        "-у",
+        "-ой",
+        "-е"
+      ]
+    }
+  ],
   "suffixes": [
     {
       "gender": "female",
@@ -286,6 +302,21 @@
     },
     {
       "gender": "female",
+      "description": "община",
+      "animate": false,
+      "test": [
+        "на"
+      ],
+      "mods": [
+        "-ы",
+        "-е",
+        "-у",
+        "-ой",
+        "-е"
+      ]
+    },
+    {
+      "gender": "female",
       "test": [
         "ова",
         "ева",
@@ -335,10 +366,11 @@
       ]
     },
     {
-      "gender": "androgynous",
-      "description": "старшина",
+      "gender": "female",
+      "animate": true,
+      "description": "сестра",
       "test": [
-        "а"
+        "ра"
       ],
       "mods": [
         "-ы",
@@ -576,6 +608,7 @@
     },
     {
       "gender": "male",
+      "animate": true,
       "test": [
         "ый",
         "кий",
@@ -737,10 +770,11 @@
     },
     {
       "gender": "male",
-      "description": "департамент",
+      "description": "департамент,продукт",
       "animate": false,
       "test": [
-        "нт"
+        "нт",
+        "кт"
       ],
       "mods": [
         "а",

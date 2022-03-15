@@ -82,13 +82,12 @@ public class Dictionary {
     /**
      * Tries to find the most suitable word record object.
      *
-     * @param word    {@code String}, the key, not {@code null}
+     * @param key     {@code String}, the key (normalized: lowercase without trailing spaces), not {@code null}
      * @param gender  {@link Gender} a filter parameter, can be {@code null}
      * @param animate {@code Boolean}a filter parameter, can be {@code null}
      * @return an {@code Optional} of {@link Word}
      */
-    public Optional<Word> wordDetails(String word, Gender gender, Boolean animate) {
-        String key = MiscStringUtils.normalize(word, LOCALE);
+    public Optional<Word> wordDetails(String key, Gender gender, Boolean animate) {
         Record record = contentMap().get(key);
         if (record == null) {
             return Optional.empty();
@@ -255,14 +254,17 @@ public class Dictionary {
             return animated;
         }
 
+        @Override
         public String[] singularCases() {
             return singularCases;
         }
 
+        @Override
         public String plural() {
             return plural;
         }
 
+        @Override
         public String[] pluralCases() {
             return pluralCases;
         }

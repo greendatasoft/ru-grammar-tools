@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static pro.greendata.rugrammartools.impl.dictionaries.Dictionary.WordRecord;
-
 /**
  * The engine impl.
  * <p>
@@ -322,12 +320,10 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} or {@code null}
      */
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
-        if (details instanceof WordRecord) {
-            String res = processDictionaryRecord((WordRecord) details, declension, toPlural);
-            // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
-            if (res != null) {
-                return res;
-            }
+        String res = processDictionaryRecord(details, declension, toPlural);
+        // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
+        if (res != null) {
+            return res;
         }
         if (toPlural != null && toPlural) {
             // TODO: make rule for plural?
@@ -339,12 +335,12 @@ public class InflectionEngineImpl implements InflectionEngine {
     /**
      * Inflects a word using petrovich rules.
      *
-     * @param record     {@link WordRecord}, not {@code null}
+     * @param record     {@link Word}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param plural     {@code Boolean}, filter parameter, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    protected String processDictionaryRecord(WordRecord record, Case declension, Boolean plural) {
+    protected String processDictionaryRecord(Word record, Case declension, Boolean plural) {
         if (declension == Case.NOMINATIVE) {
             return plural == Boolean.TRUE ? record.plural() : null;
         }

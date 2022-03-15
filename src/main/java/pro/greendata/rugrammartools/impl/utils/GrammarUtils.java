@@ -83,6 +83,9 @@ public class GrammarUtils {
     private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
     private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
 
+    private static final List<String> NEUTER_NOUN_ENDINGS = List.of("о", "е");
+    private static final List<String> FEMALE_NOUN_ENDINGS = List.of("ья", "ла", "за","ка");
+
     private static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ий", "ая", "ое");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
@@ -213,7 +216,16 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineNoun(String word) {
-        return canBeFeminineAdjectiveBasedSubstantivatNoun(word);
+        if (canBeFeminineAdjectiveBasedSubstantivatNoun(word)) {
+            return true;
+        }
+        for (String ending : FEMALE_NOUN_ENDINGS) {
+            // свинья, ладья, свекла, берёза, копейка
+            if (MiscStringUtils.endsWithIgnoreCase(word, ending)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -225,7 +237,12 @@ public class GrammarUtils {
      */
     public static boolean canBeNeuterNoun(String word) {
         // солнце, облако, дерево
-        return MiscStringUtils.endsWithIgnoreCase(word, "о") || MiscStringUtils.endsWithIgnoreCase(word, "е");
+        for (String ending : NEUTER_NOUN_ENDINGS) {
+            if (MiscStringUtils.endsWithIgnoreCase(word, ending)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -256,19 +273,20 @@ public class GrammarUtils {
     }
 
     /**
-     * Returns the gender of the specified noun (not accurate).
+     * Returns guessed gender of the specified noun (not accurate).
      *
      * @param singular {@code String}, a singular noun in nominative case, not {@code null}
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
         String nw = MiscStringUtils.normalize(singular, Dictionary.LOCALE);
-        if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за") || nw.endsWith("ка")) {
-            // свинья, ладья, свекла, берёза, копейка
+        if (canBeNeuterNoun(nw)) { // солнце, облако, дерево
+            return Gender.NEUTER;
+        }
+        if (GrammarUtils.canBeFeminineNoun(singular)) { // свинья, ладья, свекла, берёза, копейка
             return Gender.FEMALE;
         }
-        // TODO: complete
-        // most common gender
+        // the masculine gender is most common (in russian job-titles)
         return Gender.MALE;
     }
 
