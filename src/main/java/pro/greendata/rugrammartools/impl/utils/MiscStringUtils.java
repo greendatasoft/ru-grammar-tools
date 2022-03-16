@@ -1,5 +1,6 @@
 package pro.greendata.rugrammartools.impl.utils;
 
+import java.util.Collection;
 import java.util.Locale;
 
 /**
@@ -77,5 +78,14 @@ public class MiscStringUtils {
             return false;
         }
         return string.substring(index).equalsIgnoreCase(ending);
+    }
+
+    public static boolean endsWithOneOfIgnoreCase(String word, Collection<String> endings) {
+        for (String ending : endings) {
+            if (endsWithIgnoreCase(word, ending)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

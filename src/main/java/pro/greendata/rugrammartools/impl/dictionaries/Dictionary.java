@@ -173,6 +173,7 @@ public class Dictionary {
 
         private int characteristics;
 
+        // todo: to reduce memory footprint store as rule
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;

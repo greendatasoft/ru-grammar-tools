@@ -301,6 +301,9 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (require(declension, "declension case") == Case.NOMINATIVE) {
             return phrase.raw();
         }
+        if (plural == null) {
+            plural = phrase.plural();
+        }
         List<String> res = new ArrayList<>();
         for (int i = 0; i < phrase.length(); i++) {
             Word detail = phrase.details(i);
@@ -336,7 +339,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             return res;
         }
         if (toPlural != null && toPlural) {
-            // TODO: make rule for plural?
             key = GrammarUtils.toPluralNoun(key);
         }
         return processRule(key, RuleType.GENERIC, declension, details.gender(), details.animate(), toPlural);

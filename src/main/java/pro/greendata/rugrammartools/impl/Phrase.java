@@ -20,10 +20,12 @@ public class Phrase {
     private final List<String> separators;
     private final Gender gender;
     private final Boolean animate;
+    private final Boolean plural;
 
     protected Phrase(String phrase,
                      Gender gender,
                      Boolean animate,
+                     Boolean plural,
                      List<String> keys,
                      List<String> words,
                      List<Word> details,
@@ -31,6 +33,7 @@ public class Phrase {
         this.raw = phrase;
         this.gender = gender;
         this.animate = animate;
+        this.plural = plural;
         this.keys = Objects.requireNonNull(keys);
         this.words = Objects.requireNonNull(words);
         this.details = Objects.requireNonNull(details);
@@ -54,26 +57,22 @@ public class Phrase {
     }
 
     private static Phrase parseWord(String word, Gender gender, Boolean animate) {
-        String key = toKey(word);
         List<String> keys = new ArrayList<>();
         List<String> words = new ArrayList<>();
         List<Word> details = new ArrayList<>();
         List<String> separators = new ArrayList<>();
-        Optional<Word> fromDictionary = findWordDetails(key, gender, animate);
-        if (fromDictionary.isPresent()) {
-            Word detail = createWordDetails(key, fromDictionary.get(), gender, animate);
-            keys.add(key);
-            words.add(word);
-            details.add(detail);
-            return create(word, detail.gender(), detail.animate(), keys, words, details, separators);
-        }
-        gender = gender == null ? GrammarUtils.guessGenderOfSingularNoun(key) : gender;
-        if (!word.contains("-")) {
-            fill(word, new WordDetailImpl(gender, animate, false, null), keys, words, details);
-        } else {
+        Boolean plural = null;
+        if (word.contains("-")) {
+            gender = gender == null ? GrammarUtils.guessGenderOfSingularNoun(word) : gender;
             fillWithHyphen(word, gender, animate, keys, words, details, separators);
+        } else {
+            WordInfo res = fetchWordInfo(word, gender, animate);
+            animate = res.animate();
+            gender = res.gender();
+            plural = res.isPlural();
+            fill(word, res, keys, words, details);
         }
-        return create(word, gender, animate, keys, words, details, separators);
+        return create(word, gender, animate, plural, keys, words, details, separators);
     }
 
     private static Phrase parseWords(String raw, String[] parts, Gender gender, Boolean animate) {
@@ -111,34 +110,34 @@ public class Phrase {
             noun = i;
             break;
         }
-        Word nounDetails = fetchWordDetails(parts[noun], gender, animate);
+        WordInfo nounDetails = fetchWordInfo(parts[noun], gender, animate);
         int end = findEndIndex(parts, noun, nounDetails.gender());
         return assemble(raw, parts, end, nounDetails, noun);
     }
 
-    private static Word fetchWordDetails(String word, Gender gender, Boolean animate) {
+    private static WordInfo fetchWordInfo(String word, Gender gender, Boolean animate) {
         String key = toKey(word);
-        Optional<Word> res = findWordDetails(key, gender, animate);
-        return createWordDetails(key, res.orElse(null), gender, animate);
-    }
-
-    private static Word createWordDetails(String key, Word from, Gender gender, Boolean animate) {
+        Boolean plural = null;
+        Optional<Word> from = fromDictionary(key, gender, animate);
+        if (from.isPresent()) {
+            plural = false;
+        } else if (GrammarUtils.canBePlural(key)) {
+            from = fromDictionary(GrammarUtils.toSingular(key), gender, animate);
+            if (from.isPresent()) {
+                plural = true;
+            }
+        }
         if (gender == null) {
-            if (from != null) {
-                gender = from.gender();
-            }
-            if (gender == null) {
-                gender = GrammarUtils.guessGenderOfSingularNoun(key);
-            }
+            gender = from.map(Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(key));
         }
         if (animate == null) {
-            animate = from != null ? from.animate() : null;
+            animate = from.map(Word::animate).orElse(null);
         }
-        boolean indeclinable = from != null && from.isIndeclinable();
-        return new WordDetailImpl(gender, animate, indeclinable, from);
+        boolean indeclinable = from.map(Word::isIndeclinable).orElse(false);
+        return new WordInfo(key, gender, animate, plural, indeclinable, from.orElse(null));
     }
 
-    private static Optional<Word> findWordDetails(String key, Gender gender, Boolean animate) {
+    private static Optional<Word> fromDictionary(String key, Gender gender, Boolean animate) {
         return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
     }
 
@@ -159,7 +158,7 @@ public class Phrase {
         return end;
     }
 
-    private static Phrase assemble(String raw, String[] parts, int endIndex, Word noun, int nounIndex) {
+    private static Phrase assemble(String raw, String[] parts, int endIndex, WordInfo noun, int nounIndex) {
         List<String> keys = new ArrayList<>();
         List<String> words = new ArrayList<>();
         List<Word> details = new ArrayList<>();
@@ -177,7 +176,7 @@ public class Phrase {
                 if (w.contains("-")) {
                     fillWithHyphen(w, noun.gender(), noun.animate(), keys, words, details, separators);
                 } else {
-                    Word d = i == nounIndex ? noun : new WordDetailImpl(noun.gender(), noun.animate(), false, null);
+                    WordInfo d = i == nounIndex ? noun : new WordInfo(toKey(w), noun.gender(), noun.animate(), null, false, null);
                     fill(w, d, keys, words, details);
                 }
                 if (i != endIndex) {
@@ -185,15 +184,15 @@ public class Phrase {
                 }
             }
         }
-        // the rest part of phrase is indeclinable
+        // the rest part of the phrase is indeclinable
         for (int i = endIndex + 1; i < parts.length; i++) {
             separators.add(" ");
-            String k = toKey(parts[i]);
-            keys.add(k);
+            String key = toKey(parts[i]);
+            keys.add(key);
             words.add(parts[i]);
-            details.add(new WordDetailImpl(null, null, true, null));
+            details.add(new WordInfo(key, null, null, null, true, null));
         }
-        return create(raw, noun.gender(), noun.animate(), keys, words, details, separators);
+        return create(raw, noun.gender(), noun.animate(), noun.isPlural(), keys, words, details, separators);
     }
 
     /**
@@ -203,6 +202,7 @@ public class Phrase {
      * @param gender     a {@link Gender} of whole phrase, can be {@code null}
      * @param animate    a {@code Boolean} parameter of whole phrase,
      *                   {@code true} for animate, {@code false} for inanimate, {@code null} for unspecified
+     * @param plural     a {@code Boolean} parameter of whole phrase, {@code null} for unspecified
      * @param keys       a {@link List} of normalized phrase parts,
      *                   i.e. words in lowercase without trailing spaces, not {@code null}
      * @param words      a {@link List} of origin phrase parts, i.e. words, not {@code null}
@@ -211,7 +211,7 @@ public class Phrase {
      * @return {@link Phrase}
      */
     protected static Phrase create(String raw,
-                                   Gender gender, Boolean animate,
+                                   Gender gender, Boolean animate, Boolean plural,
                                    List<String> keys, List<String> words, List<Word> details, List<String> separators) {
         Objects.requireNonNull(raw, "null phrase");
         if (separators.size() != details.size() - 1) {
@@ -224,7 +224,7 @@ public class Phrase {
             throw new IllegalArgumentException();
         }
         return new Phrase(raw, gender, animate,
-                Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
+                plural, Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
                 Collections.unmodifiableList(details), Collections.unmodifiableList(separators));
     }
 
@@ -239,7 +239,7 @@ public class Phrase {
             keys.add(key);
             words.add(w);
             // todo: use dictionary here
-            details.add(new WordDetailImpl(g, animated, false, null));
+            details.add(new WordInfo(key, g, animated, null, false, null));
             separators.add(m.group());
             prev = m.end();
             // the second part is usually in the masculine gender (e.g. "сестра-анестезист")
@@ -250,12 +250,11 @@ public class Phrase {
         keys.add(key);
         words.add(w);
         // todo: use dictionary here
-        details.add(new WordDetailImpl(g, animated, false, null));
+        details.add(new WordInfo(key, g, animated, null, false, null));
     }
 
-    private static void fill(String word, Word info, List<String> keys, List<String> words, List<Word> details) {
-        String key = toKey(word);
-        keys.add(key);
+    private static void fill(String word, WordInfo info, List<String> keys, List<String> words, List<Word> details) {
+        keys.add(info.key());
         words.add(word);
         details.add(info);
     }
@@ -308,6 +307,10 @@ public class Phrase {
         return animate;
     }
 
+    public Boolean plural() {
+        return plural;
+    }
+
     public String raw() {
         return raw;
     }
@@ -337,17 +340,25 @@ public class Phrase {
         return String.format("Phrase{raw='%s', words=%s}", raw, keys);
     }
 
-    public static class WordDetailImpl implements Word {
+    public static class WordInfo implements Word {
+        private final String key;
         private final Gender gender;
         private final Boolean animated;
+        private final Boolean isPlural;
         private final boolean indeclinable;
         private final Word from;
 
-        public WordDetailImpl(Gender gender, Boolean animated, boolean indeclinable, Word from) {
+        public WordInfo(String key, Gender gender, Boolean animated, Boolean isPlural, boolean indeclinable, Word from) {
+            this.key = Objects.requireNonNull(key);
             this.gender = gender;
             this.animated = animated;
+            this.isPlural = isPlural;
             this.indeclinable = indeclinable;
             this.from = from;
+        }
+
+        public String key() {
+            return key;
         }
 
         @Override
@@ -358,6 +369,10 @@ public class Phrase {
         @Override
         public Boolean animate() {
             return animated;
+        }
+
+        public Boolean isPlural() {
+            return isPlural;
         }
 
         @Override
@@ -382,8 +397,8 @@ public class Phrase {
 
         @Override
         public String toString() {
-            return String.format("Details{gender=%s, animated=%s, indeclinable=%s, from=%s}",
-                    gender, animated, indeclinable, from);
+            return String.format("Details{key=%s, gender=%s, animated=%s, is-plural=%s, indeclinable=%s, from=%s}",
+                    key, gender, animated, isPlural, indeclinable, from);
         }
     }
 }

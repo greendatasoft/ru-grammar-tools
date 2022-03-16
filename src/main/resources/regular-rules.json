@@ -891,10 +891,25 @@
     },
     {
       "gender": "female",
-      "description": "копейки,батарейки",
+      "description": "сделки",
       "plural": true,
       "test": [
         "ки"
+      ],
+      "mods": [
+        "--ок",
+        "-ам",
+        ".",
+        "-ами",
+        "-ах"
+      ]
+    },
+    {
+      "gender": "female",
+      "description": "копейки,батарейки",
+      "plural": true,
+      "test": [
+        "йки"
       ],
       "mods": [
         "---ек",
@@ -919,6 +934,24 @@
         "-ами",
         "-ах"
       ]
+    },
+    {
+      "gender": "male",
+      "description": "клиенты",
+      "animate": true,
+      "plural": true,
+      "test": [
+        "ты",
+        "ры"
+      ],
+      "mods": [
+        "-ов",
+        "-ам",
+        "-ов",
+        "-ами",
+        "-ах"
+      ]
     }
+
   ]
 }
