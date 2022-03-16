@@ -110,8 +110,8 @@ public class Dictionary {
         MultiRecord multi = (MultiRecord) record;
         List<WordRecord> res = Arrays.stream(multi.words)
                 .sorted(Comparator.comparingInt(WordRecord::fullness).reversed())
-                .filter(s -> (gender == null || s.gender == gender) &&
-                        (animated == null || s.animated == animated))
+                .filter(s -> (gender == null || s.gender() == gender) &&
+                        (animated == null || s.animate() == animated))
                 .collect(Collectors.toList());
         if (res.isEmpty()) { // can't select, choose first
             return multi.words[0];
@@ -164,9 +164,15 @@ public class Dictionary {
     }
 
     public static class WordRecord implements Record, Word {
-        private Gender gender;
-        private Boolean animated;
-        private Boolean indeclinable;
+        private static final int HAS_ANIMATE = 2;
+        private static final int IS_ANIMATE = 4;
+        private static final int HAS_INDECLINABLE = 8;
+        private static final int IS_INDECLINABLE = 16;
+        private static final int GENDER_FLAG_0 = 32;
+        private static final int GENDER_FLAG_1 = 64;
+
+        private int characteristics;
+
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
@@ -187,16 +193,16 @@ public class Dictionary {
                 return null;
             }
             WordRecord res = new WordRecord();
-            res.gender = parseGender(array);
+            res.gender(parseGender(array));
             if (array.length < 7) {
                 return Map.entry(key, res);
             }
-            res.animated = parseBoolean(array[6]);
+            res.animate(parseBoolean(array[6]));
             if (array.length < 8) {
                 return Map.entry(key, res);
             }
-            res.indeclinable = parseBoolean(array[7]);
-            if (res.indeclinable == Boolean.TRUE) {
+            res.indeclinable(parseBoolean(array[7]));
+            if (res.indeclinable() == Boolean.TRUE) {
                 return Map.entry(key, res);
             }
             if (array.length < 16) {
@@ -246,12 +252,77 @@ public class Dictionary {
 
         @Override
         public Gender gender() {
-            return gender;
+            if (hasCharacteristics(GENDER_FLAG_0)) {
+                return hasCharacteristics(GENDER_FLAG_1) ? Gender.MALE : Gender.FEMALE;
+            }
+            return hasCharacteristics(GENDER_FLAG_1) ? Gender.NEUTER : null;
+        }
+
+        private void gender(Gender g) {
+            characteristicsOff(GENDER_FLAG_0);
+            characteristicsOff(GENDER_FLAG_1);
+            if (g == null) {
+                return;
+            }
+            if (g == Gender.FEMALE) {
+                characteristicsOn(GENDER_FLAG_0);
+                return;
+            }
+            if (g == Gender.NEUTER) {
+                characteristicsOn(GENDER_FLAG_1);
+                return;
+            }
+            characteristicsOn(GENDER_FLAG_0);
+            characteristicsOn(GENDER_FLAG_1);
         }
 
         @Override
         public Boolean animate() {
-            return animated;
+            return hasCharacteristics(HAS_ANIMATE, IS_ANIMATE);
+        }
+
+        private void animate(Boolean flag) {
+            setCharacteristics(flag, HAS_ANIMATE, IS_ANIMATE);
+        }
+
+        protected Boolean indeclinable() {
+            return hasCharacteristics(HAS_INDECLINABLE, IS_INDECLINABLE);
+        }
+
+        private void indeclinable(Boolean flag) {
+            setCharacteristics(flag, HAS_INDECLINABLE, IS_INDECLINABLE);
+        }
+
+        private void setCharacteristics(Boolean flag, int has, int is) {
+            if (flag == null) {
+                characteristicsOff(has);
+            } else {
+                characteristicsOn(has);
+                if (flag) {
+                    characteristicsOn(is);
+                } else if (hasCharacteristics(is)) {
+                    characteristicsOff(is);
+                }
+            }
+        }
+
+        private Boolean hasCharacteristics(int has, int is) {
+            return hasCharacteristics(has) ? hasCharacteristics(is) : null;
+        }
+
+        private boolean hasCharacteristics(int ch) {
+            return (characteristics & ch) == ch;
+        }
+
+        private void characteristicsOn(int ch) {
+            characteristics = characteristics | ch;
+        }
+
+        private void characteristicsOff(int ch) {
+            if (!hasCharacteristics(ch)) {
+                return;
+            }
+            characteristics = characteristics ^ ch;
         }
 
         @Override
@@ -271,7 +342,7 @@ public class Dictionary {
 
         @Override
         public boolean isIndeclinable() {
-            return indeclinable != null && indeclinable;
+            return indeclinable() != null && indeclinable();
         }
 
         /**
@@ -280,14 +351,14 @@ public class Dictionary {
          * @return {@code int}
          */
         public int fullness() {
-            return Stream.of(gender, animated, indeclinable, plural, singularCases, pluralCases)
+            return Stream.of(gender(), animate(), indeclinable(), plural, singularCases, pluralCases)
                     .filter(Objects::nonNull).mapToInt(x -> 1).sum();
         }
 
         @Override
         public String toString() {
             return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
-                    gender, animated, indeclinable, plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
+                    gender(), animate(), indeclinable(), plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
         }
     }
 }
