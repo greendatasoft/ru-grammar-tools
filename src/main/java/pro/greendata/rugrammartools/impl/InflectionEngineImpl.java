@@ -205,6 +205,16 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     @Override
+    public String inflectNameOfProfession(String profession, Case declension) {
+        return inflectPhrase(profession, declension, null, true, false);
+    }
+
+    @Override
+    public String inflectNameOfOrganization(String organization, Case declension) {
+        return inflectPhrase(organization, declension, null, false, false);
+    }
+
+    @Override
     public String inflectFullname(String sfp, Case declension) {
         return String.join(" ", inflectSPF(require(sfp, "surname+firstname+patronymic").split("\\s+"),
                 require(declension, "declension"), null));
@@ -259,7 +269,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension, Boolean animate) {
-        return inflectPhrase(phrase, declension, null, animate, false);
+        return inflectPhrase(phrase, declension, null, animate, null);
     }
 
     /**

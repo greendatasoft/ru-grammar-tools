@@ -18,7 +18,7 @@ public class ProfessionTest {
     }
 
     void assertName(String expected, String given, Case declension) {
-        String actual = engine.inflectRegularTerm(given, declension, true);
+        String actual = engine.inflectNameOfProfession(given, declension);
         Assertions.assertTrue(TestUtils.equalsIgnoreSpecial(expected, actual),
                 String.format("Wrong result for case: %s, expected='%s', actual='%s'", declension, expected, actual));
     }

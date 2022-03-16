@@ -11,9 +11,9 @@ The library contains 1000+ test-cases.
 GrammarTools.getInflectionEngine().inflectPatronymic("Петрович", Case.GENITIVE, Gender.MALE);
 GrammarTools.getInflectionEngine().inflectSurname("Петрова", Case.PREPOSITIONAL, Gender.FEMALE);
 GrammarTools.getInflectionEngine().inflectFullname("Петрова Петра Петровна", Case.DATIVE);
-GrammarTools.getInflectionEngine().inflectRegularTerm("Общество с ограниченной ответственностью Бёрнинг Мэн", Case.ACCUSATIVE, false);
-GrammarTools.getInflectionEngine().inflectRegularTerm("Вентилевой гидравлического пресса", Case.ACCUSATIVE, true);
-GrammarTools.getInflectionEngine().inflectNumeral("сорок два", "рубль", Case.INSTRUMENTAL);
+GrammarTools.getInflectionEngine().inflectNameOfOrganization("Общество с ограниченной ответственностью Бёрнинг Мэн", Case.ACCUSATIVE);
+GrammarTools.getInflectionEngine().inflectNameOfProfession("Вентилевой гидравлического пресса", Case.ACCUSATIVE);
+GrammarTools.getInflectionEngine().inflectNumeral("сорок два", "доллар", Case.INSTRUMENTAL);
 GrammarTools.getSpellingEngine().spell(42.42);
 GrammarTools.getSpellingEngine().spellOrdinal(42, Gender.NEUTER);
 ```

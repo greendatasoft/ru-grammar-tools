@@ -79,6 +79,28 @@ public interface InflectionEngine {
     String inflectSurname(String surname, Case declension, Gender gender);
 
     /**
+     * Declines the given (legal) {@code profession} name into the specified declension case.
+     *
+     * @param profession {@code String}, not {@code null}, e.g. {@code "медицинская сестра-анестезист"}
+     * @param declension {@link Case declension case}, not {@code null}
+     * @return {@code String} the profession name in the selected case
+     */
+    default String inflectNameOfProfession(String profession, Case declension) {
+        return inflectRegularTerm(profession, declension, true);
+    }
+
+    /**
+     * Declines the given (legal) {@code organization} name into the specified declension case.
+     *
+     * @param organization {@code String}, not {@code null}, e.g. {@code "акционерное общество"}
+     * @param declension   {@link Case declension case}, not {@code null}
+     * @return {@code String} the organization name in the selected case
+     */
+    default String inflectNameOfOrganization(String organization, Case declension) {
+        return inflectRegularTerm(organization, declension, false);
+    }
+
+    /**
      * Declines the given {@code sfp} (full name) into the specified declension case.
      *
      * @param sfp        {@code String} - surname+firstname+patronymic with space as separator, surname is mandatory
