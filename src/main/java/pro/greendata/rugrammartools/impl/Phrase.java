@@ -3,7 +3,7 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
-import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -260,7 +260,7 @@ public class Phrase {
     }
 
     private static String toKey(String w) {
-        return MiscStringUtils.normalize(w, Dictionary.LOCALE);
+        return TextUtils.normalize(w, Dictionary.LOCALE);
     }
 
     /**

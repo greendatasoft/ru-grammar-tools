@@ -46,47 +46,47 @@ public class NameUtils {
     }
 
     public static boolean isFirstname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return PlainDictionary.FEMALE_NAMES.contains(nw) || PlainDictionary.MALE_NAMES.contains(nw);
     }
 
     public static boolean isFemaleFirstname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return PlainDictionary.FEMALE_NAMES.contains(nw);
     }
 
     public static boolean isMaleFirstname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return PlainDictionary.MALE_NAMES.contains(nw);
     }
 
     public static boolean canBePatronymic(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return FEMALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith) || MALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeFemalePatronymic(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return FEMALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeMalePatronymic(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return MALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeSurname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return FEMALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith) || MALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeFemaleSurname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return FEMALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeMaleSurname(String word) {
-        String nw = MiscStringUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return MALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 }

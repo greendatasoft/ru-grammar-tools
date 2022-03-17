@@ -2,7 +2,7 @@ package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.Word;
-import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.io.*;
 import java.lang.ref.SoftReference;
@@ -189,7 +189,7 @@ public class Dictionary {
          */
         private static Map.Entry<String, Record> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
-            String key = MiscStringUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
+            String key = TextUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
             if (array.length < 5) {
                 return null;
             }
@@ -248,7 +248,7 @@ public class Dictionary {
         }
 
         private static String normalizeValue(String value) {
-            return MiscStringUtils.normalize(value, LOCALE).replace("'", "");
+            return TextUtils.normalize(value, LOCALE).replace("'", "");
         }
 
         @Override

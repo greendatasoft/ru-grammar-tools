@@ -5,8 +5,8 @@ import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
-import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
 import pro.greendata.rugrammartools.impl.utils.NameUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,9 +43,9 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE) {
             return word;
         }
-        String res = processRule(MiscStringUtils.normalize(word, Dictionary.LOCALE),
+        String res = processRule(TextUtils.normalize(word, Dictionary.LOCALE),
                 type, declension, gender == null ? Gender.MALE : gender, animate, plural);
-        return res == null ? word : MiscStringUtils.toProperCase(word, res);
+        return res == null ? word : TextUtils.toProperCase(word, res);
     }
 
     @Override
@@ -314,7 +314,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             }
             String k = phrase.key(i);
             String w = processRegularWord(k, detail, declension, plural);
-            res.add(w == null ? orig : MiscStringUtils.toProperCase(orig, w));
+            res.add(w == null ? orig : TextUtils.toProperCase(orig, w));
         }
         return Phrase.compose(res, phrase.separators());
     }
