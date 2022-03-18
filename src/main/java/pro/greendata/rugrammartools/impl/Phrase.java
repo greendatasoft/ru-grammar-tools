@@ -12,14 +12,14 @@ import java.util.*;
  * Represents a phrase.
  */
 public class Phrase {
-    private final String raw;
-    private final List<String> keys;
-    private final List<String> words;
-    private final List<Word> details;
-    private final List<String> separators;
-    private final Gender gender;
-    private final Boolean animate;
-    private final Boolean plural;
+    protected final String raw;
+    protected final List<String> keys;
+    protected final List<String> words;
+    protected final List<Word> details;
+    protected final List<String> separators;
+    protected final Gender gender;
+    protected final Boolean animate;
+    protected final Boolean plural;
 
     protected Phrase(String phrase,
                      Gender gender,
@@ -39,6 +39,22 @@ public class Phrase {
         this.separators = Objects.requireNonNull(separators);
     }
 
+    private static Optional<Word> fromDictionary(String key, Gender gender, Boolean animate) {
+        return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
+    }
+
+    private static String toKey(String w) {
+        return TextUtils.normalize(w, Dictionary.LOCALE);
+    }
+
+    private static boolean isSpace(char ch) {
+        return Character.isWhitespace(ch);
+    }
+
+    private static boolean isStopSymbol(char ch) {
+        return ch == '\'' || ch == '"' || ch == '\u00AB';
+    }
+
     /**
      * Creates a phrase object from the given string.
      *
@@ -49,39 +65,19 @@ public class Phrase {
      */
     public static Phrase parse(String phrase, Gender gender, Boolean animate) {
         Assembler res = Assembler.split(phrase);
-        if (res.parts.isEmpty()) {
-            throw new IllegalStateException();
+        if (res.isEmpty()) {
+            throw new IllegalArgumentException();
         }
-        res.compile(gender, animate);
-        return res.toPhrase();
-    }
-
-    private static Optional<Word> fromDictionary(String key, Gender gender, Boolean animate) {
-        return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
-    }
-
-    private static String toKey(String w) {
-        return TextUtils.normalize(w, Dictionary.LOCALE);
+        return res.compile(gender, animate).toPhrase();
     }
 
     /**
-     * Glues a phrase parts back into single {@code String}-phrase.
+     * Makes a mutable copy of this phrase.
      *
-     * @param parts      a {@link List} of {@code String}s - words
-     * @param separators a {@link List} of {@code String}s
-     * @return a {@code String}
+     * @return {@link Mutable}
      */
-    public static String compose(List<String> parts, List<String> separators) {
-        if (separators.size() != parts.size() + 1) {
-            throw new IllegalArgumentException();
-        }
-        StringBuilder res = new StringBuilder();
-        res.append(separators.get(0));
-        for (int i = 0; i < parts.size(); i++) {
-            res.append(parts.get(i));
-            res.append(separators.get(i + 1));
-        }
-        return res.toString();
+    public Mutable toMutable() {
+        return new Mutable(raw, gender, animate, plural, new ArrayList<>(keys), words, details, separators);
     }
 
     public Gender gender() {
@@ -126,6 +122,51 @@ public class Phrase {
     }
 
     /**
+     * Mutable {@link Phrase} impl.
+     */
+    public static class Mutable extends Phrase {
+
+        protected Mutable(String phrase,
+                          Gender gender,
+                          Boolean animate,
+                          Boolean plural,
+                          List<String> keys,
+                          List<String> words,
+                          List<Word> details,
+                          List<String> separators) {
+            super(phrase, gender, animate, plural, keys, words, details, separators);
+        }
+
+        /**
+         * Changes the text for the given index.
+         *
+         * @param i   {@code int}, index of word
+         * @param txt {@code String} new text
+         */
+        public void set(int i, String txt) {
+            keys.set(i, Objects.requireNonNull(txt));
+        }
+
+        /**
+         * Glues the phrase parts back into single {@code String}-phrase.
+         *
+         * @return a {@code String}
+         */
+        public String compose() {
+            if (separators.size() != keys.size() + 1) {
+                throw new IllegalStateException();
+            }
+            StringBuilder res = new StringBuilder();
+            res.append(separators.get(0));
+            for (int i = 0; i < keys.size(); i++) {
+                res.append(TextUtils.toProperCase(words.get(i), keys.get(i)));
+                res.append(separators.get(i + 1));
+            }
+            return res.toString();
+        }
+    }
+
+    /**
      * Mutable object-builder.
      */
     private static class Assembler {
@@ -150,7 +191,7 @@ public class Phrase {
 
         /**
          * Splits the given {@code phrase} into parts wrapped as {@link Assembler} object.
-         * If the phrase contains {@link #isStopSymbol(char) stop symbol},
+         * If the phrase contains {@link Phrase#isStopSymbol(char) stop symbol},
          * then the rest part of phrase after that symbol inclusively is considered as indeclinable.
          *
          * @param phrase {@code String}, not {@code null}
@@ -214,21 +255,14 @@ public class Phrase {
             return res;
         }
 
-        private static boolean isSpace(char ch) {
-            return Character.isWhitespace(ch);
-        }
-
-        private static boolean isStopSymbol(char ch) {
-            return ch == '\'' || ch == '"' || ch == '\u00AB';
-        }
-
         /**
          * Compiles this object collecting its content.
          *
          * @param inputGender  {@link Gender}, can be {@code null}
          * @param inputAnimate {@code Boolean}, can be {@code null}
+         * @return this instance
          */
-        void compile(Gender inputGender, Boolean inputAnimate) {
+        Assembler compile(Gender inputGender, Boolean inputAnimate) {
             fill(inputGender, inputAnimate);
 
             findAndSetNounPosition(this);
@@ -241,6 +275,7 @@ public class Phrase {
                 }
             });
             this.parts.tailMap(this.endIndex, false).forEach((i, p) -> p.fill(gender, animate, true));
+            return this;
         }
 
         /**
@@ -270,6 +305,10 @@ public class Phrase {
             return new Phrase(raw, noun.gender, noun.animate,
                     noun.plural, Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
                     Collections.unmodifiableList(details), Collections.unmodifiableList(separators));
+        }
+
+        public boolean isEmpty() {
+            return parts.isEmpty();
         }
 
         private boolean isNullOr(Gender g) {
@@ -460,6 +499,9 @@ public class Phrase {
         }
     }
 
+    /**
+     * A container to hold word details.
+     */
     public static class WordInfo implements Word {
         private final Gender gender;
         private final Boolean animated;

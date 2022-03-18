@@ -8,8 +8,6 @@ import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
 import pro.greendata.rugrammartools.impl.utils.NameUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -304,19 +302,19 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (plural == null) {
             plural = phrase.plural();
         }
-        List<String> res = new ArrayList<>();
-        for (int i = 0; i < phrase.length(); i++) {
-            Word detail = phrase.details(i);
-            String orig = phrase.original(i);
+        Phrase.Mutable pm = phrase.toMutable();
+        for (int i = 0; i < pm.length(); i++) {
+            Word detail = pm.details(i);
             if (detail.isIndeclinable()) {
-                res.add(orig);
                 continue;
             }
-            String k = phrase.key(i);
+            String k = pm.key(i);
             String w = processRegularWord(k, detail, declension, plural);
-            res.add(w == null ? orig : TextUtils.toProperCase(orig, w));
+            if (w != null) {
+                pm.set(i, w);
+            }
         }
-        return Phrase.compose(res, phrase.separators());
+        return pm.compose();
     }
 
     private static String[] checkAndSplit(String phrase) {
