@@ -10,6 +10,10 @@ import java.util.List;
  * Created by @ssz on 28.02.2022.
  */
 public class NameUtils {
+    private static final String INITIALS_LETTERS_IN_LOWERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя";
+    private static final String INITIALS_LETTERS_IN_UPPERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя".toUpperCase(Dictionary.LOCALE);
+    private static final String INITIALS_PATTERN = ("[" + INITIALS_LETTERS_IN_LOWERCASE + INITIALS_LETTERS_IN_UPPERCASE + "]\\.").repeat(2);
+
     private static final List<String> FEMALE_PATRONYMIC_ENDINGS = List.of("овна", "евна", "ична");
     private static final List<String> MALE_PATRONYMIC_ENDINGS = List.of("ович", "евич", "ич");
     private static final List<String> FEMALE_SURNAME_ENDINGS = List.of("ова", "ева", "ина", "ая", "яя", "екая", "цкая");
@@ -88,5 +92,9 @@ public class NameUtils {
     public static boolean canBeMaleSurname(String word) {
         String nw = TextUtils.normalize(word, Dictionary.LOCALE);
         return MALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
+    }
+
+    public static boolean canBeInitials(String word) {
+        return word.matches(INITIALS_PATTERN);
     }
 }

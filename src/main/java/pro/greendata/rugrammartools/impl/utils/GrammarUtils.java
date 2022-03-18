@@ -2,8 +2,10 @@ package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utilities for working with the Russian language, based on jobs-register (ОКПДТР, ~{@code 7860} records).
@@ -13,9 +15,14 @@ import java.util.*;
  */
 public class GrammarUtils {
 
+    private static final Collection<Integer> VOWEL_CHARS = "ауоыиэяюёе"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+    private static final Collection<Integer> CONSONANT_CHARS = "бвгджзйклмнпрстфхцчшщ"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+
     // collection of substantive feminine nouns that look like adjectives
     // (субстантивные существительные женского рода, которые выглядят как прилагательные)
-    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of(
+    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of( // TODO: move to PlainDictionary
             "буровая",
             "горничная",
             "заведующая",
@@ -242,7 +249,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B3'>Предлог</a>
      */
-    public static boolean canBeNonDerivativePreposition(String word) {
+    public static boolean isNonDerivativePreposition(String word) {
         return NON_DERIVATIVE_PREPOSITION.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
@@ -319,7 +326,7 @@ public class GrammarUtils {
     public static String toPluralNoun(String singular) {
         // TODO: make a rule for singular -> plural
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ль", "ья", "ка"))) {
-            // // корабль,рубль,свинья,ладья,копейка,сделка,сиделка
+            // корабль,рубль,свинья,ладья,копейка,сделка,сиделка
             return TextUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ла", "за", "на"))) { // свекла,берёза,коза,старшина
@@ -432,5 +439,25 @@ public class GrammarUtils {
             return neuter;
         }
         return male;
+    }
+
+    /**
+     * Answers {@code true} if the given {@code word} can be abbreviation.
+     *
+     * @param word   {@code String} to test, not {@code null}
+     * @param phrase the whole phrase containing the given {@code word}, or {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeAbbreviation(String word, String phrase) {
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        if (PlainDictionary.ABBREVIATIONS.contains(nw)) {
+            return true;
+        }
+        if (nw.length() > 1 && nw.chars().allMatch(CONSONANT_CHARS::contains) || nw.chars().allMatch(VOWEL_CHARS::contains)) {
+            // probably abbreviation if only vowels or consonants
+            return true;
+        }
+        // the given word is in upper-case but there is also lower-case chars
+        return phrase != null && TextUtils.isUpperCase(word) && TextUtils.isMixedCase(phrase);
     }
 }

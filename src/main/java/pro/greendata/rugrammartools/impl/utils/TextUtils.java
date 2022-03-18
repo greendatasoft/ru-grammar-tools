@@ -70,6 +70,17 @@ public class TextUtils {
     }
 
     /**
+     * Answers {@code true} if the string has upper-cased and lower-cased characters.
+     *
+     * @param string {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean isMixedCase(String string) {
+        long upper = string.chars().filter(Character::isUpperCase).count();
+        return upper > 0 && string.length() != upper;
+    }
+
+    /**
      * Makes a new upper-cased {@code string} from the {@code original} if it is in upper-case,
      * otherwise returns {@code string} unchanged.
      *

@@ -320,7 +320,11 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     private static String[] checkAndSplit(String phrase) {
-        return Phrase.split(require(phrase, "phrase"));
+        String[] res = require(phrase, "phrase").trim().split("\\s+");
+        if (res.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        return res;
     }
 
     /**
