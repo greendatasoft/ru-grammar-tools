@@ -5,15 +5,11 @@ import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
-import pro.greendata.rugrammartools.impl.utils.MiscStringUtils;
 import pro.greendata.rugrammartools.impl.utils.NameUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-
-import static pro.greendata.rugrammartools.impl.dictionaries.Dictionary.WordRecord;
 
 /**
  * The engine impl.
@@ -45,9 +41,9 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (declension == Case.NOMINATIVE) {
             return word;
         }
-        String res = processRule(MiscStringUtils.normalize(word, Dictionary.LOCALE),
+        String res = processRule(TextUtils.normalize(word, Dictionary.LOCALE),
                 type, declension, gender == null ? Gender.MALE : gender, animate, plural);
-        return res == null ? word : MiscStringUtils.toProperCase(word, res);
+        return res == null ? word : TextUtils.toProperCase(word, res);
     }
 
     @Override
@@ -207,6 +203,16 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     @Override
+    public String inflectNameOfProfession(String profession, Case declension) {
+        return inflectPhrase(profession, declension, null, true, false);
+    }
+
+    @Override
+    public String inflectNameOfOrganization(String organization, Case declension) {
+        return inflectPhrase(organization, declension, null, false, false);
+    }
+
+    @Override
     public String inflectFullname(String sfp, Case declension) {
         return String.join(" ", inflectSPF(require(sfp, "surname+firstname+patronymic").split("\\s+"),
                 require(declension, "declension"), null));
@@ -261,7 +267,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     @Override
     public String inflectRegularTerm(String phrase, Case declension, Boolean animate) {
-        return inflectPhrase(phrase, declension, null, animate, false);
+        return inflectPhrase(phrase, declension, null, animate, null);
     }
 
     /**
@@ -293,23 +299,30 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (require(declension, "declension case") == Case.NOMINATIVE) {
             return phrase.raw();
         }
-        List<String> res = new ArrayList<>();
-        for (int i = 0; i < phrase.length(); i++) {
-            Word detail = phrase.details(i);
-            String orig = phrase.original(i);
+        if (plural == null) {
+            plural = phrase.plural();
+        }
+        Phrase.Mutable pm = phrase.toMutable();
+        for (int i = 0; i < pm.length(); i++) {
+            Word detail = pm.details(i);
             if (detail.isIndeclinable()) {
-                res.add(orig);
                 continue;
             }
-            String k = phrase.key(i);
+            String k = pm.key(i);
             String w = processRegularWord(k, detail, declension, plural);
-            res.add(w == null ? orig : MiscStringUtils.toProperCase(orig, w));
+            if (w != null) {
+                pm.set(i, w);
+            }
         }
-        return Phrase.compose(res, phrase.separators());
+        return pm.compose();
     }
 
     private static String[] checkAndSplit(String phrase) {
-        return Phrase.split(require(phrase, "phrase"));
+        String[] res = require(phrase, "phrase").trim().split("\\s+");
+        if (res.length == 0) {
+            throw new IllegalArgumentException();
+        }
+        return res;
     }
 
     /**
@@ -322,15 +335,12 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} or {@code null}
      */
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
-        if (details instanceof WordRecord) {
-            String res = processDictionaryRecord((WordRecord) details, declension, toPlural);
-            // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
-            if (res != null) {
-                return res;
-            }
+        String res = processDictionaryRecord(details, declension, toPlural);
+        // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
+        if (res != null) {
+            return res;
         }
         if (toPlural != null && toPlural) {
-            // TODO: make rule for plural?
             key = GrammarUtils.toPluralNoun(key);
         }
         return processRule(key, RuleType.GENERIC, declension, details.gender(), details.animate(), toPlural);
@@ -339,12 +349,12 @@ public class InflectionEngineImpl implements InflectionEngine {
     /**
      * Inflects a word using petrovich rules.
      *
-     * @param record     {@link WordRecord}, not {@code null}
+     * @param record     {@link Word}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param plural     {@code Boolean}, filter parameter, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    protected String processDictionaryRecord(WordRecord record, Case declension, Boolean plural) {
+    protected String processDictionaryRecord(Word record, Case declension, Boolean plural) {
         if (declension == Case.NOMINATIVE) {
             return plural == Boolean.TRUE ? record.plural() : null;
         }

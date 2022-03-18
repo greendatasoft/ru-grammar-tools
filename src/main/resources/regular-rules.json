@@ -1,5 +1,21 @@
 {
-  "exceptions": [],
+  "exceptions": [
+    {
+      "gender": "male",
+      "description": "старшина",
+      "animate": true,
+      "test": [
+        "на"
+      ],
+      "mods": [
+        "-ы",
+        "-е",
+        "-у",
+        "-ой",
+        "-е"
+      ]
+    }
+  ],
   "suffixes": [
     {
       "gender": "female",
@@ -286,6 +302,21 @@
     },
     {
       "gender": "female",
+      "description": "община",
+      "animate": false,
+      "test": [
+        "на"
+      ],
+      "mods": [
+        "-ы",
+        "-е",
+        "-у",
+        "-ой",
+        "-е"
+      ]
+    },
+    {
+      "gender": "female",
       "test": [
         "ова",
         "ева",
@@ -335,10 +366,11 @@
       ]
     },
     {
-      "gender": "androgynous",
-      "description": "старшина",
+      "gender": "female",
+      "animate": true,
+      "description": "сестра",
       "test": [
-        "а"
+        "ра"
       ],
       "mods": [
         "-ы",
@@ -576,6 +608,7 @@
     },
     {
       "gender": "male",
+      "animate": true,
       "test": [
         "ый",
         "кий",
@@ -737,10 +770,11 @@
     },
     {
       "gender": "male",
-      "description": "департамент",
+      "description": "департамент,продукт",
       "animate": false,
       "test": [
-        "нт"
+        "нт",
+        "кт"
       ],
       "mods": [
         "а",
@@ -857,10 +891,25 @@
     },
     {
       "gender": "female",
-      "description": "копейки,батарейки",
+      "description": "сделки",
       "plural": true,
       "test": [
         "ки"
+      ],
+      "mods": [
+        "--ок",
+        "-ам",
+        ".",
+        "-ами",
+        "-ах"
+      ]
+    },
+    {
+      "gender": "female",
+      "description": "копейки,батарейки",
+      "plural": true,
+      "test": [
+        "йки"
       ],
       "mods": [
         "---ек",
@@ -885,6 +934,24 @@
         "-ами",
         "-ах"
       ]
+    },
+    {
+      "gender": "male",
+      "description": "клиенты",
+      "animate": true,
+      "plural": true,
+      "test": [
+        "ты",
+        "ры"
+      ],
+      "mods": [
+        "-ов",
+        "-ам",
+        "-ов",
+        "-ами",
+        "-ах"
+      ]
     }
+
   ]
 }

@@ -2,8 +2,10 @@ package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Utilities for working with the Russian language, based on jobs-register (ОКПДТР, ~{@code 7860} records).
@@ -13,9 +15,14 @@ import java.util.*;
  */
 public class GrammarUtils {
 
+    private static final Collection<Integer> VOWEL_CHARS = "ауоыиэяюёе"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+    private static final Collection<Integer> CONSONANT_CHARS = "бвгджзйклмнпрстфхцчшщ"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+
     // collection of substantive feminine nouns that look like adjectives
     // (субстантивные существительные женского рода, которые выглядят как прилагательные)
-    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of(
+    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of( // TODO: move to PlainDictionary
             "буровая",
             "горничная",
             "заведующая",
@@ -83,7 +90,12 @@ public class GrammarUtils {
     private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
     private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
 
+    private static final List<String> NEUTER_NOUN_ENDINGS = List.of("о", "е");
+    private static final List<String> FEMALE_NOUN_ENDINGS = List.of("ья", "ла", "за", "ка");
+
     private static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ий", "ая", "ое");
+
+    private static final List<String> PLURAL_ENDINGS = List.of("ы", "и");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
@@ -152,30 +164,15 @@ public class GrammarUtils {
     }
 
     private static boolean hasMaleAdjectiveEnding(String word) {
-        for (String end : MALE_ADJECTIVE_ENDINGS) {
-            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
-                return true;
-            }
-        }
-        return false;
+        return TextUtils.endsWithOneOfIgnoreCase(word, MALE_ADJECTIVE_ENDINGS);
     }
 
     private static boolean hasFemaleAdjectiveEnding(String word) {
-        for (String end : FEMALE_ADJECTIVE_ENDINGS) {
-            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
-                return true;
-            }
-        }
-        return false;
+        return TextUtils.endsWithOneOfIgnoreCase(word, FEMALE_ADJECTIVE_ENDINGS);
     }
 
     private static boolean hasNeuterAdjectiveEnding(String word) {
-        for (String end : NEUTER_ADJECTIVE_ENDINGS) {
-            if (MiscStringUtils.endsWithIgnoreCase(word, end)) {
-                return true;
-            }
-        }
-        return false;
+        return TextUtils.endsWithOneOfIgnoreCase(word, NEUTER_ADJECTIVE_ENDINGS);
     }
 
     private static boolean canBeSingularNominativeAdjective(String word) {
@@ -191,7 +188,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeMasculineAdjectiveBasedSubstantivatNoun(String word) {
-        return MASCULINE_SUBSTANTIVAT_NOUNS.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
+        return MASCULINE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -202,7 +199,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantivatNoun(String word) {
-        return FEMININE_SUBSTANTIVAT_NOUNS.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
+        return FEMININE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -213,7 +210,11 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineNoun(String word) {
-        return canBeFeminineAdjectiveBasedSubstantivatNoun(word);
+        if (canBeFeminineAdjectiveBasedSubstantivatNoun(word)) {
+            return true;
+        }
+        // свинья, ладья, свекла, берёза, копейка
+        return TextUtils.endsWithOneOfIgnoreCase(word, FEMALE_NOUN_ENDINGS);
     }
 
     /**
@@ -225,7 +226,19 @@ public class GrammarUtils {
      */
     public static boolean canBeNeuterNoun(String word) {
         // солнце, облако, дерево
-        return MiscStringUtils.endsWithIgnoreCase(word, "о") || MiscStringUtils.endsWithIgnoreCase(word, "е");
+        return TextUtils.endsWithOneOfIgnoreCase(word, NEUTER_NOUN_ENDINGS);
+    }
+
+    /**
+     * Determines (not very accurately) whether the given {@code noun} can be a singular and nominative neuter noun
+     *
+     * @param noun, a noun in nominative case, not {@code null}
+     * @return {@code boolean}
+     * @see #toPluralNoun(String)
+     */
+    public static boolean canBePlural(String noun) {
+        // клиенты, сделки, сиделки, моряки, доллары, берёзы
+        return TextUtils.endsWithOneOfIgnoreCase(noun, PLURAL_ENDINGS);
     }
 
     /**
@@ -236,8 +249,8 @@ public class GrammarUtils {
      * @return {@code boolean}
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B3'>Предлог</a>
      */
-    public static boolean canBeNonDerivativePreposition(String word) {
-        return NON_DERIVATIVE_PREPOSITION.contains(MiscStringUtils.normalize(word, Dictionary.LOCALE));
+    public static boolean isNonDerivativePreposition(String word) {
+        return NON_DERIVATIVE_PREPOSITION.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -247,28 +260,24 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeOrdinalNumeral(String word) {
-        for (String e : ORDINAL_NUMERAL_ENDINGS) {
-            if (MiscStringUtils.endsWithIgnoreCase(word, e)) {
-                return !isFractionNumeral(word);
-            }
-        }
-        return false;
+        return TextUtils.endsWithOneOfIgnoreCase(word, ORDINAL_NUMERAL_ENDINGS) && !isFractionNumeral(word);
     }
 
     /**
-     * Returns the gender of the specified noun (not accurate).
+     * Returns guessed gender of the specified noun (not accurate).
      *
      * @param singular {@code String}, a singular noun in nominative case, not {@code null}
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
-        String nw = MiscStringUtils.normalize(singular, Dictionary.LOCALE);
-        if (nw.endsWith("ья") || nw.endsWith("ла") || nw.endsWith("за") || nw.endsWith("ка")) {
-            // свинья, ладья, свекла, берёза, копейка
+        String nw = TextUtils.normalize(singular, Dictionary.LOCALE);
+        if (canBeNeuterNoun(nw)) { // солнце, облако, дерево
+            return Gender.NEUTER;
+        }
+        if (GrammarUtils.canBeFeminineNoun(singular)) { // свинья, ладья, свекла, берёза, копейка
             return Gender.FEMALE;
         }
-        // TODO: complete
-        // most common gender
+        // the masculine gender is most common (in russian job-titles)
         return Gender.MALE;
     }
 
@@ -298,7 +307,7 @@ public class GrammarUtils {
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingleNumeral(String standaloneNumeral) {
-        String word = MiscStringUtils.normalize(standaloneNumeral, Dictionary.LOCALE);
+        String word = TextUtils.normalize(standaloneNumeral, Dictionary.LOCALE);
         if (MALE_NUMERALS.contains(word) || word.endsWith("ый")) { // один, десятый
             return Gender.MALE;
         }
@@ -315,21 +324,50 @@ public class GrammarUtils {
      * @return {@code String}
      */
     public static String toPluralNoun(String singular) {
-        String nw = MiscStringUtils.normalize(singular, Dictionary.LOCALE);
-        if (nw.endsWith("ль")) { // корабль, рубль
-            return MiscStringUtils.replaceEnd(singular, 2, "ли", Dictionary.LOCALE);
+        // TODO: make a rule for singular -> plural
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ль", "ья", "ка"))) {
+            // корабль,рубль,свинья,ладья,копейка,сделка,сиделка
+            return TextUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
         }
-        if (nw.endsWith("ья") || nw.endsWith("ка")) { // свинья, ладья, копейка
-            return MiscStringUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ла", "за", "на"))) { // свекла,берёза,коза,старшина
+            return TextUtils.replaceEnd(singular, 1, "ы", Dictionary.LOCALE);
         }
-        if (nw.endsWith("ла") || nw.endsWith("за")) { // свекла, берёзы
-            return MiscStringUtils.replaceEnd(singular, 1, "ы", Dictionary.LOCALE);
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("т", "р"))) { // цент,фунт,клиент,брезент,доллар,солдат
+            return TextUtils.appendEnd(singular, "ы", Dictionary.LOCALE);
         }
-        if (nw.endsWith("нт") || nw.endsWith("р")) { // цент,фунт,брезент,доллар
-            return MiscStringUtils.appendEnd(singular, "ы", Dictionary.LOCALE);
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("к", "г"))) { // моряк, залог
+            return TextUtils.appendEnd(singular, "и", Dictionary.LOCALE);
         }
         // TODO: complete
         return singular;
+    }
+
+    /**
+     * Attempts to create singular form from the specified plural
+     *
+     * @param plural {@code String}, a plural noun in nominative case, not {@code null}
+     * @return {@code String}
+     */
+    public static String toSingular(String plural) {
+        // TODO: make a rule for plural -> singular
+        if (TextUtils.endsWithIgnoreCase(plural, "ли")) { // корабли, рубли
+            return TextUtils.replaceEnd(plural, 1, "ь", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ьи"))) { // свиньи, ладьи
+            return TextUtils.replaceEnd(plural, 1, "я", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ки"))) { // копейки, сделки
+            return TextUtils.replaceEnd(plural, 1, "а", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("лы", "зы"))) { // свеклы, берёзы
+            return TextUtils.replaceEnd(plural, 1, "а", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ты", "ры", "ки", "ги"))) {
+            // центы,фунты,брезенты,доллары,залоги,моряки
+            return plural.substring(0, plural.length() - 1);
+        }
+        // TODO: complete
+        return plural;
     }
 
     /**
@@ -340,12 +378,12 @@ public class GrammarUtils {
      * @return {@code String}
      */
     public static String changeGenderOfCardinalNumeral(String numeral, Gender gender) {
-        String nw = MiscStringUtils.normalize(numeral, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(numeral, Dictionary.LOCALE);
         switch (nw) {
             case "один":
-                return MiscStringUtils.toProperCase(numeral, select("одна", "одно", "один", gender));
+                return TextUtils.toProperCase(numeral, select("одна", "одно", "один", gender));
             case "два":
-                return MiscStringUtils.toProperCase(numeral, select("две", "два", "два", gender));
+                return TextUtils.toProperCase(numeral, select("две", "два", "два", gender));
         }
         return numeral;
     }
@@ -358,34 +396,34 @@ public class GrammarUtils {
      * @return {@code String}
      */
     public static String changeGenderOfOrdinalNumeral(String numeral, Gender gender) {
-        String nw = MiscStringUtils.normalize(numeral, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(numeral, Dictionary.LOCALE);
         if ("третий".equals(nw)) {
-            return MiscStringUtils.toProperCase(numeral, select("третья", "третье", "третий", gender));
+            return TextUtils.toProperCase(numeral, select("третья", "третье", "третий", gender));
         }
         // одиннадцатый одиннадцатое одиннадцатая
         // четвёртый четвёртое четвёртая
         // седьмой седьмое седьмая
         String ending = select("ая", "ое", nw.endsWith("ый") ? "ый" : "ой", gender);
-        String res = MiscStringUtils.replaceEnd(nw, 2, ending, Dictionary.LOCALE);
-        return MiscStringUtils.toProperCase(numeral, res);
+        String res = TextUtils.replaceEnd(nw, 2, ending, Dictionary.LOCALE);
+        return TextUtils.toProperCase(numeral, res);
     }
 
     public static boolean isFractionNumeral(String number) {
-        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
+        number = TextUtils.normalize(number, Dictionary.LOCALE);
         return number.contains(" целых ") || number.contains("одна целая ");
     }
 
     public static boolean isNumeralEndWithNumberOne(String number) {
-        return endsWithWord(MiscStringUtils.normalize(number, Dictionary.LOCALE), "один");
+        return endsWithWord(TextUtils.normalize(number, Dictionary.LOCALE), "один");
     }
 
     public static boolean isNumeralEndWithTwoThreeFour(String number) {
-        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
+        number = TextUtils.normalize(number, Dictionary.LOCALE);
         return endsWithWord(number, "два") || endsWithWord(number, "три") || endsWithWord(number, "четыре");
     }
 
     public static boolean isZeroNumeral(String number) {
-        number = MiscStringUtils.normalize(number, Dictionary.LOCALE);
+        number = TextUtils.normalize(number, Dictionary.LOCALE);
         return "ноль".equals(number);
     }
 
@@ -401,5 +439,25 @@ public class GrammarUtils {
             return neuter;
         }
         return male;
+    }
+
+    /**
+     * Answers {@code true} if the given {@code word} can be abbreviation.
+     *
+     * @param word   {@code String} to test, not {@code null}
+     * @param phrase the whole phrase containing the given {@code word}, or {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeAbbreviation(String word, String phrase) {
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        if (PlainDictionary.ABBREVIATIONS.contains(nw)) {
+            return true;
+        }
+        if (nw.length() > 1 && nw.chars().allMatch(CONSONANT_CHARS::contains) || nw.chars().allMatch(VOWEL_CHARS::contains)) {
+            // probably abbreviation if only vowels or consonants
+            return true;
+        }
+        // the given word is in upper-case but there is also lower-case chars
+        return phrase != null && TextUtils.isUpperCase(word) && TextUtils.isMixedCase(phrase);
     }
 }

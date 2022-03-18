@@ -18,7 +18,7 @@ public class OrganizationTest {
     }
 
     void assertName(String expected, String given, Case declension) {
-        Assertions.assertEquals(expected, engine.inflectRegularTerm(given, declension, false),
+        Assertions.assertEquals(expected, engine.inflectNameOfOrganization(given, declension),
                 "Wrong result for case: " + declension);
     }
 

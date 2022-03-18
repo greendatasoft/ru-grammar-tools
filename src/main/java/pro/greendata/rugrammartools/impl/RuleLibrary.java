@@ -67,7 +67,7 @@ public class RuleLibrary {
     }
 
     /**
-     * Loads (from the class-path) a core library for inflecting Russian full-name (firstname patronymic surname, FPS).
+     * Loads (from the class-path) a core library for inflecting Russian full-name (surname firstname patronymic, SFP).
      * It is assumed that the library would be updated from the main project on github,
      * custom changes should not be made to it.
      *

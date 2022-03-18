@@ -3,7 +3,7 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Gender;
 
 /**
- * Represents a word details.
+ * Represents a word (noun, adjective) details.
  * A part of {@link Phrase}.
  */
 public interface Word {
@@ -12,4 +12,17 @@ public interface Word {
     Boolean animate();
 
     boolean isIndeclinable();
+
+    default String[] singularCases() {
+        return null;
+    }
+
+    default String plural() {
+        return null;
+    }
+
+    default String[] pluralCases() {
+        return null;
+    }
+
 }
