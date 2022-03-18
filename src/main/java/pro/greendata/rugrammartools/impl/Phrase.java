@@ -150,6 +150,8 @@ public class Phrase {
 
         /**
          * Splits the given {@code phrase} into parts wrapped as {@link Assembler} object.
+         * If the phrase contains {@link #isStopSymbol(char) stop symbol},
+         * then the rest part of phrase after that symbol inclusively is considered as indeclinable.
          *
          * @param phrase {@code String}, not {@code null}
          * @return {@link Assembler}
@@ -163,7 +165,7 @@ public class Phrase {
             int index = 0;
             for (int i = 0; i < chars.length; ) {
                 // leading space
-                while (i < chars.length && Character.isWhitespace(chars[i])) {
+                while (i < chars.length && isSpace(chars[i])) {
                     separator.append(chars[i++]);
                 }
                 if (i == chars.length) {
@@ -174,7 +176,22 @@ public class Phrase {
                     separator = new StringBuilder();
                 }
                 // process next word
-                while (i < chars.length && !Character.isWhitespace(chars[i])) {
+                if (isStopSymbol(chars[i])) {
+                    int j = chars.length - 1;
+                    for (; j >= i; j--) {
+                        if (!isSpace(chars[j])) {
+                            break;
+                        }
+                    }
+                    word.append(chars, i, j - i + 1);
+                    Part p = new Part(word.toString());
+                    p.indeclinable = true;
+                    res.parts.put(index * INDEX_STEP, p);
+                    separator.append(chars, j, chars.length - j - 1);
+                    res.trailingSpace = separator.toString();
+                    break;
+                }
+                while (i < chars.length && !isSpace(chars[i])) {
                     word.append(chars[i++]);
                 }
                 Part p = new Part(word.toString());
@@ -184,7 +201,7 @@ public class Phrase {
                     break;
                 }
                 // process next separator
-                while (i < chars.length && Character.isWhitespace(chars[i])) {
+                while (i < chars.length && isSpace(chars[i])) {
                     separator.append(chars[i++]);
                 }
                 if (i == chars.length) {
@@ -195,6 +212,14 @@ public class Phrase {
                 separator = new StringBuilder();
             }
             return res;
+        }
+
+        private static boolean isSpace(char ch) {
+            return Character.isWhitespace(ch);
+        }
+
+        private static boolean isStopSymbol(char ch) {
+            return ch == '\'' || ch == '"' || ch == '\u00AB';
         }
 
         /**
