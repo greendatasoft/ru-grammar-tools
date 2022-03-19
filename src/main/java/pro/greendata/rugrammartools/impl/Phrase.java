@@ -130,10 +130,6 @@ public class Phrase {
         return details.get(i);
     }
 
-    public List<String> separators() {
-        return separators;
-    }
-
     @Override
     public String toString() {
         return String.format("Phrase{raw='%s', words=%s}", raw, keys);
@@ -229,7 +225,7 @@ public class Phrase {
                     Part p = new Part(word.toString());
                     p.indeclinable = true;
                     res.parts.put(index * INDEX_STEP, p);
-                    separator.append(chars, j, chars.length - j - 1);
+                    separator.append(chars, j + 1, chars.length - j - 1);
                     res.trailingSpace = separator.toString();
                     break;
                 }

@@ -105,21 +105,23 @@ public class TextUtils {
         char[] origChars = template.toCharArray();
         char[] resChars = string.toCharArray();
         int i = 0;
-        boolean isUpperCase = false;
+        boolean isUpperCaseEnding = false;
         for (; i < Math.min(origChars.length, resChars.length); i++) {
             char origChar = origChars[i];
             char resChar = resChars[i];
             if (equalsIgnoreCase(origChar, resChar)) {
                 res.append(origChar);
             } else {
-                isUpperCase = Character.isUpperCase(origChar);
+                isUpperCaseEnding = Character.isUpperCase(origChar);
                 break;
             }
         }
         for (; i < resChars.length; i++) {
             char resChar = resChars[i];
-            if (isUpperCase) {
+            if (isUpperCaseEnding) {
                 resChar = Character.toUpperCase(resChar);
+            } else {
+                resChar = Character.toLowerCase(resChar);
             }
             res.append(resChar);
         }
