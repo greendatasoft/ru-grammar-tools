@@ -13,6 +13,10 @@ public interface Word {
 
     boolean isIndeclinable();
 
+    default RuleType rule() {
+        return RuleType.GENERIC;
+    }
+
     default String[] singularCases() {
         return null;
     }

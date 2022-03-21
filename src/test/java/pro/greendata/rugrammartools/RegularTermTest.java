@@ -10,7 +10,7 @@ import java.util.function.BiFunction;
 /**
  * Created by @ssz on 25.02.2022.
  */
-public class MiscRegularTermTest {
+public class RegularTermTest {
     private final InflectionEngine engine = GrammarTools.getInflectionEngine();
 
     public static List<String[]> miscTerms() {

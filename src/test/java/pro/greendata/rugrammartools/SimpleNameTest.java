@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
  *
  * @see <a href='https://github.com/petrovich4j/petrovich4j/blob/master/src/test/java/com/github/petrovich4j/RegressionTests.java'>com.github.petrovich4j.RegressionTests</a>
  */
-public class MiscNameTest extends SPFTestBase {
+public class SimpleNameTest extends SPFTestBase {
 
     private void checkName(SPF type, Gender gender, String p1, String p2, String p3, String p4, String p5, String p6) {
         Assertions.assertEquals(p2, inflectName(p1, type, Case.GENITIVE, gender));

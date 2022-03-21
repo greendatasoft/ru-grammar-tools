@@ -438,4 +438,18 @@ public class GrammarUtils {
         // the given word is in upper-case but there is also lower-case chars
         return phrase != null && TextUtils.isUpperCase(word) && TextUtils.isMixedCase(phrase);
     }
+
+    /**
+     * Answers {@code true} if the given {@code word} can be abbreviation related to human.
+     * @param w {@code String}
+     * @return {@code boolean}
+     */
+    public static boolean canBeHumanRelatedAbbreviation(String w) {
+        for (String a : new String[]{"ип", "чп", "пбоюл"})  {
+            if (a.equalsIgnoreCase(w)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
