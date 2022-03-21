@@ -1,8 +1,8 @@
-package pro.greendata.rugrammartools;
+package pro.greendata.rugrammartools.impl;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import pro.greendata.rugrammartools.impl.Word;
+import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 
 /**

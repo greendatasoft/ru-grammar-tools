@@ -80,6 +80,24 @@ public class Phrase {
         return new Mutable(raw, gender, animate, plural, new ArrayList<>(keys), words, details, separators);
     }
 
+    /**
+     * Glues the phrase parts back into single {@code String}-phrase.
+     *
+     * @return a {@code String}
+     */
+    public String compose() {
+        if (separators.size() != keys.size() + 1) {
+            throw new IllegalStateException();
+        }
+        StringBuilder res = new StringBuilder();
+        res.append(separators.get(0));
+        for (int i = 0; i < keys.size(); i++) {
+            res.append(TextUtils.toProperCase(words.get(i), keys.get(i)));
+            res.append(separators.get(i + 1));
+        }
+        return res.toString();
+    }
+
     public Gender gender() {
         return gender;
     }
@@ -110,10 +128,6 @@ public class Phrase {
 
     public Word details(int i) {
         return details.get(i);
-    }
-
-    public List<String> separators() {
-        return separators;
     }
 
     @Override
@@ -147,23 +161,6 @@ public class Phrase {
             keys.set(i, Objects.requireNonNull(txt));
         }
 
-        /**
-         * Glues the phrase parts back into single {@code String}-phrase.
-         *
-         * @return a {@code String}
-         */
-        public String compose() {
-            if (separators.size() != keys.size() + 1) {
-                throw new IllegalStateException();
-            }
-            StringBuilder res = new StringBuilder();
-            res.append(separators.get(0));
-            for (int i = 0; i < keys.size(); i++) {
-                res.append(TextUtils.toProperCase(words.get(i), keys.get(i)));
-                res.append(separators.get(i + 1));
-            }
-            return res.toString();
-        }
     }
 
     /**
@@ -228,7 +225,7 @@ public class Phrase {
                     Part p = new Part(word.toString());
                     p.indeclinable = true;
                     res.parts.put(index * INDEX_STEP, p);
-                    separator.append(chars, j, chars.length - j - 1);
+                    separator.append(chars, j + 1, chars.length - j - 1);
                     res.trailingSpace = separator.toString();
                     break;
                 }

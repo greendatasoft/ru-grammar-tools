@@ -20,29 +20,7 @@ public class GrammarUtils {
     private static final Collection<Integer> CONSONANT_CHARS = "бвгджзйклмнпрстфхцчшщ"
             .chars().boxed().collect(Collectors.toUnmodifiableSet());
 
-    // collection of substantive feminine nouns that look like adjectives
-    // (субстантивные существительные женского рода, которые выглядят как прилагательные)
-    private static final Collection<String> FEMININE_SUBSTANTIVAT_NOUNS = Set.of( // TODO: move to PlainDictionary
-            "буровая",
-            "горничная",
-            "заведующая",
-            "заправочная"
-    );
-    // collection of substantive masculine nouns that look like adjectives
-    // (субстантивные существительные мужского рода, которые выглядят как прилагательные)
-    private static final Collection<String> MASCULINE_SUBSTANTIVAT_NOUNS = Set.of(
-            "вентилевой", "верховой", "выпускающий",
-            "горновой", "горнорабочий",
-            "дверевой", "дежурный", "дневальный",
-            "заведующий",
-            "лесничий", "люковой",
-            "миксеровой",
-            "печевой", "поверенный", "подручный", "пожарный", "портной",
-            "рабочий",
-            "торфорабочий",
-            "уполномоченный", "управляющий" // "ученый" как прилагательное ("ученый секретарь")
-    );
-    // collection simple prepositions
+    // collection of simple prepositions
     private static final Collection<String> NON_DERIVATIVE_PREPOSITION = Set.of(
             "без", "в", "для", "до", "за", "из", "к", "на", "над", "о", "об", "от", "перед", "по", "под", "при", "про", "с", "у", "через"
     );
@@ -188,7 +166,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeMasculineAdjectiveBasedSubstantivatNoun(String word) {
-        return MASCULINE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
+        return PlainDictionary.MASCULINE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
@@ -199,7 +177,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantivatNoun(String word) {
-        return FEMININE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
+        return PlainDictionary.FEMININE_SUBSTANTIVAT_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
     }
 
     /**
