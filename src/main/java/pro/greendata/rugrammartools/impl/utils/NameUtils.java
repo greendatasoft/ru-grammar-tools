@@ -97,4 +97,32 @@ public class NameUtils {
     public static boolean canBeInitials(String word) {
         return word.matches(INITIALS_PATTERN);
     }
+
+    /**
+     * Guesses gender by SFP.
+     *
+     * @param sfp an {@code Array} with full name: either {@code [surname]} (e.g. {@code "Петров"}),
+     *            or {@code [surname, firstname]} (e.g. {@code "Петров Петр"}),
+     *            or {@code [surname, firstname, patronymic]} (e.g. {@code "Петров Петр Петрович"})
+     * @return {@link Gender} or {@code null}
+     */
+    public static Gender guessGenderByFullName(String[] sfp) {
+        // by first name
+        Gender g;
+        if (sfp.length > 1) {
+            g = guessGenderByFirstName(sfp[1]);
+            if (g != null) {
+                return g;
+            }
+        }
+        // by patronymic
+        if (sfp.length > 2) {
+            g = guessGenderByPatronymicName(sfp[2]);
+            if (g != null) {
+                return g;
+            }
+        }
+        // family
+        return guessGenderBySurname(sfp[0]);
+    }
 }

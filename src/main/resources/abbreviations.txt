@@ -1,2 +1,5 @@
 ## well-known abbreviations
 ип
+пбоюл
+чп
+ооо

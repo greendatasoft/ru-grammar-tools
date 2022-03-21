@@ -331,13 +331,18 @@ public class Phrase {
                 Part part = phrase.parts.get(index);
                 String w = part.raw;
                 Map.Entry<Integer, Part> next = phrase.parts.higherEntry(index);
-                if (GrammarUtils.canBeAbbreviation(w, phrase.raw) || NameUtils.canBeInitials(w)) { // "ПАО 'Финансовая корпорация'"
+                if (GrammarUtils.canBeAbbreviation(w, phrase.raw)) {
                     part.fill(phrase.gender, phrase.animate, true);
-                    if (next != null && NameUtils.canBeSurname(next.getValue().raw)) {
-                        phrase.nounStartIndex = next.getKey(); // "И.П. Иванов", "ИП Иванов"
-                    } else {
-                        phrase.nounStartIndex = index;
+                    if (GrammarUtils.canBeHumanRelatedAbbreviation(w) && next != null) { // e.g. "ИП Иванов"
+                        if (handleHumanName(phrase, next.getKey(), true)) {
+                            break;
+                        }
                     }
+                    // e.g. "ПАО 'Финансовая корпорация'"
+                    phrase.nounStartIndex = index;
+                    break;
+                }
+                if (phrase.animate != Boolean.FALSE && handleHumanName(phrase, index, false)) {
                     break;
                 }
                 // if the next word is preposition then the first word can be noun (e.g. "Термист по обработке слюды")
@@ -371,6 +376,91 @@ public class Phrase {
                 phrase.nounStartIndex = index;
                 break;
             }
+        }
+
+        private static boolean handleHumanName(Assembler phrase, Integer index, boolean sureIsName) {
+            Part current = phrase.parts.get(index);
+            if (current == null) {
+                return false;
+            }
+            Map.Entry<Integer, Part> nextWord = phrase.parts.higherEntry(index);
+            if (sureIsName && nextWord == null && NameUtils.canBeSurname(current.raw)) { // e.g. "Петрова"
+                phrase.nounStartIndex = index;
+                handleSurname(phrase, current);
+                return true;
+            }
+            if (nextWord == null) {
+                return false;
+            }
+            Part next = nextWord.getValue();
+            Integer nextIndex = nextWord.getKey();
+            if (NameUtils.canBeInitials(current.raw) && NameUtils.canBeSurname(next.raw)) { // e.g. "П.П. Петрова"
+                phrase.nounStartIndex = nextIndex;
+                handleSurname(phrase, next);
+                return true;
+            }
+            if (NameUtils.canBeInitials(next.raw) && NameUtils.canBeSurname(current.raw)) { // e.g. "Петров П.П."
+                phrase.nounStartIndex = index;
+                handleSurname(phrase, current);
+                return true;
+            }
+            List<Part> sfp = new ArrayList<>(3);
+            NavigableMap<Integer, Part> rest = phrase.parts.tailMap(nextIndex, false);
+            Part nextNext = null;
+            Integer nextNextIndex = null;
+            if (!rest.isEmpty()) {
+                nextNext = rest.firstEntry().getValue();
+                nextNextIndex = rest.firstEntry().getKey();
+            }
+            if (NameUtils.isFirstname(current.raw)) { // e.g. "Полина Петровна Петрова" or "Полина Петрова"
+                if (nextNext != null && NameUtils.canBePatronymic(next.raw) && NameUtils.canBeSurname(nextNext.raw)) {
+                    sfp.add(nextNext);
+                    sfp.add(current);
+                    sfp.add(next);
+                } else if (NameUtils.canBeSurname(next.raw)) {
+                    sfp.add(next);
+                    sfp.add(next);
+                }
+            } else if (NameUtils.isFirstname(next.raw)) { // e.g. "Петров Петр Петрович" or "Петрова Полина"
+                if (NameUtils.canBeSurname(current.raw)) {
+                    if (nextNext != null && NameUtils.canBePatronymic(nextNext.raw)) {
+                        sfp.add(current);
+                        sfp.add(next);
+                        sfp.add(nextNext);
+                    } else {
+                        sfp.add(current);
+                        sfp.add(next);
+                    }
+                }
+            }
+            if (sfp.isEmpty()) {
+                return false;
+            }
+            Gender gender = NameUtils.guessGenderByFullName(sfp.stream().map(x -> x.raw).toArray(String[]::new));
+            if (gender == null) {
+                return false;
+            }
+            sfp.get(0).gender = gender;
+            sfp.get(0).animate = true;
+            sfp.get(0).type = RuleType.FAMILY_NAME;
+            phrase.fill(sfp.get(0));
+            sfp.get(1).gender = gender;
+            sfp.get(1).animate = true;
+            sfp.get(1).type = RuleType.FIRST_NAME;
+            if (sfp.size() > 2) {
+                sfp.get(2).gender = gender;
+                sfp.get(2).animate = true;
+                sfp.get(2).type = RuleType.PATRONYMIC_NAME;
+            }
+            phrase.nounStartIndex = nextNextIndex != null ? nextNextIndex : nextIndex;
+            return true;
+        }
+
+        private static void handleSurname(Assembler phrase, Part next) {
+            next.type = RuleType.FAMILY_NAME;
+            next.animate = true;
+            next.gender = NameUtils.canBeFemaleSurname(next.raw) ? Gender.FEMALE : Gender.MALE;
+            phrase.fill(next);
         }
 
         private static void findAndSetEndPosition(Assembler phrase) {
@@ -463,6 +553,7 @@ public class Phrase {
             Word word;
             Gender gender;
             Boolean animate;
+            RuleType type = RuleType.GENERIC;
             Boolean plural;
             boolean indeclinable;
             private String key;
@@ -486,7 +577,7 @@ public class Phrase {
             }
 
             public Word toWord() {
-                return new WordInfo(gender, animate, plural, indeclinable, word);
+                return new WordInfo(gender, animate, type, plural, indeclinable, word);
             }
 
             @Override
@@ -502,13 +593,15 @@ public class Phrase {
     public static class WordInfo implements Word {
         private final Gender gender;
         private final Boolean animated;
+        private final RuleType ruleType;
         private final Boolean isPlural;
         private final boolean indeclinable;
         private final Word from;
 
-        public WordInfo(Gender gender, Boolean animated, Boolean isPlural, boolean indeclinable, Word from) {
+        public WordInfo(Gender gender, Boolean animated, RuleType ruleType, Boolean isPlural, boolean indeclinable, Word from) {
             this.gender = gender;
             this.animated = animated;
+            this.ruleType = ruleType;
             this.isPlural = isPlural;
             this.indeclinable = indeclinable;
             this.from = from;
@@ -531,6 +624,11 @@ public class Phrase {
         @Override
         public boolean isIndeclinable() {
             return indeclinable;
+        }
+
+        @Override
+        public RuleType rule() {
+            return ruleType;
         }
 
         @Override

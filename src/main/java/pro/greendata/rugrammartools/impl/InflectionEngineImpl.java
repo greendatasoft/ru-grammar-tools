@@ -225,7 +225,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             throw new IllegalArgumentException();
         }
         if (gender == null) {
-            gender = guessGenderByFullName(sfp);
+            gender = NameUtils.guessGenderByFullName(sfp);
         }
         String s = inflect(sfp[0], RuleType.FAMILY_NAME, declension, gender, true, false);
         if (sfp.length == 1) {
@@ -335,7 +335,8 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @return {@code String} or {@code null}
      */
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
-        String res = processDictionaryRecord(details, declension, toPlural);
+        RuleType type = details.rule();
+        String res = type == RuleType.GENERIC ? processDictionaryRecord(details, declension, toPlural) : null;
         // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
         if (res != null) {
             return res;
@@ -343,7 +344,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (toPlural != null && toPlural) {
             key = GrammarUtils.toPluralNoun(key);
         }
-        return processRule(key, RuleType.GENERIC, declension, details.gender(), details.animate(), toPlural);
+        return processRule(key, type, declension, details.gender(), details.animate(), toPlural);
     }
 
     /**
@@ -405,26 +406,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             }
         }
         return res;
-    }
-
-    protected Gender guessGenderByFullName(String[] sfp) {
-        // by first name
-        Gender g;
-        if (sfp.length > 1) {
-            g = NameUtils.guessGenderByFirstName(sfp[1]);
-            if (g != null) {
-                return g;
-            }
-        }
-        // by patronymic
-        if (sfp.length > 2) {
-            g = NameUtils.guessGenderByPatronymicName(sfp[2]);
-            if (g != null) {
-                return g;
-            }
-        }
-        // family
-        return NameUtils.guessGenderBySurname(sfp[0]);
     }
 
     private RuleSet chooseRuleSet(RuleType type) {
