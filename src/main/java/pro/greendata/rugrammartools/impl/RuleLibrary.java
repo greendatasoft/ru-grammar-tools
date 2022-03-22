@@ -26,10 +26,6 @@ public class RuleLibrary {
     private static final NameBean REGULAR_RULES_LIB = loadRegularBean();
     private static final NameBean NUMERALS_RULES_LIB = loadNumeralsBean();
 
-    static final char KEEP_CHARACTER = '.';
-    static final char REMOVE_CHARACTER = '-';
-    static final String KEEP_MOD = Character.toString(KEEP_CHARACTER);
-
     public static final RuleSet LAST_NAME_RULES = map(NAMES_RULES_LIB.getLastname());
     public static final RuleSet FIRST_NAME_RULES = map(NAMES_RULES_LIB.getFirstname());
     public static final RuleSet PATRONYMIC_NAME_RULES = map(NAMES_RULES_LIB.getMiddlename());

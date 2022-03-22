@@ -2,6 +2,7 @@ package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 
 import java.util.Arrays;
 import java.util.Objects;
@@ -27,26 +28,7 @@ public class Rule {
     }
 
     public String apply(Case declension, String word) {
-        return applyMod(mode(declension), word);
-    }
-
-    private static String applyMod(String mod, String word) { // the original method
-        if (mod.equals(RuleLibrary.KEEP_MOD)) {
-            return word;
-        }
-        if (mod.indexOf(RuleLibrary.REMOVE_CHARACTER) < 0) {
-            return word + mod;
-        }
-        String result = word;
-        for (int i = 0; i < mod.length(); i++) {
-            if (mod.charAt(i) == RuleLibrary.REMOVE_CHARACTER) {
-                result = result.substring(0, result.length() - 1);
-            } else {
-                result += mod.substring(i);
-                break;
-            }
-        }
-        return result;
+        return RuleUtils.changeEnding(word, mode(declension));
     }
 
     public Stream<String> test() {
