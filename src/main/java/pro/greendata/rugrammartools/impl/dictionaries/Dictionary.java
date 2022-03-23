@@ -2,6 +2,7 @@ package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.Word;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.io.*;
@@ -51,15 +52,17 @@ public class Dictionary {
     @SuppressWarnings({"unchecked"})
     protected static Map<String, Record> load(String source) {
         Map<String, Record> data = new HashMap<>(26900);
+        Map<Record, Record> cache = new HashMap<>(26900);
         try (InputStream in = Objects.requireNonNull(Dictionary.class.getResourceAsStream(source));
              BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
              Stream<String> lines = reader.lines()) {
             lines.forEach(record -> {
-                Map.Entry<String, Record> e = WordRecord.parse(record);
+                Map.Entry<String, ? extends Record> e = WordRecord.parse(record);
                 if (e == null) {
                     return;
                 }
-                data.merge(e.getKey(), e.getValue(), MultiRecord::create);
+                Record value = cache.computeIfAbsent(e.getValue(), x -> e.getValue());
+                data.merge(e.getKey(), value, MultiRecord::create);
             });
         } catch (IOException e) {
             throw new UncheckedIOException("Can't load " + source, e);
@@ -135,9 +138,15 @@ public class Dictionary {
         }
     }
 
+    /**
+     * A base dictionary record interface.
+     */
     interface Record {
     }
 
+    /**
+     * Implementation that holds several {@link WordRecord}s.
+     */
     static class MultiRecord implements Record {
         private final WordRecord[] words;
 
@@ -163,6 +172,9 @@ public class Dictionary {
         }
     }
 
+    /**
+     * A record for noun (right now).
+     */
     public static class WordRecord implements Record, Word {
         private static final int HAS_ANIMATE = 2;
         private static final int IS_ANIMATE = 4;
@@ -172,8 +184,6 @@ public class Dictionary {
         private static final int GENDER_FLAG_1 = 64;
 
         private int characteristics;
-
-        // todo: to reduce memory footprint store as rule
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
@@ -187,7 +197,7 @@ public class Dictionary {
          * @param sourceLine {@code String}
          * @return a {@code Map.Entry}
          */
-        private static Map.Entry<String, Record> parse(String sourceLine) {
+        private static Map.Entry<String, WordRecord> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = TextUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
             if (array.length < 5) {
@@ -211,17 +221,29 @@ public class Dictionary {
             }
             res.singularCases = new String[5];
             for (int i = 0; i < 5; i++) {
-                res.singularCases[i] = normalizeValue(array[11 + i]);
+                res.singularCases[i] = toEnding(key, array[11 + i]);
             }
             if (array.length < 22) {
                 return Map.entry(key, res);
             }
-            res.plural = normalizeValue(array[16]);
+            res.plural = toEnding(key, array[16]);
             res.pluralCases = new String[5];
-            for (int i = 0; i < 5; i++) {
-                res.pluralCases[i] = normalizeValue(array[17 + i]);
+            for (int i = 0; i < 5; i++) { // note that the base here is a singular key, not plural its form
+                res.pluralCases[i] = toEnding(key, array[17 + i]);
             }
             return Map.entry(key, res);
+        }
+
+        private static String toEnding(String key, String word) {
+            String w = normalizeValue(word);
+            if (!w.contains(",")) {
+                return RuleUtils.calcEnding(key, w);
+            }
+            StringJoiner res = new StringJoiner(",");
+            for (String p : w.split(",\\s*")) {
+                res.add(RuleUtils.calcEnding(key, p));
+            }
+            return res.toString();
         }
 
         private static Gender parseGender(String[] array) {
@@ -360,6 +382,25 @@ public class Dictionary {
         public String toString() {
             return String.format("Record{gender=%s, animated=%s, indeclinable=%s, plural='%s', singularCases=%s, pluralCases=%s}",
                     gender(), animate(), indeclinable(), plural, Arrays.toString(singularCases), Arrays.toString(pluralCases));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            WordRecord record = (WordRecord) o;
+            return characteristics == record.characteristics &&
+                    Objects.equals(plural, record.plural) &&
+                    Arrays.equals(singularCases, record.singularCases) &&
+                    Arrays.equals(pluralCases, record.pluralCases);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hash(characteristics, plural);
+            result = 31 * result + Arrays.hashCode(singularCases);
+            result = 31 * result + Arrays.hashCode(pluralCases);
+            return result;
         }
     }
 }
