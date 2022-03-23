@@ -187,7 +187,7 @@ public class Phrase {
         private Integer nounStartIndex;
         // for composed nouns end != start (e.g. "сестра-анестезист")
         private Integer nounEndIndex;
-        // end of declinable part of phrase
+        // end of the declinable part of phrase
         private Integer endIndex;
         // usually gender is null, it is determined by the phrase;
         // may not match the true gender of the wearer (in case of profession).
@@ -274,6 +274,12 @@ public class Phrase {
         Assembler compile(Type type, Gender inputGender, Boolean inputAnimate) {
             fill(inputGender, inputAnimate);
 
+            if (PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(this.parts.firstEntry().getValue().key())) {
+                // starts with preposition -> consider the whole phrase as indeclinable
+                this.parts.forEach((i, p) -> p.fill(gender, animate, true));
+                return this;
+            }
+
             findAndSetNounPosition(this);
             compileNoun(this);
             findAndSetEndPosition(this);
@@ -300,7 +306,7 @@ public class Phrase {
 
             separators.add(leadingSpace == null ? "" : leadingSpace);
             Integer last = parts.lastKey();
-            Part noun = Objects.requireNonNull(parts.get(nounStartIndex));
+            Part noun = nounStartIndex == null ? null : Objects.requireNonNull(parts.get(nounStartIndex));
             parts.forEach((index, part) -> {
                 if (!Objects.equals(index, last)) {
                     separators.add(Objects.requireNonNull(part.space));
@@ -311,8 +317,8 @@ public class Phrase {
             });
             separators.add(trailingSpace == null ? "" : trailingSpace);
 
-            return new Phrase(raw, noun.gender, noun.animate,
-                    noun.plural, Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
+            return new Phrase(raw, this.gender, this.animate, noun == null ? null : noun.plural,
+                    Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
                     Collections.unmodifiableList(details), Collections.unmodifiableList(separators));
         }
 
@@ -360,6 +366,7 @@ public class Phrase {
                 // the following code was designed for inflection profession names
                 // if the next word is preposition then the first word can be noun (e.g. "Термист по обработке слюды")
                 if (next != null && PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(next.getValue().key())) {
+                    next.getValue().indeclinable = true;
                     phrase.nounStartIndex = index;
                     break;
                 }
