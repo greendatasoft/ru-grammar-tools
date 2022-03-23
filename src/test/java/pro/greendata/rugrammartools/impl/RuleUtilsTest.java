@@ -13,4 +13,15 @@ public class RuleUtilsTest {
         Assertions.assertEquals("xyyy", RuleUtils.changeEnding("xxx", "--yyy"));
         Assertions.assertEquals("xxxzzz", RuleUtils.changeEnding("xxx", "zzz"));
     }
+
+    @Test
+    public void testCalcEnding() {
+        Assertions.assertEquals(".", RuleUtils.calcEnding("xxx", "xxx"));
+        //noinspection StringOperationCanBeSimplified
+        Assertions.assertEquals(".", RuleUtils.calcEnding("xxx", new String("xxx")));
+        Assertions.assertEquals("-y", RuleUtils.calcEnding("xxx", "xxy"));
+        Assertions.assertEquals("zz", RuleUtils.calcEnding("xxx", "xxxzz"));
+        Assertions.assertEquals("---zz", RuleUtils.calcEnding("xxxyzf", "xxxzz"));
+        Assertions.assertEquals("-tt", RuleUtils.calcEnding("xxx", "xxtt"));
+    }
 }

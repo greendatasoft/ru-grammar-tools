@@ -15,26 +15,62 @@ public class RuleUtils {
      * <li>{@code "xxx" + "." = "xxx"}</li>
      * </ul>
      *
-     * @param word {@code String} a word to modify
-     * @param mod  {@code String}, e.g. {@code --xx}, {@code .}
+     * @param word   {@code String} a word to modify
+     * @param ending {@code String}, e.g. {@code --xx}, {@code .}
      * @return {@code String}
      */
-    public static String changeEnding(String word, String mod) {
-        if (KEEP_MOD.equals(mod)) {
+    public static String changeEnding(String word, String ending) {
+        if (KEEP_MOD.equals(ending)) {
             return word;
         }
-        if (mod.lastIndexOf(REMOVE_CHARACTER) < 0) {
-            return word + mod;
+        if (ending.lastIndexOf(REMOVE_CHARACTER) < 0) {
+            return word + ending;
         }
         String res = word;
-        for (int i = 0; i < mod.length(); i++) {
-            if (mod.charAt(i) == REMOVE_CHARACTER) {
+        for (int i = 0; i < ending.length(); i++) {
+            if (ending.charAt(i) == REMOVE_CHARACTER) {
                 res = res.substring(0, res.length() - 1);
             } else {
-                res += mod.substring(i);
+                res += ending.substring(i);
                 break;
             }
         }
         return res;
     }
+
+    /**
+     * Calculates an ending mod for the given primary and secondary words.
+     *
+     * @param primary   {@code String}, not {@code null}
+     * @param secondary {@code String}, not {@code null}
+     * @return {@code String}
+     */
+    public static String calcEnding(String primary, String secondary) {
+        //noinspection StringEquality
+        if (primary == secondary) {
+            return KEEP_MOD;
+        }
+        char[] first = primary.toCharArray();
+        char[] second = secondary.toCharArray();
+        int i = 0;
+        for (; i < Math.min(second.length, first.length); i++) {
+            if (first[i] != second[i]) {
+                break;
+            }
+        }
+        int num = first.length - i;
+        if (num == 0 && second.length == first.length) {
+            return KEEP_MOD;
+        }
+        StringBuilder res = new StringBuilder();
+        //noinspection StringRepeatCanBeUsed -- expected to be faster than String#repeat
+        for (int j = 0; j < num; j++) {
+            res.append(REMOVE_CHARACTER);
+        }
+        for (int j = i; j < second.length; j++) {
+            res.append(second[j]);
+        }
+        return res.toString();
+    }
+
 }

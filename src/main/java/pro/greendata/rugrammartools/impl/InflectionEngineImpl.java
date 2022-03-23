@@ -6,6 +6,7 @@ import pro.greendata.rugrammartools.InflectionEngine;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
 import pro.greendata.rugrammartools.impl.utils.NameUtils;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.Objects;
@@ -254,6 +255,7 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return inflectFullname(phrase, declension);
             }
         }
+        // todo: handle numerals (both cardinal and ordinal)
         return inflectRegularTerm(phrase, declension, null);
     }
 
@@ -336,7 +338,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
         RuleType type = details.rule();
-        String res = type == RuleType.GENERIC ? processDictionaryRecord(details, declension, toPlural) : null;
+        String res = type == RuleType.GENERIC ? processDictionaryRecord(key, details, declension, toPlural) : null;
         // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
         if (res != null) {
             return res;
@@ -350,12 +352,14 @@ public class InflectionEngineImpl implements InflectionEngine {
     /**
      * Inflects a word using petrovich rules.
      *
+     *
+     * @param key        {@code String} a normalized word
      * @param record     {@link Word}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param plural     {@code Boolean}, filter parameter, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    protected String processDictionaryRecord(Word record, Case declension, Boolean plural) {
+    protected String processDictionaryRecord(String key, Word record, Case declension, Boolean plural) {
         if (declension == Case.NOMINATIVE) {
             return plural == Boolean.TRUE ? record.plural() : null;
         }
@@ -364,7 +368,27 @@ public class InflectionEngineImpl implements InflectionEngine {
             return null;
         }
         String w = cases[declension.ordinal() - 1];
-        return selectLongestWord(w);
+        return applyCase(key, w);
+    }
+
+    private static String applyCase(String key, String word) {
+        if (!word.contains(",")) {
+            return RuleUtils.changeEnding(key, word);
+        }
+        // selects the longest
+        String[] array = word.split(",\\s*");
+        String res = null;
+        for (String s : array) {
+            String item = RuleUtils.changeEnding(key, s);
+            if (res == null) {
+                res = item;
+                continue;
+            }
+            if (item.length() > res.length()) {
+                res = item;
+            }
+        }
+        return res;
     }
 
     /**
@@ -384,28 +408,6 @@ public class InflectionEngineImpl implements InflectionEngine {
             return null;
         }
         return rule.apply(declension, normalized);
-    }
-
-    /**
-     * Selects the longest word, if it has separator ',' (sometimes there is two or more correct forms).
-     *
-     * @param w {@code String}
-     * @return {@code String}
-     */
-    private static String selectLongestWord(String w) {
-        if (!w.contains(",")) {
-            return w;
-        }
-        String[] array = w.split(",\\s*");
-        String res = null;
-        for (String s : array) {
-            if (res == null) {
-                res = s;
-            } else if (s.length() > res.length()) {
-                res = s;
-            }
-        }
-        return res;
     }
 
     private RuleSet chooseRuleSet(RuleType type) {

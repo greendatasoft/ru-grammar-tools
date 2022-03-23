@@ -2,6 +2,7 @@ package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.Word;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.io.*;
@@ -172,8 +173,6 @@ public class Dictionary {
         private static final int GENDER_FLAG_1 = 64;
 
         private int characteristics;
-
-        // todo: to reduce memory footprint store as rule
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
@@ -211,17 +210,29 @@ public class Dictionary {
             }
             res.singularCases = new String[5];
             for (int i = 0; i < 5; i++) {
-                res.singularCases[i] = normalizeValue(array[11 + i]);
+                res.singularCases[i] = toEnding(key, array[11 + i]);
             }
             if (array.length < 22) {
                 return Map.entry(key, res);
             }
-            res.plural = normalizeValue(array[16]);
+            res.plural = toEnding(key, array[16]);
             res.pluralCases = new String[5];
-            for (int i = 0; i < 5; i++) {
-                res.pluralCases[i] = normalizeValue(array[17 + i]);
+            for (int i = 0; i < 5; i++) { // note that the base here is key here (a singular word, not plural)
+                res.pluralCases[i] = toEnding(key, array[17 + i]);
             }
             return Map.entry(key, res);
+        }
+
+        private static String toEnding(String key, String word) {
+            String w = normalizeValue(word);
+            if (!w.contains(",")) {
+                return RuleUtils.calcEnding(key, w);
+            }
+            StringJoiner res = new StringJoiner(",");
+            for (String p : w.split(",\\s*")) {
+                res.add(RuleUtils.calcEnding(key, p));
+            }
+            return res.toString();
         }
 
         private static Gender parseGender(String[] array) {

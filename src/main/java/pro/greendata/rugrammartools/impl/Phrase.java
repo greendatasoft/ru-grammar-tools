@@ -530,8 +530,10 @@ public class Phrase {
             if (from.isPresent()) {
                 part.plural = false;
             } else if (GrammarUtils.canBePlural(part.key())) {
-                from = fromDictionary(GrammarUtils.toSingular(part.key()), gender, animate);
+                String key = GrammarUtils.toSingular(part.key());
+                from = fromDictionary(key, gender, animate);
                 if (from.isPresent()) {
+                    part.key = key; // replace key!
                     part.plural = true;
                 }
             }
