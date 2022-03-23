@@ -59,7 +59,7 @@ public class GrammarUtils {
     private static final List<String> NEUTER_NOUN_ENDINGS = List.of("о", "е");
     private static final List<String> FEMALE_NOUN_ENDINGS = List.of("ья", "ла", "за", "ка");
 
-    private static final List<String> PLURAL_ENDINGS = List.of("ы", "и");
+    private static final List<String> PLURAL_ENDINGS = List.of("ы", "и", "я", "а");
 
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
@@ -248,9 +248,13 @@ public class GrammarUtils {
      */
     public static String toPluralNoun(String singular) {
         // TODO: make a rule for singular -> plural
-        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ль", "ья", "ка"))) {
-            // корабль,рубль,свинья,ладья,копейка,сделка,сиделка
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ль", "ья", "ка", "ия"))) {
+            // корабль,рубль,свинья,ладья,копейка,сделка,сиделка,инвестиция
             return TextUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ие"))) {
+            // решение, отношение
+            return TextUtils.replaceEnd(singular, 1, "я", Dictionary.LOCALE);
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ла", "за", "на"))) { // свекла,берёза,коза,старшина
             return TextUtils.replaceEnd(singular, 1, "ы", Dictionary.LOCALE);
@@ -276,7 +280,10 @@ public class GrammarUtils {
         if (TextUtils.endsWithIgnoreCase(plural, "ли")) { // корабли, рубли
             return TextUtils.replaceEnd(plural, 1, "ь", Dictionary.LOCALE);
         }
-        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ьи"))) { // свиньи, ладьи
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ия"))) { // состояния, действия
+            return TextUtils.replaceEnd(plural, 1, "е", Dictionary.LOCALE);
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ьи", "ии"))) { // свиньи, ладьи, инвестиции
             return TextUtils.replaceEnd(plural, 1, "я", Dictionary.LOCALE);
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ки"))) { // копейки, сделки
