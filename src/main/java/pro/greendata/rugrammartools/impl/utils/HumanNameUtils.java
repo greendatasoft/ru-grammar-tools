@@ -7,9 +7,13 @@ import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 import java.util.List;
 
 /**
+ * Utilities to work with human names.
  * Created by @ssz on 28.02.2022.
+ *
+ * @see GrammarUtils
+ * @see NumeralUtils
  */
-public class NameUtils {
+public class HumanNameUtils {
     private static final String INITIALS_LETTERS_IN_LOWERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя";
     private static final String INITIALS_LETTERS_IN_UPPERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя".toUpperCase(Dictionary.LOCALE);
     private static final String INITIALS_PATTERN = ("[" + INITIALS_LETTERS_IN_LOWERCASE + INITIALS_LETTERS_IN_UPPERCASE + "]\\.").repeat(2);

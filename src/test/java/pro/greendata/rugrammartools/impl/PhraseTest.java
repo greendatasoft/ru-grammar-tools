@@ -3,6 +3,7 @@ package pro.greendata.rugrammartools.impl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.Phrase.Type;
 
 import java.util.List;
 
@@ -14,7 +15,7 @@ public class PhraseTest {
     @Test
     public void testParsePhrase1() {
         String s = " AA BbB \tGggG ";
-        Phrase p = Phrase.parse(s, null, null);
+        Phrase p = Phrase.parse(s, Type.ANY, null, null);
         Assertions.assertEquals(List.of(" ", " ", " \t", " "), p.separators);
         Assertions.assertEquals(List.of("AA", "BbB", "GggG"), p.words);
         Assertions.assertEquals(List.of("aa", "bbb", "gggg"), p.keys);
@@ -27,7 +28,7 @@ public class PhraseTest {
     @Test
     public void testParsePhrase2() {
         String s = "ааА\tБ\tввв ' Ддд ззз жжж'\n";
-        Phrase p = Phrase.parse(s, Gender.NEUTER, false);
+        Phrase p = Phrase.parse(s, Type.ANY, Gender.NEUTER, false);
         Assertions.assertEquals(List.of("", "\t", "\t", " ", "\n"), p.separators);
         Assertions.assertEquals(List.of("ааА", "Б", "ввв", "' Ддд ззз жжж'"), p.words);
         Assertions.assertEquals(List.of("ааа", "б", "ввв", "' ддд ззз жжж'"), p.keys);
@@ -40,7 +41,7 @@ public class PhraseTest {
     @Test
     public void testMutableParsePhrase() {
         String s = "A b C";
-        Phrase.Mutable p = Phrase.parse(s, Gender.NEUTER, false).toMutable();
+        Phrase.Mutable p = Phrase.parse(s, Type.ANY, Gender.NEUTER, false).toMutable();
         Assertions.assertEquals(s, p.compose());
         p.set(0, "d");
         Assertions.assertEquals("D b C", p.compose());

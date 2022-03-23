@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 /**
+ * Utils to work with {@code String}s.
  * Created by @ssz on 25.02.2022.
  */
 public class TextUtils {

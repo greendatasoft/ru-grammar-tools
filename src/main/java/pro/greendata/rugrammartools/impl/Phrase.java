@@ -2,8 +2,9 @@ package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
-import pro.greendata.rugrammartools.impl.utils.NameUtils;
+import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.*;
@@ -59,16 +60,17 @@ public class Phrase {
      * Creates a phrase object from the given string.
      *
      * @param phrase  {@code String}, not {@code null}
+     * @param type    {@link Type}
      * @param gender  {@link Gender} (can be {@code null}), filter parameter
      * @param animate {@code Boolean} (can be {@code null}), filter parameter
      * @return {@link Phrase}
      */
-    public static Phrase parse(String phrase, Gender gender, Boolean animate) {
+    public static Phrase parse(String phrase, Type type, Gender gender, Boolean animate) {
         Assembler res = Assembler.split(phrase);
         if (res.isEmpty()) {
             throw new IllegalArgumentException();
         }
-        return res.compile(gender, animate).toPhrase();
+        return res.compile(type, gender, animate).toPhrase();
     }
 
     /**
@@ -133,6 +135,15 @@ public class Phrase {
     @Override
     public String toString() {
         return String.format("Phrase{raw='%s', words=%s}", raw, keys);
+    }
+
+    /**
+     * A phrase type.
+     */
+    public enum Type {
+        PROFESSION_NAME,
+        ORGANIZATION_NAME,
+        ANY
     }
 
     /**
@@ -255,11 +266,12 @@ public class Phrase {
         /**
          * Compiles this object collecting its content.
          *
+         * @param type {@link Phrase.Type}
          * @param inputGender  {@link Gender}, can be {@code null}
          * @param inputAnimate {@code Boolean}, can be {@code null}
          * @return this instance
          */
-        Assembler compile(Gender inputGender, Boolean inputAnimate) {
+        Assembler compile(Type type, Gender inputGender, Boolean inputAnimate) {
             fill(inputGender, inputAnimate);
 
             findAndSetNounPosition(this);
@@ -345,15 +357,16 @@ public class Phrase {
                 if (phrase.animate != Boolean.FALSE && handleHumanName(phrase, index, false)) {
                     break;
                 }
+                // the following code was designed for inflection profession names
                 // if the next word is preposition then the first word can be noun (e.g. "Термист по обработке слюды")
-                if (next != null && GrammarUtils.isNonDerivativePreposition(next.getValue().raw)) {
+                if (next != null && PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(next.getValue().key())) {
                     phrase.nounStartIndex = index;
                     break;
                 }
                 // (masculine) skip leading adjectives
                 if (phrase.isNullOr(Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
                     phrase.gender = Gender.MALE;
-                    if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantivatNoun(w)) {
+                    if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w)) {
                         phrase.nounStartIndex = index;
                         break;
                     }
@@ -362,7 +375,7 @@ public class Phrase {
                 // (feminine) skip the leading adjectives
                 if (phrase.isNullOr(Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
                     phrase.gender = Gender.FEMALE;
-                    if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantivatNoun(w)) {
+                    if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w)) {
                         phrase.nounStartIndex = index;
                         break;
                     }
@@ -384,7 +397,7 @@ public class Phrase {
                 return false;
             }
             Map.Entry<Integer, Part> nextWord = phrase.parts.higherEntry(index);
-            if (sureIsName && nextWord == null && NameUtils.canBeSurname(current.raw)) { // e.g. "Петрова"
+            if (sureIsName && nextWord == null && HumanNameUtils.canBeSurname(current.raw)) { // e.g. "Петрова"
                 phrase.nounStartIndex = index;
                 handleSurname(phrase, current);
                 return true;
@@ -394,12 +407,12 @@ public class Phrase {
             }
             Part next = nextWord.getValue();
             Integer nextIndex = nextWord.getKey();
-            if (NameUtils.canBeInitials(current.raw) && NameUtils.canBeSurname(next.raw)) { // e.g. "П.П. Петрова"
+            if (HumanNameUtils.canBeInitials(current.raw) && HumanNameUtils.canBeSurname(next.raw)) { // e.g. "П.П. Петрова"
                 phrase.nounStartIndex = nextIndex;
                 handleSurname(phrase, next);
                 return true;
             }
-            if (NameUtils.canBeInitials(next.raw) && NameUtils.canBeSurname(current.raw)) { // e.g. "Петров П.П."
+            if (HumanNameUtils.canBeInitials(next.raw) && HumanNameUtils.canBeSurname(current.raw)) { // e.g. "Петров П.П."
                 phrase.nounStartIndex = index;
                 handleSurname(phrase, current);
                 return true;
@@ -412,18 +425,18 @@ public class Phrase {
                 nextNext = rest.firstEntry().getValue();
                 nextNextIndex = rest.firstEntry().getKey();
             }
-            if (NameUtils.isFirstname(current.raw)) { // e.g. "Полина Петровна Петрова" or "Полина Петрова"
-                if (nextNext != null && NameUtils.canBePatronymic(next.raw) && NameUtils.canBeSurname(nextNext.raw)) {
+            if (HumanNameUtils.isFirstname(current.raw)) { // e.g. "Полина Петровна Петрова" or "Полина Петрова"
+                if (nextNext != null && HumanNameUtils.canBePatronymic(next.raw) && HumanNameUtils.canBeSurname(nextNext.raw)) {
                     sfp.add(nextNext);
                     sfp.add(current);
                     sfp.add(next);
-                } else if (NameUtils.canBeSurname(next.raw)) {
+                } else if (HumanNameUtils.canBeSurname(next.raw)) {
                     sfp.add(next);
                     sfp.add(next);
                 }
-            } else if (NameUtils.isFirstname(next.raw)) { // e.g. "Петров Петр Петрович" or "Петрова Полина"
-                if (NameUtils.canBeSurname(current.raw)) {
-                    if (nextNext != null && NameUtils.canBePatronymic(nextNext.raw)) {
+            } else if (HumanNameUtils.isFirstname(next.raw)) { // e.g. "Петров Петр Петрович" or "Петрова Полина"
+                if (HumanNameUtils.canBeSurname(current.raw)) {
+                    if (nextNext != null && HumanNameUtils.canBePatronymic(nextNext.raw)) {
                         sfp.add(current);
                         sfp.add(next);
                         sfp.add(nextNext);
@@ -436,7 +449,7 @@ public class Phrase {
             if (sfp.isEmpty()) {
                 return false;
             }
-            Gender gender = NameUtils.guessGenderByFullName(sfp.stream().map(x -> x.raw).toArray(String[]::new));
+            Gender gender = HumanNameUtils.guessGenderByFullName(sfp.stream().map(x -> x.raw).toArray(String[]::new));
             if (gender == null) {
                 return false;
             }
@@ -459,7 +472,7 @@ public class Phrase {
         private static void handleSurname(Assembler phrase, Part next) {
             next.type = RuleType.FAMILY_NAME;
             next.animate = true;
-            next.gender = NameUtils.canBeFemaleSurname(next.raw) ? Gender.FEMALE : Gender.MALE;
+            next.gender = HumanNameUtils.canBeFemaleSurname(next.raw) ? Gender.FEMALE : Gender.MALE;
             phrase.fill(next);
         }
 
