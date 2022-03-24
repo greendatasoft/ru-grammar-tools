@@ -4,9 +4,22 @@ import java.util.Collection;
 import java.util.Locale;
 
 /**
+ * Utils to work with {@code String}s.
  * Created by @ssz on 25.02.2022.
  */
 public class TextUtils {
+
+    public static final Locale DEFAULT_LOCALE = new Locale("ru", "ru");
+
+    /**
+     * Makes a normalized string (lowercase without trailing spaces).
+     *
+     * @param orig {@code String}, not {@code null}
+     * @return {@code String}
+     */
+    public static String normalize(String orig) {
+        return normalize(orig, DEFAULT_LOCALE);
+    }
 
     /**
      * Makes a normalized string (lowercase without trailing spaces).
@@ -24,11 +37,34 @@ public class TextUtils {
      *
      * @param orig   {@code String}, not {@code null}
      * @param ending {@code String} to append
+     * @return {@code String}
+     */
+    public static String appendEnd(String orig, String ending) {
+        return appendEnd(orig, ending, DEFAULT_LOCALE);
+    }
+
+    /**
+     * Appends ending to the original string preserving case.
+     *
+     * @param orig   {@code String}, not {@code null}
+     * @param ending {@code String} to append
      * @param locale {@link Locale} use the case transformation rules for this locale
      * @return {@code String}
      */
     public static String appendEnd(String orig, String ending, Locale locale) {
         return orig + toUpperCaseIfNeeded(orig, ending, locale);
+    }
+
+    /**
+     * Replaces the ending of the original string with the given one preserving case.
+     *
+     * @param orig         {@code String}, not {@code null}
+     * @param numberToTrim {@code int} - the number of symbols to cut from the end of {@code orig}
+     * @param ending       {@code String}
+     * @return {@code String}
+     */
+    public static String replaceEnd(String orig, int numberToTrim, String ending) {
+        return replaceEnd(orig, numberToTrim, ending, DEFAULT_LOCALE);
     }
 
     /**

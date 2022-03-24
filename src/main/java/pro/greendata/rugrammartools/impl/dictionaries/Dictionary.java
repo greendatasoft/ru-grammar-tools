@@ -20,7 +20,6 @@ import java.util.stream.Stream;
  * @see <a href='https://github.com/Badestrand/russian-dictionary'>Russian Dictionary Data</a>
  */
 public class Dictionary {
-    public static final Locale LOCALE = new Locale("ru", "ru");
 
     private static final Dictionary NOUN_DICTIONARY = new Dictionary("/nouns.csv");
 
@@ -199,12 +198,12 @@ public class Dictionary {
          */
         private static Map.Entry<String, WordRecord> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
-            String key = TextUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
+            String key = TextUtils.normalize(Objects.requireNonNull(array[0]));
             if (array.length < 5) {
                 return null;
             }
             WordRecord res = new WordRecord();
-            res.gender(parseGender(array));
+            res.gender(parseGender(array[4]));
             if (array.length < 7) {
                 return Map.entry(key, res);
             }
@@ -246,14 +245,14 @@ public class Dictionary {
             return res.toString();
         }
 
-        private static Gender parseGender(String[] array) {
-            if ("f".equals(array[4])) {
+        private static Gender parseGender(String g) {
+            if ("f".equals(g)) {
                 return Gender.FEMALE;
             }
-            if ("n".equals(array[4])) {
+            if ("n".equals(g)) {
                 return Gender.NEUTER;
             }
-            if ("m".equals(array[4])) {
+            if ("m".equals(g)) {
                 return Gender.MALE;
             }
             return null;
@@ -270,7 +269,7 @@ public class Dictionary {
         }
 
         private static String normalizeValue(String value) {
-            return TextUtils.normalize(value, LOCALE).replace("'", "");
+            return TextUtils.normalize(value).replace("'", "");
         }
 
         @Override
