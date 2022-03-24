@@ -521,7 +521,7 @@ public class Phrase {
                 return;
             }
             // process with hyphen e.g. "альфа-лучи", "лётчик-наблюдатель", "караван-сарай"
-            String[] words = noun.key().split("-");
+            String[] words = noun.raw.split("-");
             Gender g = phrase.gender;
             List<Part> newParts = new ArrayList<>();
             for (int i = 0; i < words.length; i++) {

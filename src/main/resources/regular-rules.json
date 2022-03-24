@@ -801,6 +801,21 @@
     },
     {
       "gender": "male",
+      "description": "лаборант",
+      "animate": true,
+      "test": [
+        "нт"
+      ],
+      "mods": [
+        "а",
+        "у",
+        "а",
+        "ом",
+        "е"
+      ]
+    },
+    {
+      "gender": "male",
       "test": [
         "ен",
         "нн",
