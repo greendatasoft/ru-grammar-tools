@@ -550,10 +550,10 @@ public class Phrase {
             if (from.isPresent()) {
                 part.plural = false;
             } else if (GrammarUtils.canBePlural(part.key())) {
-                String key = GrammarUtils.toSingular(part.key());
-                from = fromDictionary(key, gender, animate);
+                String k = GrammarUtils.toSingular(part.key());
+                from = fromDictionary(k, gender, animate);
                 if (from.isPresent()) {
-                    part.key = key; // replace key!
+                    part.key = k; // replace key!
                     part.plural = true;
                 }
             }
@@ -561,6 +561,17 @@ public class Phrase {
             part.indeclinable = from.map(Word::isIndeclinable).orElse(false);
             if (gender == null) {
                 gender = from.map(Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(part.key()));
+                if (gender == null) {
+                    String k = GrammarUtils.toSingular(part.key());
+                    gender = GrammarUtils.guessGenderOfSingularNoun(k);
+                    if (gender != null) {
+                        part.key = k; // replace key!
+                        part.plural = true; // possible wrong
+                    } else {
+                        // the masculine gender is most common (in russian job-titles)
+                        gender = Gender.MALE;
+                    }
+                }
             }
             if (animate == null) {
                 animate = from.map(Word::animate).orElse(null);

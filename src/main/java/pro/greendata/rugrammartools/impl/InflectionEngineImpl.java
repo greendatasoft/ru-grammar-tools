@@ -330,6 +330,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             return res;
         }
         if (toPlural != null && toPlural) {
+            // note that for plural declensions the base is also plural in json, not singular like in dictionary rules
             key = GrammarUtils.toPluralNoun(key);
         }
         return processRule(key, type, declension, details.gender(), details.animate(), toPlural);
