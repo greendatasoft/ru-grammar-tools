@@ -5,10 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -20,12 +17,20 @@ import java.util.stream.Stream;
 public class PlainDictionary {
     public static final Collection<String> FEMALE_NAMES = load("/female-names.txt");
     public static final Collection<String> MALE_NAMES = load("/male-names.txt");
+
+    /**
+     * true (indeclinable) abbreviations
+     */
     public static final Collection<String> ABBREVIATIONS = load("/abbreviations.txt");
-    // collection of substantive feminine nouns that look like adjectives
-    // (субстантивные существительные женского рода, которые выглядят как прилагательные)
+    /**
+     * collection of substantive feminine nouns that look like adjectives
+     * (субстантивные существительные женского рода, которые выглядят как прилагательные)
+     */
     public static final Collection<String> FEMININE_SUBSTANTIVE_NOUNS = load("/female-substantives.txt");
-    // collection of substantive masculine nouns that look like adjectives
-    // (субстантивные существительные мужского рода, которые выглядят как прилагательные)
+    /**
+     * collection of substantive masculine nouns that look like adjectives
+     * (субстантивные существительные мужского рода, которые выглядят как прилагательные)
+     */
     public static final Collection<String> MASCULINE_SUBSTANTIVE_NOUNS = load("/male-substantives.txt");
     /**
      * A {@code List} of big cardinal numerals, so called {@code "Короткая шкала"}.
@@ -48,7 +53,31 @@ public class PlainDictionary {
     public static final Collection<Integer> CONSONANT_CHARS = "бвгджзйклмнпрстфхцчшщ"
             .chars().boxed().collect(Collectors.toUnmodifiableSet());
 
-    public static Set<String> load(String resource) {
+    /**
+     * Collection of noun-endings.
+     * Each ending belongs to one and only one gender group (ambiguous endings are excluded).
+     * Collected from {@code nouns.csv}.
+     */
+    public static final Map<String, Collection<String>> NOUN_ENDINGS = loadAsMap("/noun-endings.txt");
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Map<String, Collection<String>> loadAsMap(@SuppressWarnings("SameParameterValue") String resource) {
+        Set<String> res = load(resource);
+        Map.Entry[] values = res.stream().map(PlainDictionary::parseLine).toArray(Map.Entry[]::new);
+        return Map.ofEntries(values);
+    }
+
+    private static Map.Entry<String, Collection<String>> parseLine(String line) {
+        String[] kv = line.split(":\\s*");
+        if (kv.length != 2) {
+            throw new IllegalStateException("Wrong line: " + line);
+        }
+        Collection<String> value = Set.of(Arrays.stream(kv[1].split(",\\s*"))
+                .map(String::trim).filter(x -> !x.isEmpty()).toArray(String[]::new));
+        return Map.entry(kv[0].trim(), value);
+    }
+
+    private static Set<String> load(String resource) {
         try (InputStream in = Objects.requireNonNull(PlainDictionary.class.getResourceAsStream(resource));
              BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
              Stream<String> stream = reader.lines()) {

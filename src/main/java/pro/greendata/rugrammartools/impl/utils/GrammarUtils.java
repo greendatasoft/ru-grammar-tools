@@ -52,12 +52,11 @@ public class GrammarUtils {
             of("дой", "слюдой")
     );
 
+    private static final Collection<String> DEFINITELY_NEUTER_NOUNS = Set.of("знания", "прения");
+
     private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
     private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
     private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
-
-    private static final List<String> NEUTER_NOUN_ENDINGS = List.of("о", "е");
-    private static final List<String> FEMALE_NOUN_ENDINGS = List.of("ья", "ла", "за", "ка");
 
     private static final List<String> PLURAL_ENDINGS = List.of("ы", "и", "я", "а");
 
@@ -176,7 +175,15 @@ public class GrammarUtils {
             return true;
         }
         // свинья, ладья, свекла, берёза, копейка
-        return TextUtils.endsWithOneOfIgnoreCase(word, FEMALE_NOUN_ENDINGS);
+        if (TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.FEMALE))) {
+            return true;
+        }
+        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        if (DEFINITELY_NEUTER_NOUNS.contains(nw)) {
+            return false;
+        }
+        // most of the nouns with ending '-ия' are female (see nouns.csv)
+        return nw.endsWith("ия");
     }
 
     /**
@@ -187,8 +194,29 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeNeuterNoun(String word) {
+        if (DEFINITELY_NEUTER_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE))) {
+            return true;
+        }
         // солнце, облако, дерево
-        return TextUtils.endsWithOneOfIgnoreCase(word, NEUTER_NOUN_ENDINGS);
+        return TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.NEUTER));
+    }
+
+    /**
+     * Determines (not very accurately) whether the given {@code word} can be a singular and nominative masculine noun
+     * (i.e. является ли слово {@code существительным в мужском роде единственном числе и именительном падеже}?).
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeMaleNoun(String word) {
+        if (canBeMasculineAdjectiveBasedSubstantiveNoun(word)) {
+            return true;
+        }
+        return TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.MALE));
+    }
+
+    private static Collection<String> endings(Gender gender) {
+        return Objects.requireNonNull(PlainDictionary.NOUN_ENDINGS.get(gender.name().toLowerCase()));
     }
 
     /**
@@ -207,18 +235,20 @@ public class GrammarUtils {
      * Returns guessed gender of the specified noun (not accurate).
      *
      * @param singular {@code String}, a singular noun in nominative case, not {@code null}
-     * @return {@link Gender}
+     * @return {@link Gender} or {@code null}
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
         String nw = TextUtils.normalize(singular, Dictionary.LOCALE);
         if (canBeNeuterNoun(nw)) { // солнце, облако, дерево
             return Gender.NEUTER;
         }
-        if (GrammarUtils.canBeFeminineNoun(singular)) { // свинья, ладья, свекла, берёза, копейка
+        if (canBeFeminineNoun(singular)) { // свинья, ладья, свекла, берёза, копейка
             return Gender.FEMALE;
         }
-        // the masculine gender is most common (in russian job-titles)
-        return Gender.MALE;
+        if (canBeMaleNoun(singular)) {
+            return Gender.MALE;
+        }
+        return null;
     }
 
     /**
