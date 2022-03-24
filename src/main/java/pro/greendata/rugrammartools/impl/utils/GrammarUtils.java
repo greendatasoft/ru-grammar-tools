@@ -1,7 +1,6 @@
 package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.*;
@@ -149,7 +148,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeMasculineAdjectiveBasedSubstantiveNoun(String word) {
-        return PlainDictionary.MASCULINE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
+        return PlainDictionary.MASCULINE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word));
     }
 
     /**
@@ -160,7 +159,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantiveNoun(String word) {
-        return PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE));
+        return PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word));
     }
 
     /**
@@ -178,7 +177,7 @@ public class GrammarUtils {
         if (TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.FEMALE))) {
             return true;
         }
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         if (DEFINITELY_NEUTER_NOUNS.contains(nw)) {
             return false;
         }
@@ -194,7 +193,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeNeuterNoun(String word) {
-        if (DEFINITELY_NEUTER_NOUNS.contains(TextUtils.normalize(word, Dictionary.LOCALE))) {
+        if (DEFINITELY_NEUTER_NOUNS.contains(TextUtils.normalize(word))) {
             return true;
         }
         // солнце, облако, дерево
@@ -238,7 +237,7 @@ public class GrammarUtils {
      * @return {@link Gender} or {@code null}
      */
     public static Gender guessGenderOfSingularNoun(String singular) {
-        String nw = TextUtils.normalize(singular, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(singular);
         if (canBeNeuterNoun(nw)) { // солнце, облако, дерево
             return Gender.NEUTER;
         }
@@ -280,20 +279,20 @@ public class GrammarUtils {
         // TODO: make a rule for singular -> plural
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ль", "ья", "ка", "ия"))) {
             // корабль,рубль,свинья,ладья,копейка,сделка,сиделка,инвестиция
-            return TextUtils.replaceEnd(singular, 1, "и", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(singular, 1, "и");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ие"))) {
             // решение, отношение
-            return TextUtils.replaceEnd(singular, 1, "я", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(singular, 1, "я");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("ла", "за", "на"))) { // свекла,берёза,коза,старшина
-            return TextUtils.replaceEnd(singular, 1, "ы", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(singular, 1, "ы");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("т", "р"))) { // цент,фунт,клиент,брезент,доллар,солдат
-            return TextUtils.appendEnd(singular, "ы", Dictionary.LOCALE);
+            return TextUtils.appendEnd(singular, "ы");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(singular, List.of("к", "г"))) { // моряк, залог
-            return TextUtils.appendEnd(singular, "и", Dictionary.LOCALE);
+            return TextUtils.appendEnd(singular, "и");
         }
         // TODO: complete
         return singular;
@@ -308,19 +307,19 @@ public class GrammarUtils {
     public static String toSingular(String plural) {
         // TODO: make a rule for plural -> singular
         if (TextUtils.endsWithIgnoreCase(plural, "ли")) { // корабли, рубли
-            return TextUtils.replaceEnd(plural, 1, "ь", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(plural, 1, "ь");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ия"))) { // состояния, действия
-            return TextUtils.replaceEnd(plural, 1, "е", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(plural, 1, "е");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ьи", "ии"))) { // свиньи, ладьи, инвестиции
-            return TextUtils.replaceEnd(plural, 1, "я", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(plural, 1, "я");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ки"))) { // копейки, сделки
-            return TextUtils.replaceEnd(plural, 1, "а", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(plural, 1, "а");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("лы", "зы"))) { // свеклы, берёзы
-            return TextUtils.replaceEnd(plural, 1, "а", Dictionary.LOCALE);
+            return TextUtils.replaceEnd(plural, 1, "а");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(plural, List.of("ты", "ры", "ки", "ги"))) {
             // центы,фунты,брезенты,доллары,залоги,моряки
@@ -352,7 +351,7 @@ public class GrammarUtils {
      * @return {@code boolean}
      */
     public static boolean canBeAbbreviation(String word, String phrase) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         if (PlainDictionary.ABBREVIATIONS.contains(nw)) {
             return true;
         }

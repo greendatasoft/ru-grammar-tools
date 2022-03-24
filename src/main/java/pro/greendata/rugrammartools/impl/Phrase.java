@@ -45,7 +45,7 @@ public class Phrase {
     }
 
     private static String toKey(String w) {
-        return TextUtils.normalize(w, Dictionary.LOCALE);
+        return TextUtils.normalize(w);
     }
 
     private static boolean isSpace(char ch) {

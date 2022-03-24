@@ -1,7 +1,6 @@
 package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.List;
@@ -35,7 +34,7 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean canBeFraction(String phrase) {
-        phrase = TextUtils.normalize(phrase, Dictionary.LOCALE);
+        phrase = TextUtils.normalize(phrase);
         return phrase.contains(" целых ") || phrase.contains("одна целая ");
     }
 
@@ -46,7 +45,7 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean containsBigCardinalNumeral(String phrase) {
-        String nw = TextUtils.normalize(phrase, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(phrase);
         if ("тысячи".equals(nw) || "тысяч".equals(nw)) {
             // ноль целых две десятых, десять тысяч целых тридцать три сотых
             return true;
@@ -67,7 +66,7 @@ public class NumeralUtils {
      * @return {@link Gender}
      */
     public static Gender guessGenderOfSingleNumeral(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         if (MALE_NUMERALS.contains(nw) || nw.endsWith("ый")) { // один, десятый
             return Gender.MALE;
         }
@@ -85,7 +84,7 @@ public class NumeralUtils {
      * @return {@code String}
      */
     public static String changeGenderOfCardinalNumeral(String numeral, Gender gender) {
-        String nw = TextUtils.normalize(numeral, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(numeral);
         switch (nw) {
             case "один":
                 return TextUtils.toProperCase(numeral, GrammarUtils.select("одна", "одно", "один", gender));
@@ -103,7 +102,7 @@ public class NumeralUtils {
      * @return {@code String}
      */
     public static String changeGenderOfOrdinalNumeral(String numeral, Gender gender) {
-        String nw = TextUtils.normalize(numeral, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(numeral);
         if ("третий".equals(nw)) {
             return TextUtils.toProperCase(numeral, GrammarUtils.select("третья", "третье", "третий", gender));
         }
@@ -111,7 +110,7 @@ public class NumeralUtils {
         // четвёртый четвёртое четвёртая
         // седьмой седьмое седьмая
         String ending = GrammarUtils.select("ая", "ое", nw.endsWith("ый") ? "ый" : "ой", gender);
-        String res = TextUtils.replaceEnd(nw, 2, ending, Dictionary.LOCALE);
+        String res = TextUtils.replaceEnd(nw, 2, ending);
         return TextUtils.toProperCase(numeral, res);
     }
 
@@ -122,7 +121,7 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean isZero(String word) {
-        return "ноль".equals(TextUtils.normalize(word, Dictionary.LOCALE));
+        return "ноль".equals(TextUtils.normalize(word));
     }
 
     /**
@@ -132,7 +131,7 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean endsWithCardinalOne(String phrase) {
-        return GrammarUtils.endsWithWord(TextUtils.normalize(phrase, Dictionary.LOCALE), "один");
+        return GrammarUtils.endsWithWord(TextUtils.normalize(phrase), "один");
     }
 
     /**
@@ -142,7 +141,7 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean endsWithCardinalTwoThreeFour(String phrase) {
-        String nw = TextUtils.normalize(phrase, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(phrase);
         return GrammarUtils.endsWithWord(nw, "два") ||
                 GrammarUtils.endsWithWord(nw, "три") || GrammarUtils.endsWithWord(nw, "четыре");
     }

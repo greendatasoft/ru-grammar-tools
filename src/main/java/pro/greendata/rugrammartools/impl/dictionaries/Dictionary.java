@@ -20,7 +20,6 @@ import java.util.stream.Stream;
  * @see <a href='https://github.com/Badestrand/russian-dictionary'>Russian Dictionary Data</a>
  */
 public class Dictionary {
-    public static final Locale LOCALE = new Locale("ru", "ru");
 
     private static final Dictionary NOUN_DICTIONARY = new Dictionary("/nouns.csv");
 
@@ -199,7 +198,7 @@ public class Dictionary {
          */
         private static Map.Entry<String, WordRecord> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
-            String key = TextUtils.normalize(Objects.requireNonNull(array[0]), LOCALE);
+            String key = TextUtils.normalize(Objects.requireNonNull(array[0]));
             if (array.length < 5) {
                 return null;
             }
@@ -270,7 +269,7 @@ public class Dictionary {
         }
 
         private static String normalizeValue(String value) {
-            return TextUtils.normalize(value, LOCALE).replace("'", "");
+            return TextUtils.normalize(value).replace("'", "");
         }
 
         @Override

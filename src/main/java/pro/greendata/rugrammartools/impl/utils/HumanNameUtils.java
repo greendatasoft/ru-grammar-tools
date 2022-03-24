@@ -1,7 +1,6 @@
 package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
  */
 public class HumanNameUtils {
     private static final String INITIALS_LETTERS_IN_LOWERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя";
-    private static final String INITIALS_LETTERS_IN_UPPERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя".toUpperCase(Dictionary.LOCALE);
+    private static final String INITIALS_LETTERS_IN_UPPERCASE = "абвгдеёжзийклмнопрстуфхцчшщыэюя".toUpperCase(TextUtils.DEFAULT_LOCALE);
     private static final String INITIALS_PATTERN = ("[" + INITIALS_LETTERS_IN_LOWERCASE + INITIALS_LETTERS_IN_UPPERCASE + "]\\.").repeat(2);
 
     private static final List<String> FEMALE_PATRONYMIC_ENDINGS = List.of("овна", "евна", "ична");
@@ -54,47 +53,47 @@ public class HumanNameUtils {
     }
 
     public static boolean isFirstname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return PlainDictionary.FEMALE_NAMES.contains(nw) || PlainDictionary.MALE_NAMES.contains(nw);
     }
 
     public static boolean isFemaleFirstname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return PlainDictionary.FEMALE_NAMES.contains(nw);
     }
 
     public static boolean isMaleFirstname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return PlainDictionary.MALE_NAMES.contains(nw);
     }
 
     public static boolean canBePatronymic(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return FEMALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith) || MALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeFemalePatronymic(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return FEMALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeMalePatronymic(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return MALE_PATRONYMIC_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeSurname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return FEMALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith) || MALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeFemaleSurname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return FEMALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
     public static boolean canBeMaleSurname(String word) {
-        String nw = TextUtils.normalize(word, Dictionary.LOCALE);
+        String nw = TextUtils.normalize(word);
         return MALE_SURNAME_ENDINGS.stream().anyMatch(nw::endsWith);
     }
 
