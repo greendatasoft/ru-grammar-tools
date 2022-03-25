@@ -1,102 +1,95 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.PartOfSpeech;
 
-import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Created by @ssz on 04.12.2020.
  */
 public class RuleSet {
-    private final Rule[] exceptions;
-    private final Rule[] suffixes;
+    private static final Comparator<Rule> BY_ANIMATE_COMPARATOR = Comparator.comparingInt((Rule r) -> toInt(r.animate)).reversed();
+    private static final Comparator<Rule> BY_PLURAL_COMPARATOR = Comparator.comparingInt((Rule r) -> toInt(r.plural)).reversed();
+    private static final Comparator<Rule> BY_PART_OF_SPEECH_COMPARATOR = Comparator.comparingInt((Rule r) -> toInt(r.partOfSpeech)).reversed();
 
-    public RuleSet(Rule[] exceptions, Rule[] suffixes) {
+    private final List<Rule> exceptions;
+    private final List<Rule> suffixes;
+
+    protected RuleSet(List<Rule> exceptions, List<Rule> suffixes) {
         this.exceptions = Objects.requireNonNull(exceptions);
         this.suffixes = Objects.requireNonNull(suffixes);
     }
 
-    public static Rule findRule(String word, Gender gender, Boolean animated, Boolean plural, RuleSet rules) {
-        Rule exceptionRule = selectRule(rules.exceptions(), word, gender, animated, plural);
+    public static Rule findRule(String word,
+                                Gender gender,
+                                PartOfSpeech partOfSpeech,
+                                Boolean animate,
+                                Boolean plural,
+                                RuleSet rules) {
+        Rule exceptionRule = findRule(rules.exceptions, word, gender, partOfSpeech, animate, plural);
         if (exceptionRule != null && exceptionRule.matchGenderStrict(gender)) {
             return exceptionRule;
         }
-        Rule suffixRule = selectRule(rules.suffixes(), word, gender, animated, plural);
+        Rule suffixRule = findRule(rules.suffixes, word, gender, partOfSpeech, animate, plural);
         if (suffixRule != null && suffixRule.matchGenderStrict(gender)) {
             return suffixRule;
         }
         return exceptionRule != null ? exceptionRule : suffixRule;
     }
 
-    private static Rule selectRule(Stream<Rule> rules, String word, Gender gender, Boolean animate, Boolean plural) {
-        List<Rule> res = rules.filter(rule -> filterRule(rule, word, gender, animate, plural))
-                .collect(Collectors.toList());
-        if (res.isEmpty()) {
+    private static Rule findRule(List<Rule> rules, String word, Gender gender, PartOfSpeech pos, Boolean animate, Boolean plural) {
+        List<Rule> byEnding = rules.stream().filter(r -> r.match(word)).collect(Collectors.toList());
+        if (byEnding.isEmpty()) {
             return null;
         }
-        if (res.size() == 1) {
-            return res.get(0);
+        if (byEnding.size() == 1) {
+            return byEnding.get(0);
         }
-        List<Rule> byGender = filter(res, x -> x.matchGenderStrict(gender));
-        if (byGender.isEmpty()) {
-            // if nothing found try neuter (original logic)
-            byGender = filter(res, x -> x.matchGenderStrict(Gender.NEUTER));
-        }
-        if (byGender.isEmpty()) {
+        // if nothing found use neuter as default (it's original weird logic)
+        List<Rule> byGender = byEnding.stream()
+                .filter(r -> r.matchGenderStrict(gender) || r.matchGenderStrict(Gender.NEUTER))
+                .collect(Collectors.toList());
+        if (byGender.isEmpty()) { // gender is mandatory right now
             throw new IllegalStateException();
         }
         if (byGender.size() == 1) {
             return byGender.get(0);
         }
-        if (plural == null && animate == null) {
+        if (plural == null && animate == null && pos == null) {
+            // no filter parameters is specified -> return the first
             return byGender.get(0);
         }
-        if (plural == null) {
-            List<Rule> byAnimate = filter(byGender, x -> x.matchAnimateStrict(animate));
-            if (byAnimate.size() == 1) {
-                return byAnimate.get(0);
-            }
+        Comparator<Rule> comp = createRuleComparator(pos, animate, plural);
+        if (comp == null) {
+            // can't sort -> return the first one
+            return byGender.get(0);
         }
-        if (animate == null) {
-            List<Rule> byPlural = filter(byGender, x -> x.matchPluralStrict(plural));
-            if (byPlural.size() == 1) {
-                return byPlural.get(0);
-            }
+        return byGender.stream()
+                .sorted(comp)
+                .filter(r -> r.matchAnimateLenient(animate) && r.matchPluralLenient(plural) && r.matchPartOfSpeechLenient(pos))
+                .findFirst().orElse(null);
+    }
+
+    private static Comparator<Rule> createRuleComparator(PartOfSpeech pos, Boolean animate, Boolean plural) {
+        Comparator<Rule> res = null;
+        if (animate != null) {
+            res = BY_ANIMATE_COMPARATOR;
         }
-        List<Rule> byAnimateAndPlural = filter(byGender, x -> x.matchAnimateStrict(animate) && x.matchPluralStrict(plural));
-        if (byAnimateAndPlural.size() == 1) {
-            return byAnimateAndPlural.get(0);
+        if (plural != null) {
+            res = res == null ? BY_PLURAL_COMPARATOR : res.thenComparing(BY_PLURAL_COMPARATOR);
         }
-        List<Rule> byAnimateOrPlural = filter(byGender, x -> x.matchAnimateStrict(animate) || x.matchPluralStrict(plural));
-        if (byAnimateOrPlural.size() == 1) {
-            return byAnimateOrPlural.get(0);
+        if (pos != null) {
+            res = res == null ? BY_PART_OF_SPEECH_COMPARATOR : res.thenComparing(BY_PART_OF_SPEECH_COMPARATOR);
         }
-        // choose the first ...
-        return byGender.get(0);
+        return res;
     }
 
-    private static List<Rule> filter(List<Rule> res, Predicate<Rule> test) {
-        return res.stream().filter(test).collect(Collectors.toList());
+    private static <X> int toInt(X v) {
+        return v == null ? -1 : 1;
     }
 
-    private static boolean filterRule(Rule rule, String word, Gender gender, Boolean animated, Boolean plural) {
-        return filterRule(rule, gender, animated, plural) && rule.test().anyMatch(word::endsWith);
-    }
-
-    private static boolean filterRule(Rule rule, Gender gender, Boolean animated, Boolean plural) {
-        return rule.matchPlural(plural) && rule.matchAnimate(animated) && rule.matchGender(gender);
-    }
-
-    private Stream<Rule> exceptions() {
-        return Arrays.stream(exceptions);
-    }
-
-    private Stream<Rule> suffixes() {
-        return Arrays.stream(suffixes);
-    }
 }

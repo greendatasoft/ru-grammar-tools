@@ -8,6 +8,7 @@ import java.util.List;
 @SuppressWarnings("unused")
 public class RuleBean {
     private String gender;
+    private String partOfSpeech;
     private String description;
     private Boolean plural;
     private Boolean animate;
@@ -21,6 +22,14 @@ public class RuleBean {
 
     public void setGender(String gender) {
         this.gender = gender;
+    }
+
+    public String getPartOfSpeech() {
+        return partOfSpeech;
+    }
+
+    public void setPartOfSpeech(String partOfSpeech) {
+        this.partOfSpeech = partOfSpeech;
     }
 
     public List<String> getMods() {
