@@ -1,6 +1,7 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
@@ -266,7 +267,7 @@ public class Phrase {
         /**
          * Compiles this object collecting its content.
          *
-         * @param type {@link Phrase.Type}
+         * @param type {@link Phrase.Type} TODO: handle phrase type
          * @param inputGender  {@link Gender}, can be {@code null}
          * @param inputAnimate {@code Boolean}, can be {@code null}
          * @return this instance
@@ -276,7 +277,7 @@ public class Phrase {
 
             if (PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(this.parts.firstEntry().getValue().key())) {
                 // starts with preposition -> consider the whole phrase as indeclinable
-                this.parts.forEach((i, p) -> p.fill(gender, animate, true));
+                this.parts.forEach((i, p) -> p.fillSettings(gender, null, animate, true));
                 return this;
             }
 
@@ -286,10 +287,11 @@ public class Phrase {
 
             this.parts.headMap(this.endIndex, true).forEach((i, p) -> {
                 if (p.isBlank()) {
-                    p.fill(gender, animate, false);
+                    p.fillSettings(gender, PartOfSpeech.ADJECTIVE, animate, false);
                 }
             });
-            this.parts.tailMap(this.endIndex, false).forEach((i, p) -> p.fill(gender, animate, true));
+            this.parts.tailMap(this.endIndex, false)
+                    .forEach((i, p) -> p.fillSettings(gender, PartOfSpeech.ADJECTIVE, animate, true));
             return this;
         }
 
@@ -330,7 +332,7 @@ public class Phrase {
             return gender == null || gender == g;
         }
 
-        private void fill(Part p) {
+        private void fillFromWord(Part p) {
             fill(p.gender, p.animate);
         }
 
@@ -350,7 +352,7 @@ public class Phrase {
                 String w = part.raw;
                 Map.Entry<Integer, Part> next = phrase.parts.higherEntry(index);
                 if (GrammarUtils.canBeAbbreviation(w, phrase.raw)) {
-                    part.fill(phrase.gender, phrase.animate, true);
+                    part.fillSettings(phrase.gender, PartOfSpeech.NOUN, phrase.animate, true);
                     if (GrammarUtils.canBeHumanRelatedAbbreviation(w) && next != null) { // e.g. "ИП Иванов"
                         if (handleHumanName(phrase, next.getKey(), true)) {
                             break;
@@ -463,7 +465,7 @@ public class Phrase {
             sfp.get(0).gender = gender;
             sfp.get(0).animate = true;
             sfp.get(0).type = RuleType.FAMILY_NAME;
-            phrase.fill(sfp.get(0));
+            phrase.fillFromWord(sfp.get(0));
             sfp.get(1).gender = gender;
             sfp.get(1).animate = true;
             sfp.get(1).type = RuleType.FIRST_NAME;
@@ -480,7 +482,7 @@ public class Phrase {
             next.type = RuleType.FAMILY_NAME;
             next.animate = true;
             next.gender = HumanNameUtils.canBeFemaleSurname(next.raw) ? Gender.FEMALE : Gender.MALE;
-            phrase.fill(next);
+            phrase.fillFromWord(next);
         }
 
         private static void findAndSetEndPosition(Assembler phrase) {
@@ -506,17 +508,17 @@ public class Phrase {
             phrase.nounEndIndex = index;
             Part noun = phrase.parts.get(index);
             if (!noun.isBlank()) { // already processed
-                phrase.fill(noun);
+                phrase.fillFromWord(noun);
                 return;
             }
             findAdnInsertNoun(noun, phrase.gender, phrase.animate);
-            phrase.fill(noun);
+            phrase.fillFromWord(noun);
             if (noun.word != null) {
                 return;
             }
             if (!noun.key().contains("-")) {
                 if (noun.isBlank()) {
-                    noun.fill(phrase.gender, phrase.animate, false);
+                    noun.fillSettings(phrase.gender, PartOfSpeech.NOUN, phrase.animate, false);
                 }
                 return;
             }
@@ -533,7 +535,7 @@ public class Phrase {
                     findAdnInsertNoun(p, g, phrase.animate);
                 }
                 if (p.isBlank()) {
-                    p.fill(g, phrase.animate, false);
+                    p.fillSettings(g, PartOfSpeech.NOUN, phrase.animate, false);
                 }
                 p.space = i == words.length - 1 ? noun.space : "-";
                 newParts.add(p);
@@ -542,7 +544,7 @@ public class Phrase {
             for (int i = 0; i < newParts.size(); i++) {
                 phrase.parts.put(phrase.nounEndIndex = index + i, newParts.get(i));
             }
-            phrase.fill(newParts.get(0));
+            phrase.fillFromWord(newParts.get(0));
         }
 
         private static void findAdnInsertNoun(Part part, Gender gender, Boolean animate) {
@@ -587,6 +589,7 @@ public class Phrase {
             Gender gender;
             Boolean animate;
             RuleType type = RuleType.GENERIC;
+            PartOfSpeech partOfSpeech;
             Boolean plural;
             boolean indeclinable;
             private String key;
@@ -600,17 +603,18 @@ public class Phrase {
             }
 
             boolean isBlank() {
-                return word == null && gender == null && animate == null && !indeclinable;
+                return word == null && gender == null && partOfSpeech == null && animate == null && !indeclinable;
             }
 
-            void fill(Gender gender, Boolean animate, boolean indeclinable) {
+            void fillSettings(Gender gender, PartOfSpeech partOfSpeech, Boolean animate, boolean indeclinable) {
                 this.gender = gender;
+                this.partOfSpeech = partOfSpeech;
                 this.animate = animate;
                 this.indeclinable = indeclinable;
             }
 
             public Word toWord() {
-                return new WordInfo(gender, animate, type, plural, indeclinable, word);
+                return new WordInfo(type, gender, partOfSpeech, animate, plural, indeclinable, word);
             }
 
             @Override
@@ -625,16 +629,24 @@ public class Phrase {
      */
     public static class WordInfo implements Word {
         private final Gender gender;
-        private final Boolean animated;
+        private final Boolean animate;
+        private final PartOfSpeech partOfSpeech;
         private final RuleType ruleType;
         private final Boolean isPlural;
         private final boolean indeclinable;
         private final Word from;
 
-        public WordInfo(Gender gender, Boolean animated, RuleType ruleType, Boolean isPlural, boolean indeclinable, Word from) {
-            this.gender = gender;
-            this.animated = animated;
+        public WordInfo(RuleType ruleType,
+                        Gender gender,
+                        PartOfSpeech partOfSpeech,
+                        Boolean animate,
+                        Boolean isPlural,
+                        boolean indeclinable,
+                        Word from) {
             this.ruleType = ruleType;
+            this.gender = gender;
+            this.partOfSpeech = partOfSpeech;
+            this.animate = animate;
             this.isPlural = isPlural;
             this.indeclinable = indeclinable;
             this.from = from;
@@ -647,7 +659,12 @@ public class Phrase {
 
         @Override
         public Boolean animate() {
-            return animated;
+            return animate;
+        }
+
+        @Override
+        public PartOfSpeech partOfSpeech() {
+            return partOfSpeech;
         }
 
         public Boolean isPlural() {
@@ -681,8 +698,8 @@ public class Phrase {
 
         @Override
         public String toString() {
-            return String.format("Details{gender=%s, animated=%s, is-plural=%s, indeclinable=%s, from=%s}",
-                    gender, animated, isPlural, indeclinable, from);
+            return String.format("Details{gender=%s, pos=%s, animated=%s, is-plural=%s, indeclinable=%s, from=%s}",
+                    gender, partOfSpeech, animate, isPlural, indeclinable, from);
         }
     }
 }

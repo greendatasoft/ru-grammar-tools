@@ -3,6 +3,7 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
+import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.Phrase.Type;
 import pro.greendata.rugrammartools.impl.utils.*;
 
@@ -20,7 +21,7 @@ public class InflectionEngineImpl implements InflectionEngine {
      * Declines the given {@code word} in accordance with the specified settings using petrovich rules.
      * This is the generic method.
      *
-     * @param word       {@code String}, single word or phrase, a term, in nominative case, not {@code null}
+     * @param word       {@code String}, single noun or phrase with noun, a term, in nominative case, not {@code null}
      * @param type       {@link RuleType}, not {@code null}
      * @param declension {@link Case declension case}, not {@code null}
      * @param gender     {@link Gender} feminine, masculine or neuter,
@@ -40,7 +41,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             return word;
         }
         String res = processRule(TextUtils.normalize(word),
-                type, declension, gender == null ? Gender.MALE : gender, animate, plural);
+                type, declension, gender == null ? Gender.MALE : gender, PartOfSpeech.NOUN, animate, plural);
         return res == null ? word : TextUtils.toProperCase(word, res);
     }
 
@@ -332,7 +333,7 @@ public class InflectionEngineImpl implements InflectionEngine {
             // note that for plural declensions the base is also plural in json, not singular like in dictionary rules
             key = GrammarUtils.toPluralNoun(key);
         }
-        return processRule(key, type, declension, details.gender(), details.animate(), toPlural);
+        return processRule(key, type, declension, details.gender(), details.partOfSpeech(), details.animate(), toPlural);
     }
 
     /**
@@ -383,12 +384,19 @@ public class InflectionEngineImpl implements InflectionEngine {
      * @param type       {@link RuleType}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param gender     {@link Gender}, filter parameter
+     * @param pos        {@link PartOfSpeech}, filter parameter
      * @param animate    {@code Boolean}, filter parameter, can be {@code null}
      * @param plural     {@code Boolean}, filter parameter, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    protected String processRule(String normalized, RuleType type, Case declension, Gender gender, Boolean animate, Boolean plural) {
-        Rule rule = RuleSet.findRule(normalized, gender, animate, plural, chooseRuleSet(type));
+    protected String processRule(String normalized,
+                                 RuleType type,
+                                 Case declension,
+                                 Gender gender,
+                                 PartOfSpeech pos,
+                                 Boolean animate,
+                                 Boolean plural) {
+        Rule rule = RuleSet.findRule(normalized, gender, pos, animate, plural, chooseRuleSet(type));
         if (rule == null) {
             return null;
         }

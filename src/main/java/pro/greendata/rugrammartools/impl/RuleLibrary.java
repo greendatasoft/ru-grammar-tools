@@ -2,6 +2,7 @@ package pro.greendata.rugrammartools.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.beans.NameBean;
 import pro.greendata.rugrammartools.impl.beans.RuleBean;
 import pro.greendata.rugrammartools.impl.beans.RulesBean;
@@ -9,6 +10,8 @@ import pro.greendata.rugrammartools.impl.beans.RulesBean;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Rules.
@@ -26,30 +29,31 @@ public class RuleLibrary {
     private static final NameBean REGULAR_RULES_LIB = loadRegularBean();
     private static final NameBean NUMERALS_RULES_LIB = loadNumeralsBean();
 
-    public static final RuleSet LAST_NAME_RULES = map(NAMES_RULES_LIB.getLastname());
-    public static final RuleSet FIRST_NAME_RULES = map(NAMES_RULES_LIB.getFirstname());
-    public static final RuleSet PATRONYMIC_NAME_RULES = map(NAMES_RULES_LIB.getMiddlename());
-    public static final RuleSet REGULAR_TERM_RULES = map(REGULAR_RULES_LIB);
-    public static final RuleSet NUMERALS_RULES = map(NUMERALS_RULES_LIB);
+    public static final RuleSet LAST_NAME_RULES = toRuleSet(NAMES_RULES_LIB.getLastname());
+    public static final RuleSet FIRST_NAME_RULES = toRuleSet(NAMES_RULES_LIB.getFirstname());
+    public static final RuleSet PATRONYMIC_NAME_RULES = toRuleSet(NAMES_RULES_LIB.getMiddlename());
+    public static final RuleSet REGULAR_TERM_RULES = toRuleSet(REGULAR_RULES_LIB);
+    public static final RuleSet NUMERALS_RULES = toRuleSet(NUMERALS_RULES_LIB);
 
-    private static RuleSet map(NameBean bean) {
-        return new RuleSet(map(bean.getExceptions()), map(bean.getSuffixes()));
+    private static RuleSet toRuleSet(NameBean bean) {
+        return new RuleSet(toRules(bean.getExceptions()), toRules(bean.getSuffixes()));
     }
 
-    private static Rule[] map(Collection<RuleBean> beans) {
-        return beans.stream().map(RuleLibrary::map).toArray(Rule[]::new);
+    private static List<Rule> toRules(Collection<RuleBean> beans) {
+        return beans.stream().map(RuleLibrary::toRule).collect(Collectors.toUnmodifiableList());
     }
 
-    private static Rule map(RuleBean bean) {
+    private static Rule toRule(RuleBean bean) {
         return new Rule(
                 bean.getTest().toArray(new String[0]),
                 bean.getMods().toArray(new String[0]),
-                map(bean.getGender()),
+                toGender(bean.getGender()),
+                toPartOfSpeech(bean.getPartOfSpeech()),
                 bean.getAnimate(),
                 bean.getPlural());
     }
 
-    private static Gender map(String name) {
+    private static Gender toGender(String name) {
         switch (name) {
             case "female":
                 return Gender.FEMALE;
@@ -59,6 +63,20 @@ public class RuleLibrary {
                 return Gender.NEUTER;
             default:
                 throw new IllegalArgumentException("Wrong name: " + name);
+        }
+    }
+
+    private static PartOfSpeech toPartOfSpeech(String name) {
+        if (name == null) {
+            return null;
+        }
+        switch (name) {
+            case "noun":
+                return PartOfSpeech.NOUN;
+            case "adjective":
+                return PartOfSpeech.ADJECTIVE;
+            default:
+                throw new IllegalArgumentException("Wrong part-of-speech: " + name);
         }
     }
 

@@ -3,6 +3,7 @@
     {
       "gender": "male",
       "description": "старшина",
+      "partOfSpeech": "noun",
       "animate": true,
       "test": [
         "на"
@@ -68,6 +69,7 @@
     {
       "gender": "female",
       "description": "батарейка,копейка",
+      "partOfSpeech": "noun",
       "test": [
         "йка"
       ],
@@ -198,6 +200,7 @@
       "plural": false,
       "animate": false,
       "description" : "история, армия, партия, компания",
+      "partOfSpeech": "noun",
       "test": [
         "ия"
       ],
@@ -214,6 +217,7 @@
       "plural": true,
       "animate": false,
       "description" : "истории, армии, партии, компании, гарантии",
+      "partOfSpeech": "noun",
       "test": [
         "ии"
       ],
@@ -248,6 +252,7 @@
     {
       "gender": "androgynous",
       "description": "седьмое,коричневое",
+      "partOfSpeech": "adjective",
       "test": [
         "ое"
       ],
@@ -262,6 +267,7 @@
     {
       "gender": "androgynous",
       "description": "третье",
+      "partOfSpeech": "adjective",
       "test": [
         "ье"
       ],
@@ -276,6 +282,7 @@
     {
       "gender": "androgynous",
       "description": "общество,колесо",
+      "partOfSpeech": "noun",
       "animate": false,
       "test": [
         "во",
@@ -294,6 +301,7 @@
       "plural": false,
       "animate": false,
       "description": "положение, отношение, внимание, движение, состояние, действие",
+      "partOfSpeech": "noun",
       "test": [
         "ие"
       ],
@@ -310,6 +318,7 @@
       "plural": true,
       "animate": false,
       "description": "положения, решения, условия, развития, события",
+      "partOfSpeech": "noun",
       "test": [
         "ия"
       ],
@@ -357,6 +366,7 @@
     {
       "gender": "female",
       "description": "община",
+      "partOfSpeech": "noun",
       "animate": false,
       "test": [
         "на"
@@ -407,6 +417,7 @@
     {
       "gender": "female",
       "description": "свекла,берёза",
+      "partOfSpeech": "noun",
       "test": [
         "ла",
         "за"
@@ -423,6 +434,7 @@
       "gender": "female",
       "animate": true,
       "description": "сестра",
+      "partOfSpeech": "noun",
       "test": [
         "ра"
       ],
@@ -437,6 +449,7 @@
     {
       "gender": "male",
       "description": "дубль,рубль",
+      "partOfSpeech": "noun",
       "test": [
         "бль"
       ],
@@ -451,6 +464,7 @@
     {
       "gender": "female",
       "description": "третья",
+      "partOfSpeech": "adjective",
       "animate": false,
       "test": [
         "тья"
@@ -466,6 +480,7 @@
     {
       "gender": "female",
       "description": "свинья",
+      "partOfSpeech": "noun",
       "animate": true,
       "test": [
         "ья"
@@ -578,6 +593,7 @@
       "gender": "male",
       "animate": false,
       "description": "второй",
+      "partOfSpeech": "adjective",
       "test": [
         "ой"
       ],
@@ -641,6 +657,7 @@
       "gender": "male",
       "animate": false,
       "description": "третий",
+      "partOfSpeech": "adjective",
       "test": [
         "тий"
       ],
@@ -656,6 +673,7 @@
       "gender": "male",
       "animate": true,
       "description": "третий",
+      "partOfSpeech": "adjective",
       "test": [
         "тий"
       ],
@@ -671,6 +689,7 @@
       "gender": "male",
       "animate": false,
       "description": "четвёртый,горький",
+      "partOfSpeech": "adjective",
       "test": [
         "ый",
         "ий"
@@ -786,6 +805,7 @@
     {
       "gender": "male",
       "description": "департамент,продукт",
+      "partOfSpeech": "noun",
       "animate": false,
       "test": [
         "нт",
@@ -802,6 +822,7 @@
     {
       "gender": "male",
       "description": "лаборант",
+      "partOfSpeech": "noun",
       "animate": true,
       "test": [
         "нт"
@@ -862,6 +883,7 @@
     {
       "gender": "male",
       "description": "дубли,рубли,корабли",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "бли"
@@ -877,6 +899,7 @@
     {
       "gender": "female",
       "description": "свиньи",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "ьи"
@@ -892,6 +915,7 @@
     {
       "gender": "female",
       "description": "свеклы",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "лы"
@@ -907,6 +931,7 @@
     {
       "gender": "female",
       "description": "берёзы",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "зы"
@@ -922,6 +947,7 @@
     {
       "gender": "female",
       "description": "сделки",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "ки"
@@ -937,6 +963,7 @@
     {
       "gender": "female",
       "description": "копейки,батарейки",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "йки"
@@ -952,6 +979,7 @@
     {
       "gender": "male",
       "description": "центы,долллары",
+      "partOfSpeech": "noun",
       "plural": true,
       "test": [
         "ты",
@@ -968,6 +996,7 @@
     {
       "gender": "male",
       "description": "клиенты",
+      "partOfSpeech": "noun",
       "animate": true,
       "plural": true,
       "test": [

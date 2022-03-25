@@ -1,6 +1,7 @@
 package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.Word;
 import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
@@ -301,6 +302,11 @@ public class Dictionary {
         @Override
         public Boolean animate() {
             return hasCharacteristics(HAS_ANIMATE, IS_ANIMATE);
+        }
+
+        @Override
+        public PartOfSpeech partOfSpeech() {
+            return PartOfSpeech.NOUN;
         }
 
         private void animate(Boolean flag) {
