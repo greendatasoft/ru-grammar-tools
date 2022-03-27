@@ -48,9 +48,13 @@ public class PlainDictionary {
     public static final Collection<String> NON_DERIVATIVE_PREPOSITION = Set.of(
             "без", "в", "для", "до", "за", "из", "к", "на", "над", "о", "об", "от", "перед", "по", "под", "при", "про", "с", "у", "через"
     );
-    public static final Collection<Integer> VOWEL_CHARS = "ауоыиэяюёе"
+    public static final Collection<Integer> VOWEL_CHARS_LOWERCASE = "ауоыиэяюёе"
             .chars().boxed().collect(Collectors.toUnmodifiableSet());
-    public static final Collection<Integer> CONSONANT_CHARS = "бвгджзйклмнпрстфхцчшщ"
+    public static final Collection<Integer> CONSONANT_CHARS_LOWERCASE = "бвгджзйклмнпрстфхцчшщ"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+    public static final Collection<Integer> ALL_CHARS_LOWERCASE = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+            .chars().boxed().collect(Collectors.toUnmodifiableSet());
+    public static final Collection<Integer> ALL_CHARS_UPPERCASE = "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
             .chars().boxed().collect(Collectors.toUnmodifiableSet());
 
     /**

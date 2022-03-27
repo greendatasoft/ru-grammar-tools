@@ -2,7 +2,6 @@ package pro.greendata.rugrammartools.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.beans.NameBean;
 import pro.greendata.rugrammartools.impl.beans.RuleBean;
 import pro.greendata.rugrammartools.impl.beans.RulesBean;

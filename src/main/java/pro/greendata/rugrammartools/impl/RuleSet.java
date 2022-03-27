@@ -1,7 +1,6 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.PartOfSpeech;
 
 import java.util.Comparator;
 import java.util.List;

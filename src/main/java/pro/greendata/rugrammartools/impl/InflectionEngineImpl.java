@@ -3,8 +3,9 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
-import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.Phrase.Type;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.utils.*;
 
 import java.util.Objects;
@@ -324,7 +325,9 @@ public class InflectionEngineImpl implements InflectionEngine {
      */
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
         RuleType type = details.rule();
-        String res = type == RuleType.GENERIC ? processDictionaryRecord(key, details, declension, toPlural) : null;
+        Dictionary.Record record = details.record();
+        String res = type == RuleType.GENERIC && record instanceof NounDictionary.Word ?
+                processDictionaryNounRecord(key, (NounDictionary.Word) record, declension, toPlural) : null;
         // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
         if (res != null) {
             return res;
@@ -337,15 +340,15 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     /**
-     * Inflects a word using petrovich rules.
+     * Inflects the specified word using dictionary.
      *
      * @param key        {@code String} a normalized word
-     * @param record     {@link Word}, not {@code null}
+     * @param record     {@link NounDictionary.Word}, not {@code null}
      * @param declension {@link Case}, not {@code null}
      * @param plural     {@code Boolean}, filter parameter, can be {@code null}
      * @return {@code String} or {@code null}
      */
-    protected String processDictionaryRecord(String key, Word record, Case declension, Boolean plural) {
+    protected String processDictionaryNounRecord(String key, NounDictionary.Word record, Case declension, Boolean plural) {
         if (declension == Case.NOMINATIVE) {
             return plural == Boolean.TRUE ? record.plural() : null;
         }

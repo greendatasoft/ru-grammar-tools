@@ -64,6 +64,29 @@ public class GrammarUtils {
     }
 
     /**
+     * Answers {@code true} if the given {@code word} consists of russian letters and hyphen.
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean isRuWord(String word) {
+        if (word.isBlank()) {
+            return false;
+        }
+        for (int i = 0; i < word.length(); i++) {
+            int ch = word.charAt(i);
+            if (PlainDictionary.ALL_CHARS_LOWERCASE.contains(ch) || PlainDictionary.ALL_CHARS_UPPERCASE.contains(ch)) {
+                continue;
+            }
+            if (ch == '-') {
+                continue;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
      * Determines whether the specified {@code word} can be a singular nominative adjective.
      *
      * @param word   {@code String} to test, in lower-case, not {@code null}
@@ -355,7 +378,9 @@ public class GrammarUtils {
         if (PlainDictionary.ABBREVIATIONS.contains(nw)) {
             return true;
         }
-        if (nw.length() > 1 && nw.chars().allMatch(PlainDictionary.CONSONANT_CHARS::contains) || nw.chars().allMatch(PlainDictionary.VOWEL_CHARS::contains)) {
+        if (nw.length() > 1 &&
+                nw.chars().allMatch(PlainDictionary.CONSONANT_CHARS_LOWERCASE::contains) ||
+                nw.chars().allMatch(PlainDictionary.VOWEL_CHARS_LOWERCASE::contains)) {
             // probably abbreviation if only vowels or consonants
             return true;
         }

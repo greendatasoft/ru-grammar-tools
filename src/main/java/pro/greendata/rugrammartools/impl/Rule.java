@@ -2,7 +2,6 @@ package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.utils.RuleUtils;
 
 import java.util.Arrays;
