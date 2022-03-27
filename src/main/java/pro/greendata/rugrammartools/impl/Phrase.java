@@ -2,6 +2,8 @@ package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.PartOfSpeech;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.ArrayList;
@@ -167,7 +169,7 @@ public class Phrase {
         private final RuleType ruleType;
         private final Boolean isPlural;
         private final boolean indeclinable;
-        private final Word from;
+        private final NounDictionary.Record from;
 
         public WordInfo(RuleType ruleType,
                         Gender gender,
@@ -175,7 +177,7 @@ public class Phrase {
                         Boolean animate,
                         Boolean isPlural,
                         boolean indeclinable,
-                        Word from) {
+                        NounDictionary.Record from) {
             this.ruleType = ruleType;
             this.gender = gender;
             this.partOfSpeech = partOfSpeech;
@@ -215,18 +217,8 @@ public class Phrase {
         }
 
         @Override
-        public String[] singularCases() {
-            return from != null ? from.singularCases() : null;
-        }
-
-        @Override
-        public String plural() {
-            return from != null ? from.plural() : null;
-        }
-
-        @Override
-        public String[] pluralCases() {
-            return from != null ? from.pluralCases() : null;
+        public Dictionary.Record record() {
+            return from;
         }
 
         @Override

@@ -3,6 +3,7 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
 import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
@@ -33,7 +34,7 @@ public class PhraseAssembler {
     private String leadingSpace;
     private String trailingSpace;
 
-    public static Optional<Word> fromDictionary(String key, Gender gender, Boolean animate) {
+    public static Optional<NounDictionary.Word> fromDictionary(String key, Gender gender, Boolean animate) {
         return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
     }
 
@@ -310,7 +311,7 @@ public class PhraseAssembler {
     }
 
     private static void processNoun(Part part, Gender gender, Boolean animate) {
-        Optional<Word> from = findNounInDictionary(part, gender, animate);
+        Optional<? extends Dictionary.Record> from = findNounInDictionary(part, gender, animate);
         if (from.isPresent()) {
             return;
         }
@@ -339,14 +340,14 @@ public class PhraseAssembler {
         part.animate = animate;
     }
 
-    private static Optional<Word> findNounInDictionary(Part part, Gender givenGender, Boolean givenAnimate) {
+    private static Optional<? extends Dictionary.Record> findNounInDictionary(Part part, Gender givenGender, Boolean givenAnimate) {
         if (part.word != null) { // already processed, found
             return Optional.of(part.word);
         }
         if (part.notFoundInDictionary) { // already processed, but not found
             return Optional.empty();
         }
-        Optional<Word> from = fromDictionary(part.key(), givenGender, givenAnimate);
+        Optional<NounDictionary.Word> from = fromDictionary(part.key(), givenGender, givenAnimate);
         if (from.isPresent()) {
             part.plural = false;
         } else if (GrammarUtils.canBePlural(part.key())) {
@@ -455,7 +456,7 @@ public class PhraseAssembler {
     static class Part {
         private final String raw;
         String space;
-        Word word;
+        Dictionary.Record word;
         Gender gender;
         Boolean animate;
         RuleType type = RuleType.GENERIC;
