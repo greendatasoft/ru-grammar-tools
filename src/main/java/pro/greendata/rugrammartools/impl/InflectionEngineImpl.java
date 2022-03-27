@@ -3,7 +3,6 @@ package pro.greendata.rugrammartools.impl;
 import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
-import pro.greendata.rugrammartools.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.Phrase.Type;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;

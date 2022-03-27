@@ -1,7 +1,7 @@
 package pro.greendata.rugrammartools.impl.dictionaries;
 
 import pro.greendata.rugrammartools.Gender;
-import pro.greendata.rugrammartools.PartOfSpeech;
+import pro.greendata.rugrammartools.impl.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.*;
