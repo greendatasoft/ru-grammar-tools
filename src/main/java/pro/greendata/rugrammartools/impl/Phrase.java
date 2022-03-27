@@ -176,7 +176,7 @@ public class Phrase {
     }
 
     /**
-     * Mutable object-builder.
+     * Mutable phrase-builder.
      */
     private static class Assembler {
         private static final int INDEX_STEP = 1000;
@@ -184,17 +184,17 @@ public class Phrase {
         private final NavigableMap<Integer, Part> parts = new TreeMap<>();
         // input phrase
         private String raw;
-        // the position of the main noun in the phrase
-        private Integer nounStartIndex;
+        // the position of the main noun (subject) in the phrase
+        private Integer subjectStartIndex;
         // for composed nouns end != start (e.g. "сестра-анестезист")
-        private Integer nounEndIndex;
+        private Integer subjectEndIndex;
         // end of the declinable part of phrase
         private Integer endIndex;
         // usually gender is null, it is determined by the phrase;
         // may not match the true gender of the wearer (in case of profession).
-        private Gender gender;
+        private Gender phraseGender;
         // can be null
-        private Boolean animate;
+        private Boolean phraseAnimate;
         private String leadingSpace;
         private String trailingSpace;
 
@@ -267,31 +267,30 @@ public class Phrase {
         /**
          * Compiles this object collecting its content.
          *
-         * @param type {@link Phrase.Type} TODO: handle phrase type
+         * @param type         {@link Phrase.Type} TODO: handle phrase type
          * @param inputGender  {@link Gender}, can be {@code null}
          * @param inputAnimate {@code Boolean}, can be {@code null}
          * @return this instance
          */
         Assembler compile(Type type, Gender inputGender, Boolean inputAnimate) {
-            fill(inputGender, inputAnimate);
+            fillMissedSettings(inputGender, inputAnimate);
 
             if (PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(this.parts.firstEntry().getValue().key())) {
                 // starts with preposition -> consider the whole phrase as indeclinable
-                this.parts.forEach((i, p) -> p.fillSettings(gender, null, animate, true));
+                this.parts.forEach((i, p) -> p.fillMissedSettings(phraseGender, null, phraseAnimate, true));
                 return this;
             }
 
-            findAndSetNounPosition(this);
-            compileNoun(this);
-            findAndSetEndPosition(this);
+            processPreSubjectParts(this);
+            processSubject(this);
+            processPostSubjectParts(this);
 
-            this.parts.headMap(this.endIndex, true).forEach((i, p) -> {
-                if (p.isBlank()) {
-                    p.fillSettings(gender, PartOfSpeech.ADJECTIVE, animate, false);
-                }
-            });
+            // set default settings for adjectives surrounding the subject
+            this.parts.headMap(this.endIndex, true)
+                    .forEach((i, p) -> p.fillMissedSettings(phraseGender, null, phraseAnimate, false));
+            // the rest of the phrase (supplemental part) is indeclinable
             this.parts.tailMap(this.endIndex, false)
-                    .forEach((i, p) -> p.fillSettings(gender, PartOfSpeech.ADJECTIVE, animate, true));
+                    .forEach((i, p) -> p.fillMissedSettings(phraseGender, null, phraseAnimate, true));
             return this;
         }
 
@@ -308,7 +307,7 @@ public class Phrase {
 
             separators.add(leadingSpace == null ? "" : leadingSpace);
             Integer last = parts.lastKey();
-            Part noun = nounStartIndex == null ? null : Objects.requireNonNull(parts.get(nounStartIndex));
+            Part noun = subjectStartIndex == null ? null : Objects.requireNonNull(parts.get(subjectStartIndex));
             parts.forEach((index, part) -> {
                 if (!Objects.equals(index, last)) {
                     separators.add(Objects.requireNonNull(part.space));
@@ -319,7 +318,7 @@ public class Phrase {
             });
             separators.add(trailingSpace == null ? "" : trailingSpace);
 
-            return new Phrase(raw, this.gender, this.animate, noun == null ? null : noun.plural,
+            return new Phrase(raw, this.phraseGender, this.phraseAnimate, noun == null ? null : noun.plural,
                     Collections.unmodifiableList(keys), Collections.unmodifiableList(words),
                     Collections.unmodifiableList(details), Collections.unmodifiableList(separators));
         }
@@ -329,75 +328,192 @@ public class Phrase {
         }
 
         private boolean isNullOr(Gender g) {
-            return gender == null || gender == g;
+            return phraseGender == null || phraseGender == g;
         }
 
-        private void fillFromWord(Part p) {
-            fill(p.gender, p.animate);
+        private void fillMissedSettingsFromWord(Part word) {
+            fillMissedSettings(word.gender, word.animate);
         }
 
-        private void fill(Gender g, Boolean a) {
-            if (this.animate == null) {
-                this.animate = a;
+        private void fillMissedSettings(Gender g, Boolean a) {
+            if (this.phraseAnimate == null) {
+                this.phraseAnimate = a;
             }
-            if (this.gender == null) {
-                this.gender = g;
+            if (this.phraseGender == null) {
+                this.phraseGender = g;
             }
         }
 
-        private static void findAndSetNounPosition(Assembler phrase) {
-            phrase.nounStartIndex = phrase.parts.firstKey(); // the position of the main word in the phrase
+        private static void processPreSubjectParts(Assembler phrase) {
+            phrase.subjectStartIndex = phrase.parts.firstKey(); // the position of the main word in the phrase
             for (Integer index : phrase.parts.keySet()) {
                 Part part = phrase.parts.get(index);
                 String w = part.raw;
+                if (!GrammarUtils.isRuWord(w)) {
+                    part.indeclinable = true;
+                    continue;
+                }
                 Map.Entry<Integer, Part> next = phrase.parts.higherEntry(index);
                 if (GrammarUtils.canBeAbbreviation(w, phrase.raw)) {
-                    part.fillSettings(phrase.gender, PartOfSpeech.NOUN, phrase.animate, true);
+                    part.fillMissedSettings(phrase.phraseGender, PartOfSpeech.NOUN, phrase.phraseAnimate, true);
                     if (GrammarUtils.canBeHumanRelatedAbbreviation(w) && next != null) { // e.g. "ИП Иванов"
                         if (handleHumanName(phrase, next.getKey(), true)) {
                             break;
                         }
                     }
                     // e.g. "ПАО 'Финансовая корпорация'"
-                    phrase.nounStartIndex = index;
+                    phrase.subjectStartIndex = index;
                     break;
                 }
-                if (phrase.animate != Boolean.FALSE && handleHumanName(phrase, index, false)) {
+                if (phrase.phraseAnimate != Boolean.FALSE && handleHumanName(phrase, index, false)) {
                     break;
                 }
                 // the following code was designed for inflection profession names
                 // if the next word is preposition then the first word can be noun (e.g. "Термист по обработке слюды")
                 if (next != null && PlainDictionary.NON_DERIVATIVE_PREPOSITION.contains(next.getValue().key())) {
-                    next.getValue().indeclinable = true;
-                    phrase.nounStartIndex = index;
+                    next.getValue().fillMissedSettings(null, PartOfSpeech.PREPOSITION, null, true);
+                    phrase.subjectStartIndex = index;
                     break;
                 }
                 // (masculine) skip leading adjectives
                 if (phrase.isNullOr(Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
-                    phrase.gender = Gender.MALE;
+                    phrase.phraseGender = Gender.MALE;
                     if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w)) {
-                        phrase.nounStartIndex = index;
+                        phrase.subjectStartIndex = index;
                         break;
                     }
+                    part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                     continue;
                 }
                 // (feminine) skip the leading adjectives
                 if (phrase.isNullOr(Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
-                    phrase.gender = Gender.FEMALE;
+                    phrase.phraseGender = Gender.FEMALE;
                     if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w)) {
-                        phrase.nounStartIndex = index;
+                        phrase.subjectStartIndex = index;
                         break;
                     }
+                    part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                     continue;
                 }
                 // (neuter) skip leading adjectives
                 if (phrase.isNullOr(Gender.NEUTER) && GrammarUtils.canBeSingularNominativeNeuterAdjective(w)) {
-                    phrase.gender = Gender.NEUTER;
+                    phrase.phraseGender = Gender.NEUTER;
+                    part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                     continue;
                 }
-                phrase.nounStartIndex = index;
+                phrase.subjectStartIndex = index;
                 break;
             }
+        }
+
+        private static void processPostSubjectParts(Assembler phrase) {
+            phrase.endIndex = phrase.subjectEndIndex;
+            Integer lastIndex = phrase.parts.lastKey();
+            NavigableMap<Integer, Part> tail = phrase.parts.tailMap(phrase.subjectEndIndex, false);
+            for (Integer k : tail.keySet()) {
+                Part p = tail.get(k);
+                if (!GrammarUtils.canBeAdjective(p.raw, phrase.phraseGender)) {
+                    break;
+                }
+                phrase.endIndex = k;
+            }
+            if (!Objects.equals(phrase.endIndex, phrase.subjectEndIndex) && !Objects.equals(phrase.endIndex, lastIndex)) {
+                // TODO: phrases with two nouns are ignored for now
+                phrase.endIndex = phrase.subjectEndIndex;
+            }
+        }
+
+        private static void processSubject(Assembler phrase) {
+            int index = phrase.subjectStartIndex;
+            phrase.subjectEndIndex = index;
+            Part subject = phrase.parts.get(index);
+            processNoun(subject, phrase.phraseGender, phrase.phraseAnimate);
+            if (subject.word != null) {
+                phrase.fillMissedSettingsFromWord(subject);
+                return;
+            }
+            if (!subject.key().contains("-")) {
+                phrase.fillMissedSettingsFromWord(subject);
+                return;
+            }
+            // process with hyphen e.g. "альфа-лучи", "лётчик-наблюдатель", "караван-сарай"
+            String[] words = subject.raw.split("-");
+            Gender g = phrase.phraseGender;
+            List<Part> newParts = new ArrayList<>();
+            for (int i = 0; i < words.length; i++) {
+                Part p = new Part(words[i]);
+                processNoun(p, g, phrase.phraseAnimate);
+                if (i > 0 && phrase.phraseGender != Gender.MALE && p.word == null) {
+                    // the second part is usually masculine (e.g. "сестра-анестезист")
+                    g = Gender.MALE;
+                    processNoun(p, g, phrase.phraseAnimate);
+                }
+                p.space = i == words.length - 1 ? subject.space : "-";
+                newParts.add(p);
+            }
+            phrase.parts.remove(index);
+            for (int i = 0; i < newParts.size(); i++) {
+                phrase.parts.put(phrase.subjectEndIndex = index + i, newParts.get(i));
+            }
+            phrase.fillMissedSettingsFromWord(newParts.get(0));
+        }
+
+        private static void processNoun(Part part, Gender gender, Boolean animate) {
+            Optional<Word> from = findNounInDictionary(part, gender, animate);
+            if (from.isPresent()) {
+                return;
+            }
+            // if the noun is not found in the dictionary,
+            // then derive its settings from the input parameters and semantic of the word itself
+            if (part.indeclinable == null) { // default value:
+                part.indeclinable = false;
+            } else if (part.indeclinable) { // skip indeclinable
+                return;
+            }
+            if (gender == null) {
+                gender = GrammarUtils.guessGenderOfSingularNoun(part.key());
+                if (gender == null) {
+                    String k = GrammarUtils.toSingular(part.key());
+                    gender = GrammarUtils.guessGenderOfSingularNoun(k);
+                    if (gender != null) {
+                        part.key = k; // replace key!
+                        part.plural = true; // possible wrong
+                    } else {
+                        // the masculine gender is most common (in russian job-titles)
+                        gender = Gender.MALE;
+                    }
+                }
+            }
+            part.gender = gender;
+            part.animate = animate;
+        }
+
+        private static Optional<Word> findNounInDictionary(Part part, Gender givenGender, Boolean givenAnimate) {
+            if (part.word != null) { // already processed, found
+                return Optional.of(part.word);
+            }
+            if (part.notFoundInDictionary) { // already processed, but not found
+                return Optional.empty();
+            }
+            Optional<Word> from = fromDictionary(part.key(), givenGender, givenAnimate);
+            if (from.isPresent()) {
+                part.plural = false;
+            } else if (GrammarUtils.canBePlural(part.key())) {
+                String k = GrammarUtils.toSingular(part.key());
+                from = fromDictionary(k, givenGender, givenAnimate);
+                if (from.isPresent()) {
+                    part.key = k; // replace key!
+                    part.plural = true;
+                }
+            }
+            part.notFoundInDictionary = from.isEmpty();
+            from.ifPresent(word -> {
+                part.word = word;
+                Gender g = Optional.ofNullable(word.gender()).orElse(givenGender);
+                Boolean a =  Optional.ofNullable(word.animate()).orElse(givenAnimate);
+                part.fillMissedSettings(g, PartOfSpeech.NOUN, a, word.isIndeclinable());
+            });
+            return from;
         }
 
         private static boolean handleHumanName(Assembler phrase, Integer index, boolean sureIsName) {
@@ -407,7 +523,7 @@ public class Phrase {
             }
             Map.Entry<Integer, Part> nextWord = phrase.parts.higherEntry(index);
             if (sureIsName && nextWord == null && HumanNameUtils.canBeSurname(current.raw)) { // e.g. "Петрова"
-                phrase.nounStartIndex = index;
+                phrase.subjectStartIndex = index;
                 handleSurname(phrase, current);
                 return true;
             }
@@ -417,12 +533,12 @@ public class Phrase {
             Part next = nextWord.getValue();
             Integer nextIndex = nextWord.getKey();
             if (HumanNameUtils.canBeInitials(current.raw) && HumanNameUtils.canBeSurname(next.raw)) { // e.g. "П.П. Петрова"
-                phrase.nounStartIndex = nextIndex;
+                phrase.subjectStartIndex = nextIndex;
                 handleSurname(phrase, next);
                 return true;
             }
             if (HumanNameUtils.canBeInitials(next.raw) && HumanNameUtils.canBeSurname(current.raw)) { // e.g. "Петров П.П."
-                phrase.nounStartIndex = index;
+                phrase.subjectStartIndex = index;
                 handleSurname(phrase, current);
                 return true;
             }
@@ -465,7 +581,7 @@ public class Phrase {
             sfp.get(0).gender = gender;
             sfp.get(0).animate = true;
             sfp.get(0).type = RuleType.FAMILY_NAME;
-            phrase.fillFromWord(sfp.get(0));
+            phrase.fillMissedSettingsFromWord(sfp.get(0));
             sfp.get(1).gender = gender;
             sfp.get(1).animate = true;
             sfp.get(1).type = RuleType.FIRST_NAME;
@@ -474,7 +590,7 @@ public class Phrase {
                 sfp.get(2).animate = true;
                 sfp.get(2).type = RuleType.PATRONYMIC_NAME;
             }
-            phrase.nounStartIndex = nextNextIndex != null ? nextNextIndex : nextIndex;
+            phrase.subjectStartIndex = nextNextIndex != null ? nextNextIndex : nextIndex;
             return true;
         }
 
@@ -482,104 +598,7 @@ public class Phrase {
             next.type = RuleType.FAMILY_NAME;
             next.animate = true;
             next.gender = HumanNameUtils.canBeFemaleSurname(next.raw) ? Gender.FEMALE : Gender.MALE;
-            phrase.fillFromWord(next);
-        }
-
-        private static void findAndSetEndPosition(Assembler phrase) {
-            // only the first part of the phrase is declined - the main word (noun) and the adjectives surrounding it;
-            // the words after - usually does not decline (we assume that some supplemental part goes next)
-            phrase.endIndex = phrase.nounEndIndex;
-            Integer lastIndex = phrase.parts.lastKey();
-            NavigableMap<Integer, Part> tail = phrase.parts.tailMap(phrase.nounEndIndex, false);
-            for (Integer k : tail.keySet()) {
-                if (!GrammarUtils.canBeAdjective(tail.get(k).raw, phrase.gender)) {
-                    break;
-                }
-                phrase.endIndex = k;
-            }
-            if (!Objects.equals(phrase.endIndex, phrase.nounEndIndex) && !Objects.equals(phrase.endIndex, lastIndex)) {
-                // TODO: phrases with two nouns are ignored for now
-                phrase.endIndex = phrase.nounEndIndex;
-            }
-        }
-
-        private static void compileNoun(Assembler phrase) {
-            int index = phrase.nounStartIndex;
-            phrase.nounEndIndex = index;
-            Part noun = phrase.parts.get(index);
-            if (!noun.isBlank()) { // already processed
-                phrase.fillFromWord(noun);
-                return;
-            }
-            findAdnInsertNoun(noun, phrase.gender, phrase.animate);
-            phrase.fillFromWord(noun);
-            if (noun.word != null) {
-                return;
-            }
-            if (!noun.key().contains("-")) {
-                if (noun.isBlank()) {
-                    noun.fillSettings(phrase.gender, PartOfSpeech.NOUN, phrase.animate, false);
-                }
-                return;
-            }
-            // process with hyphen e.g. "альфа-лучи", "лётчик-наблюдатель", "караван-сарай"
-            String[] words = noun.raw.split("-");
-            Gender g = phrase.gender;
-            List<Part> newParts = new ArrayList<>();
-            for (int i = 0; i < words.length; i++) {
-                Part p = new Part(words[i]);
-                findAdnInsertNoun(p, g, phrase.animate);
-                if (i > 0 && phrase.gender != Gender.MALE && p.word == null) {
-                    // the second part is usually masculine (e.g. "сестра-анестезист")
-                    g = Gender.MALE;
-                    findAdnInsertNoun(p, g, phrase.animate);
-                }
-                if (p.isBlank()) {
-                    p.fillSettings(g, PartOfSpeech.NOUN, phrase.animate, false);
-                }
-                p.space = i == words.length - 1 ? noun.space : "-";
-                newParts.add(p);
-            }
-            phrase.parts.remove(index);
-            for (int i = 0; i < newParts.size(); i++) {
-                phrase.parts.put(phrase.nounEndIndex = index + i, newParts.get(i));
-            }
-            phrase.fillFromWord(newParts.get(0));
-        }
-
-        private static void findAdnInsertNoun(Part part, Gender gender, Boolean animate) {
-            Optional<Word> from = fromDictionary(part.key(), gender, animate);
-            if (from.isPresent()) {
-                part.plural = false;
-            } else if (GrammarUtils.canBePlural(part.key())) {
-                String k = GrammarUtils.toSingular(part.key());
-                from = fromDictionary(k, gender, animate);
-                if (from.isPresent()) {
-                    part.key = k; // replace key!
-                    part.plural = true;
-                }
-            }
-            from.ifPresent(word -> part.word = word);
-            part.indeclinable = from.map(Word::isIndeclinable).orElse(false);
-            if (gender == null) {
-                gender = from.map(Word::gender).orElseGet(() -> GrammarUtils.guessGenderOfSingularNoun(part.key()));
-                if (gender == null) {
-                    String k = GrammarUtils.toSingular(part.key());
-                    gender = GrammarUtils.guessGenderOfSingularNoun(k);
-                    if (gender != null) {
-                        part.key = k; // replace key!
-                        part.plural = true; // possible wrong
-                    } else {
-                        // the masculine gender is most common (in russian job-titles)
-                        gender = Gender.MALE;
-                    }
-                }
-            }
-            if (animate == null) {
-                animate = from.map(Word::animate).orElse(null);
-            }
-            part.gender = gender;
-            part.animate = animate;
+            phrase.fillMissedSettingsFromWord(next);
         }
 
         static class Part {
@@ -591,7 +610,8 @@ public class Phrase {
             RuleType type = RuleType.GENERIC;
             PartOfSpeech partOfSpeech;
             Boolean plural;
-            boolean indeclinable;
+            Boolean indeclinable;
+            boolean notFoundInDictionary;
             private String key;
 
             Part(String raw) {
@@ -602,15 +622,19 @@ public class Phrase {
                 return key == null ? key = toKey(raw) : key;
             }
 
-            boolean isBlank() {
-                return word == null && gender == null && partOfSpeech == null && animate == null && !indeclinable;
-            }
-
-            void fillSettings(Gender gender, PartOfSpeech partOfSpeech, Boolean animate, boolean indeclinable) {
-                this.gender = gender;
-                this.partOfSpeech = partOfSpeech;
-                this.animate = animate;
-                this.indeclinable = indeclinable;
+            void fillMissedSettings(Gender gender, PartOfSpeech partOfSpeech, Boolean animate, boolean indeclinable) {
+                if (this.gender == null) {
+                    this.gender = gender;
+                }
+                if (this.partOfSpeech == null) {
+                    this.partOfSpeech = partOfSpeech;
+                }
+                if (this.animate == null) {
+                    this.animate = animate;
+                }
+                if (this.indeclinable == null) {
+                    this.indeclinable = indeclinable;
+                }
             }
 
             public Word toWord() {
