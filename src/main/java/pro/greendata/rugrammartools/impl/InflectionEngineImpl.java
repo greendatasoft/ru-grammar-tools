@@ -4,6 +4,7 @@ import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
 import pro.greendata.rugrammartools.impl.Phrase.Type;
+import pro.greendata.rugrammartools.impl.dictionaries.AdjectiveDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.utils.*;
@@ -326,8 +327,15 @@ public class InflectionEngineImpl implements InflectionEngine {
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
         RuleType type = details.rule();
         Dictionary.Record record = details.record();
-        String res = type == RuleType.GENERIC && record instanceof NounDictionary.Word ?
-                processDictionaryNounRecord(key, (NounDictionary.Word) record, declension, toPlural) : null;
+        String res;
+        if (type == RuleType.GENERIC && record instanceof NounDictionary.Word) {
+            res = processDictionaryNounRecord(key, (NounDictionary.Word) record, declension, toPlural);
+        } else if (type == RuleType.GENERIC && record instanceof AdjectiveDictionary.Word) {
+            res = processDictionaryAdjectiveRecord(key, (AdjectiveDictionary.Word) record, declension,
+                    details, toPlural);
+        } else {
+            res = null;
+        }
         // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
         if (res != null) {
             return res;
@@ -337,6 +345,31 @@ public class InflectionEngineImpl implements InflectionEngine {
             key = GrammarUtils.toPluralNoun(key);
         }
         return processRule(key, type, declension, details.gender(), details.partOfSpeech(), details.animate(), toPlural);
+    }
+
+    protected String processDictionaryAdjectiveRecord(String key, AdjectiveDictionary.Word record, Case declension,
+                                                      Word detail, Boolean plural) {
+        String[] cases;
+        if (plural) {
+            cases = record.pluralCases();
+        } else if (detail.gender() == Gender.MALE) {
+            cases = record.masculineCases();
+        } else if (detail.gender() == Gender.FEMALE) {
+            cases = record.feminineCases();
+        } else if (detail.gender() == Gender.NEUTER) {
+            cases = record.neuterCases();
+        } else {
+            return null;
+        }
+
+        String w;
+        if (declension == Case.ACCUSATIVE && !detail.animate()) {
+            w = cases[0];
+        } else {
+            w = cases[declension.ordinal()];
+        }
+
+        return applyCase(key, w);
     }
 
     /**

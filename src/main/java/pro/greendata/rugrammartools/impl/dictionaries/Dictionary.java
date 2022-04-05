@@ -39,6 +39,10 @@ public abstract class Dictionary {
         return NounDictionary.DICTIONARY;
     }
 
+    public static AdjectiveDictionary getAdjectiveDictionary() {
+        return AdjectiveDictionary.DICTIONARY;
+    }
+
     /**
      * Loads the {@link Dictionary} from the file system.
      *

@@ -54,8 +54,8 @@ public class GrammarUtils {
     private static final Collection<String> DEFINITELY_NEUTER_NOUNS = Set.of("знания", "прения");
 
     private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
-    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
-    private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
+    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя");
+    private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое", "ее");
 
     private static final List<String> PLURAL_ENDINGS = List.of("ы", "и", "я", "а");
 
@@ -183,6 +183,11 @@ public class GrammarUtils {
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantiveNoun(String word) {
         return PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word));
+    }
+
+    // TODO: Remove NO_SUBSTANTIVE_PHRASE dic
+    public static boolean canBePhraseIsNotSubstantiveNoun(String phrase) {
+        return PlainDictionary.NO_SUBSTANTIVE_PHRASE.contains(TextUtils.normalize(phrase));
     }
 
     /**
@@ -350,6 +355,20 @@ public class GrammarUtils {
         }
         // TODO: complete
         return plural;
+    }
+
+    public static String toSingularMasculineAdjective(String word) {
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ья", "ье", "ьи"))) { // кошачий, божий, птичий
+            return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ая", "ое"))) { // Хороший, Смешной
+            return TextUtils.replaceEnd(word, 2, "ий") + TextUtils.replaceEnd(word, 2, "ой");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ее"))) { // Хороший
+            return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        // TODO: complete
+        return word;
     }
 
     static boolean endsWithWord(String phrase, String word) {

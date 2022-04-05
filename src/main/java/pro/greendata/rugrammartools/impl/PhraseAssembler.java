@@ -1,6 +1,7 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.AdjectiveDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
@@ -35,6 +36,10 @@ public class PhraseAssembler {
 
     public static Optional<NounDictionary.Word> fromDictionary(String key, Gender gender, Boolean animate) {
         return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
+    }
+
+    public static Optional<AdjectiveDictionary.Word> fromDictionary(String key) {
+        return Dictionary.getAdjectiveDictionary().wordDetails(key);
     }
 
     public static String toKey(String w) {
@@ -229,20 +234,26 @@ public class PhraseAssembler {
             // (masculine) skip leading adjectives
             if (phrase.isNullOr(Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
                 phrase.phraseGender = Gender.MALE;
-                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w)) {
+                //TODO: need to think. example: Рабочий полигона, но Рабочий день
+                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w) &&
+                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
+                //TODO: processAdjective
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 continue;
             }
             // (feminine) skip the leading adjectives
             if (phrase.isNullOr(Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
                 phrase.phraseGender = Gender.FEMALE;
-                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w)) {
+                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w) &&
+                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 continue;
             }
@@ -250,6 +261,7 @@ public class PhraseAssembler {
             if (phrase.isNullOr(Gender.NEUTER) && GrammarUtils.canBeSingularNominativeNeuterAdjective(w)) {
                 phrase.phraseGender = Gender.NEUTER;
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 continue;
             }
             phrase.subjectStartIndex = index;
@@ -257,6 +269,7 @@ public class PhraseAssembler {
         }
     }
 
+    // TODO: add processNoun and processAdjective
     private static void processPostSubjectParts(PhraseAssembler phrase) {
         phrase.endIndex = phrase.subjectEndIndex;
         Integer lastIndex = phrase.parts.lastKey();
@@ -264,8 +277,10 @@ public class PhraseAssembler {
         for (Integer k : tail.keySet()) {
             Part p = tail.get(k);
             if (!GrammarUtils.canBeAdjective(p.raw, phrase.phraseGender)) {
+                //processNoun(p, phrase.phraseGender, phrase.phraseAnimate);
                 break;
             }
+            //processAdjective(p, phrase.phraseGender, phrase.phraseAnimate);
             phrase.endIndex = k;
         }
         if (!Objects.equals(phrase.endIndex, phrase.subjectEndIndex) && !Objects.equals(phrase.endIndex, lastIndex)) {
@@ -307,6 +322,41 @@ public class PhraseAssembler {
             phrase.parts.put(phrase.subjectEndIndex = index + i, newParts.get(i));
         }
         phrase.fillMissedSettingsFromWord(newParts.get(0));
+    }
+
+    private static void processAdjective(Part part, Gender gender, Boolean animate) {
+        Optional<? extends Dictionary.Record> from = findAdjectiveInDictionary(part);
+
+        part.gender = gender;
+        part.animate = animate;
+    }
+
+    private static Optional<? extends Dictionary.Record> findAdjectiveInDictionary(Part part) {
+        if (part.word != null) { // already processed, found
+            return Optional.of(part.word);
+        }
+        if (part.notFoundInDictionary) { // already processed, but not found
+            return Optional.empty();
+        }
+
+        //TODO: Ключ надо поставить в единственное число м.р.
+        String key = GrammarUtils.toSingularMasculineAdjective(part.key());
+        String[] keys = key.split(",");
+        Optional<AdjectiveDictionary.Word> from = Optional.empty();
+
+        for (int i = 0; i < keys.length; i++) {
+            from = fromDictionary(key);
+            if (from.isPresent()) {
+                break;
+            }
+        }
+
+        part.notFoundInDictionary = from.isEmpty();
+        from.ifPresent(word -> {
+            part.word = word;
+            part.fillMissedSettings(null, PartOfSpeech.ADJECTIVE, null, false);
+        });
+        return from;
     }
 
     private static void processNoun(Part part, Gender gender, Boolean animate) {
