@@ -264,6 +264,12 @@ public class PhraseAssembler {
                 processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 continue;
             }
+            if (next != null && GrammarUtils.canBePluralNominativeAdjective(w)){
+                part.plural = true;
+                part.partOfSpeech = PartOfSpeech.ADJECTIVE;
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
+                continue;
+            }
             phrase.subjectStartIndex = index;
             break;
         }
@@ -344,9 +350,10 @@ public class PhraseAssembler {
         String[] keys = key.split(",");
         Optional<AdjectiveDictionary.Word> from = Optional.empty();
 
-        for (int i = 0; i < keys.length; i++) {
-            from = fromDictionary(key);
+        for (String s : keys) {
+            from = fromDictionary(s);
             if (from.isPresent()) {
+                part.key = s;
                 break;
             }
         }

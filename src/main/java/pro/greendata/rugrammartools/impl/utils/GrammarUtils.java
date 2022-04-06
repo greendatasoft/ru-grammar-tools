@@ -48,8 +48,13 @@ public class GrammarUtils {
                     "расписаний", "растений", "соединений", "сооружений", "строений", "термсоединений", "учреждений"),
             of("вой", "буровой", "вентилевой", "верховой", "горновой", "дверевой", "душевой", "кладовой",
                     "люковой", "миксеровой", "печевой", "скиповой", "стволовой"),
-            of("дой", "слюдой")
+            of("дой", "слюдой"),
+            of("ние", "рефинансирование", "оседание")
     );
+
+    //Сложные существительные во множественном числе
+    //TODO: temporal solution!
+    private static final Map<String, String> PLURAL_NOUN = Map.of("друзья", "друг", "люди", "человек");
 
     private static final Collection<String> DEFINITELY_NEUTER_NOUNS = Set.of("знания", "прения");
 
@@ -114,6 +119,11 @@ public class GrammarUtils {
         return canBeSingularNominativeFeminineAdjective(word) && !canBeFeminineAdjectiveBasedSubstantiveNoun(word);
     }
 
+    public static boolean canBePluralNominativeAdjective(String word) {
+        return TextUtils.endsWithOneOfIgnoreCase(word, List.of("ые", "ие", "ьи")) && !DEFINITELY_NOT_ADJECTIVES.
+                getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(TextUtils.normalize(word));
+    }
+
     /**
      * Determines whether the specified {@code word} can be a singular nominative masculine adjective
      * (i.e. является ли слово {@code прилагательным в мужском роде, единственном числе и именительном падеже}?).
@@ -160,7 +170,7 @@ public class GrammarUtils {
 
     private static boolean canBeSingularNominativeAdjective(String word) {
         return word.length() > 2 && !DEFINITELY_NOT_ADJECTIVES
-                .getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(word);
+                .getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(TextUtils.normalize(word));
     }
 
     /**
@@ -354,18 +364,26 @@ public class GrammarUtils {
             return plural.substring(0, plural.length() - 1);
         }
         // TODO: complete
-        return plural;
+        return PLURAL_NOUN.getOrDefault(plural, plural);
     }
 
     public static String toSingularMasculineAdjective(String word) {
+        //For Singular Adjectives
         if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ья", "ье", "ьи"))) { // кошачий, божий, птичий
             return TextUtils.replaceEnd(word, 2, "ий");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ая", "ое"))) { // Хороший, Смешной
-            return TextUtils.replaceEnd(word, 2, "ий") + TextUtils.replaceEnd(word, 2, "ой");
+            return TextUtils.replaceEnd(word, 2, "ий,") + TextUtils.replaceEnd(word, 2, "ой");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ее"))) { // Хороший
             return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        //For Plural Adjectives
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ие"))) { // Громкий (громкие)
+            return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ые"))) { // Смешной (смешные), Смешанный (смешанные)
+            return TextUtils.replaceEnd(word, 2, "ой,") + TextUtils.replaceEnd(word, 2, "ый");
         }
         // TODO: complete
         return word;

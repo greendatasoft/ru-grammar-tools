@@ -50,6 +50,9 @@ public class RuleUtils {
         if (primary == secondary) {
             return KEEP_MOD;
         }
+        //Remove only parentheses
+        primary = primary.replaceAll("[()]", "");
+        secondary = secondary.replaceAll("[()]", "");
         char[] first = primary.toCharArray();
         char[] second = secondary.toCharArray();
         int i = 0;

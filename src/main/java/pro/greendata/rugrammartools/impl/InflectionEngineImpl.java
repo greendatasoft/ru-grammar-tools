@@ -350,7 +350,7 @@ public class InflectionEngineImpl implements InflectionEngine {
     protected String processDictionaryAdjectiveRecord(String key, AdjectiveDictionary.Word record, Case declension,
                                                       Word detail, Boolean plural) {
         String[] cases;
-        if (plural) {
+        if (plural == Boolean.TRUE || plural == null && detail.isPlural()) {
             cases = record.pluralCases();
         } else if (detail.gender() == Gender.MALE) {
             cases = record.masculineCases();
@@ -362,11 +362,24 @@ public class InflectionEngineImpl implements InflectionEngine {
             return null;
         }
 
-        String w;
-        if (declension == Case.ACCUSATIVE && !detail.animate()) {
-            w = cases[0];
-        } else {
-            w = cases[declension.ordinal()];
+        String w = cases[declension.ordinal()];
+        if (declension == Case.ACCUSATIVE) {
+            if (!detail.animate()) {
+                //Case.NOMINATIVE
+                w = cases[0];
+            } else {
+                //Берем окончание, которое отличное от Case.NOMINATIVE
+                if (cases[declension.ordinal()].contains(",")) {
+                    for (String s : cases[declension.ordinal()].split(",")) {
+                        if (cases[0].equals(s)) {
+                            continue;
+                        }
+                        w = s;
+                    }
+                } else {
+                    w = cases[declension.ordinal()];
+                }
+            }
         }
 
         return applyCase(key, w);

@@ -201,6 +201,7 @@ public class Phrase {
             return partOfSpeech;
         }
 
+        @Override
         public Boolean isPlural() {
             return isPlural;
         }
