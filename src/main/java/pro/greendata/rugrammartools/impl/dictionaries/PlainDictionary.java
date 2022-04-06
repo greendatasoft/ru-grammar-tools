@@ -46,6 +46,12 @@ public class PlainDictionary {
             "тысяча", "миллион", "миллиард", "триллион", "квадриллион", "квинтиллион", "секстиллион", "септиллион",
             "октиллион", "нониллион", "дециллион", "ундециллион", "дуодециллион", "тредециллион", "кваттордециллион",
             "квиндециллион", "седециллион", "септдециллион", "октодециллион", "новемдециллион", "вигинтиллион");
+
+    /**
+     * A {@code List} of big ordinal numerals.
+     */
+    public static final List<String> BIG_ORDINAL_NUMERALS = BIG_CARDINAL_NUMERALS.stream()
+            .map(w -> w + "ный").collect(Collectors.toList());
     /**
      * A collection of simple (non-derivative) prepositions ({@code список непроизводных предлогов})
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B3'>Предлог</a>

@@ -231,6 +231,16 @@ public class InflectionEngineImpl implements InflectionEngine {
     public String inflectAny(String phrase, Case declension) {
         require(declension, "null case declension");
         String[] parts = checkAndSplit(phrase);
+        for (int i = parts.length - 1; i >= 0; i--) {
+            if (NumeralUtils.canBeNumeral(parts[i])) {
+                String[] res = getNumeralAndUnit(parts, i);
+                if (res[1].isEmpty()) {
+                    return inflectNumeral(res[0], declension);
+                } else {
+                    return inflectNumeral(res[0], res[1], declension);
+                }
+            }
+        }
         if (parts.length < 4) { // then can be full name
             if (parts.length > 1 && HumanNameUtils.isFirstname(parts[1])) {
                 return inflectFullname(phrase, declension);
@@ -312,6 +322,25 @@ public class InflectionEngineImpl implements InflectionEngine {
         if (res.length == 0) {
             throw new IllegalArgumentException();
         }
+        return res;
+    }
+
+    private static String[] getNumeralAndUnit(String[] parts, Integer upToIndex) {
+        upToIndex = upToIndex == null ? parts.length : upToIndex;
+        String[] res = new String[2];
+        res[0] = "";
+        res[1] = "";
+
+        for (int i = 0; i < parts.length; i++) {
+            if (i <= upToIndex) {
+                res[0] += " " + parts[i];
+            } else {
+                res[1] += " " + parts[i];
+            }
+        }
+
+        res[0] = TextUtils.normalize(res[0]);
+        res[1] = TextUtils.normalize(res[1]);
         return res;
     }
 

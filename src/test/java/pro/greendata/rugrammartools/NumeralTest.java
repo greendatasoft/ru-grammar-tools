@@ -33,6 +33,12 @@ public class NumeralTest {
         testNumerical(engine::inflectNumeral, p1, p2, p3, p4, p5, p6);
     }
 
+    @ParameterizedTest(name = "[{index}] ::: {0}")
+    @MethodSource("data")
+    public void testInflectAnyNumerical(String p1, String p2, String p3, String p4, String p5, String p6) {
+        testNumerical(engine::inflectAny, p1, p2, p3, p4, p5, p6);
+    }
+
     protected void testNumerical(BiFunction<String, Case, String> inflector,
                                  String p1, String p2, String p3, String p4, String p5, String p6) {
         assertPhrase(p2, p1, Case.GENITIVE, inflector);

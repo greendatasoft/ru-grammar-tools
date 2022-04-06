@@ -15,7 +15,35 @@ public class NumeralUtils {
 
     static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
     static final Set<String> MALE_NUMERALS = Set.of("один");
-    static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ий", "ая", "ое");
+    static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("первый", "второй", "третий", "четвёртый", "пятый", "шестой", "седьмой",
+            "восьмой", "девятый", "десятый", "дцатый", "сороковой", "сотый", "тысячный");
+    static final List<String> CARDINAL_NUMERAL_ENDINGS = List.of("один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять",
+            "десять", "дцать", "сорок", "десят", "сто", "сти", "ста", "сот");
+
+    /**
+     * Determines whether the given {@code word} can be a numeral.
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    //TODO: should do it right
+    // https://izamorfix.ru/rus/morfologiya/poryadkovye_chislit.html
+    public static boolean canBeNumeral(String word) {
+        word = TextUtils.normalize(word);
+        return canBeCardinal(word) || canBeOrdinalNumeral(word);
+    }
+
+    /**
+     * Determines whether the given {@code word} can be a cardinal numeral.
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeCardinal(String word) {
+        return (TextUtils.endsWithOneOfIgnoreCase(word, CARDINAL_NUMERAL_ENDINGS) ||
+                TextUtils.startsWithOneOfIgnoreCase(word, CARDINAL_NUMERAL_ENDINGS) ||
+                TextUtils.startsWithOneOfIgnoreCase(word, FEMALE_NUMERALS) ||
+                containsBigCardinalNumeral(word) ||
+                FEMALE_NUMERALS.contains(word));
+    }
 
     /**
      * Determines whether the given {@code word} can be an ordinal numeral.
@@ -24,7 +52,12 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean canBeOrdinalNumeral(String word) {
-        return TextUtils.endsWithOneOfIgnoreCase(word, ORDINAL_NUMERAL_ENDINGS) && !canBeFraction(word);
+        String[] parts = word.split(" ");
+        word = parts.length > 1 ? changeGenderOfOrdinalNumeral(parts[parts.length - 1], Gender.MALE) :
+                changeGenderOfOrdinalNumeral(word, Gender.MALE);
+        return (TextUtils.endsWithOneOfIgnoreCase(word, ORDINAL_NUMERAL_ENDINGS) ||
+                TextUtils.endsWithOneOfIgnoreCase(word, PlainDictionary.BIG_ORDINAL_NUMERALS)) &&
+                !canBeFraction(word);
     }
 
     /**
@@ -52,7 +85,7 @@ public class NumeralUtils {
         }
         for (String s : PlainDictionary.BIG_CARDINAL_NUMERALS) {
             // два миллиона целых две десятых, миллион целых одна сотая
-            if (nw.startsWith(s)) {
+            if (nw.contains(s)) {
                 return true;
             }
         }
@@ -102,6 +135,9 @@ public class NumeralUtils {
      * @return {@code String}
      */
     public static String changeGenderOfOrdinalNumeral(String numeral, Gender gender) {
+        if (numeral.length() < 2) {
+            return numeral;
+        }
         String nw = TextUtils.normalize(numeral);
         if ("третий".equals(nw)) {
             return TextUtils.toProperCase(numeral, GrammarUtils.select("третья", "третье", "третий", gender));
