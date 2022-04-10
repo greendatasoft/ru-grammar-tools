@@ -3,7 +3,13 @@ package pro.greendata.rugrammartools.impl.utils;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 
 /**
  * Utilities for working with the Russian language.
@@ -51,10 +57,6 @@ public class GrammarUtils {
             of("дой", "слюдой"),
             of("ние", "рефинансирование", "оседание")
     );
-
-    //Сложные существительные во множественном числе
-    //TODO: temporal solution!
-    private static final Map<String, String> PLURAL_NOUN = Map.of("друзья", "друг", "люди", "человек");
 
     private static final Collection<String> DEFINITELY_NEUTER_NOUNS = Set.of("знания", "прения");
 
@@ -364,7 +366,7 @@ public class GrammarUtils {
             return plural.substring(0, plural.length() - 1);
         }
         // TODO: complete
-        return PLURAL_NOUN.getOrDefault(plural, plural);
+        return plural;
     }
 
     public static String toSingularMasculineAdjective(String word) {

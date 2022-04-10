@@ -20,6 +20,9 @@ public class NumeralUtils {
     static final List<String> CARDINAL_NUMERAL_ENDINGS = List.of("один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять",
             "десять", "дцать", "сорок", "десят", "сто", "сти", "ста", "сот");
 
+    //TODO: FIX
+    private static final Set<String> NOT_NUMERAL = Set.of("место", "сторона", "стороны", "стол", "столы", "стати", "места", "двери");
+
     /**
      * Determines whether the given {@code word} can be a numeral.
      * @param word {@code String}, not {@code null}
@@ -29,7 +32,8 @@ public class NumeralUtils {
     // https://izamorfix.ru/rus/morfologiya/poryadkovye_chislit.html
     public static boolean canBeNumeral(String word) {
         word = TextUtils.normalize(word);
-        return canBeCardinal(word) || canBeOrdinalNumeral(word);
+        return !NOT_NUMERAL.contains(word) &&
+                (canBeCardinal(word) || canBeOrdinalNumeral(word));
     }
 
     /**

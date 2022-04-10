@@ -9,7 +9,15 @@ import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
 import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+
 
 /**
  * Mutable phrase-builder.
@@ -404,21 +412,18 @@ public class PhraseAssembler {
             return Optional.empty();
         }
         Optional<NounDictionary.Word> from = fromDictionary(part.key(), givenGender, givenAnimate);
-        if (from.isPresent()) {
-            part.plural = false;
-        } else if (GrammarUtils.canBePlural(part.key())) {
-            String k = GrammarUtils.toSingular(part.key());
-            from = fromDictionary(k, givenGender, givenAnimate);
-            if (from.isPresent()) {
-                part.key = k; // replace key!
-                part.plural = true;
-            }
-        }
         part.notFoundInDictionary = from.isEmpty();
         from.ifPresent(word -> {
             part.word = word;
             Gender g = Optional.ofNullable(word.gender()).orElse(givenGender);
             Boolean a = Optional.ofNullable(word.animate()).orElse(givenAnimate);
+            if (!word.isIndeclinable()) {
+                part.plural = !word.singular().equals(part.key());
+                part.key = word.singular();
+            } else {
+                part.plural = false;
+            }
+
             part.fillMissedSettings(g, PartOfSpeech.NOUN, a, word.isIndeclinable());
         });
         return from;

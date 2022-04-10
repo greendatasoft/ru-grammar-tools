@@ -69,42 +69,43 @@ public class AdjectiveDictionary extends Dictionary {
          * @param sourceLine {@code String}
          * @return a {@code Map.Entry}
          */
-        private static Map.Entry<String, Word> parse(String sourceLine) {
+        private static Map<String, Word> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = TextUtils.normalize(Objects.requireNonNull(array[0]));
             if (array.length < 10) {
                 return null;
             }
             Word res = new Word();
-            res.masculineCases = new String[6];
             if (array.length < 16) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
+            res.masculineCases = new String[6];
             for (int i = 0; i < 6; i++) {
                 res.masculineCases[i] = toEnding(key, array[10 + i]);
             }
             if (array.length < 22) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.feminineCases = new String[6];
             for (int i = 0; i < 6; i++) {
                 res.feminineCases[i] = toEnding(key, array[16 + i]);
             }
             if (array.length < 28) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.neuterCases = new String[6];
             for (int i = 0; i < 6; i++) {
                 res.neuterCases[i] = toEnding(key, array[22 + i]);
             }
             if (array.length < 34) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.pluralCases = new String[6];
             for (int i = 0; i < 6; i++) { // note that the base here is a singular key, not plural its form
                 res.pluralCases[i] = toEnding(key, array[28 + i]);
             }
-            return Map.entry(key, res);
+
+            return Map.of(key, res);
         }
 
         public final PartOfSpeech partOfSpeech() {

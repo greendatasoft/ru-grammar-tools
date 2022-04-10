@@ -4,7 +4,12 @@ import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.PartOfSpeech;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -84,6 +89,7 @@ public class NounDictionary extends Dictionary {
         private static final int GENDER_FLAG_0 = 32;
         private static final int GENDER_FLAG_1 = 64;
 
+        private String singularKey;
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
@@ -97,41 +103,48 @@ public class NounDictionary extends Dictionary {
          * @param sourceLine {@code String}
          * @return a {@code Map.Entry}
          */
-        private static Map.Entry<String, Word> parse(String sourceLine) {
+        private static Map<String, Word> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = TextUtils.normalize(Objects.requireNonNull(array[0]));
             if (array.length < 5) {
                 return null;
             }
             Word res = new Word();
+            res.singularKey = key;
             res.gender(parseGender(array[4]));
             if (array.length < 7) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.animate(parseBoolean(array[6]));
             if (array.length < 8) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.indeclinable(parseBoolean(array[7]));
             if (res.indeclinable() == Boolean.TRUE) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             if (array.length < 16) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
             res.singularCases = new String[5];
             for (int i = 0; i < 5; i++) {
                 res.singularCases[i] = toEnding(key, array[11 + i]);
             }
             if (array.length < 22) {
-                return Map.entry(key, res);
+                return Map.of(key, res);
             }
+            String pluralKey = normalizeKey(array[16]);
             res.plural = toEnding(key, array[16]);
             res.pluralCases = new String[5];
             for (int i = 0; i < 5; i++) { // note that the base here is a singular key, not plural its form
                 res.pluralCases[i] = toEnding(key, array[17 + i]);
             }
-            return Map.entry(key, res);
+
+            return toMap(res, key, pluralKey);
+        }
+
+        private static Map<String, Word> toMap(Word res, String... keys) {
+            return Arrays.stream(keys).collect(Collectors.toMap(Function.identity(), k -> res, (a, b) -> a));
         }
 
         private static Gender parseGender(String g) {
@@ -202,6 +215,10 @@ public class NounDictionary extends Dictionary {
             setCharacteristics(flag, HAS_INDECLINABLE, IS_INDECLINABLE);
         }
 
+        public String singular() {
+            return singularKey;
+        }
+
         public String[] singularCases() {
             return singularCases;
         }
@@ -220,7 +237,7 @@ public class NounDictionary extends Dictionary {
 
         @Override
         protected int fullness() {
-            return Stream.of(gender(), animate(), indeclinable(), plural, singularCases, pluralCases)
+            return Stream.of(gender(), animate(), indeclinable(), plural, singularKey, singularCases, pluralCases)
                     .filter(Objects::nonNull).mapToInt(x -> 1).sum();
         }
 
@@ -237,13 +254,14 @@ public class NounDictionary extends Dictionary {
             Word record = (Word) o;
             return characteristics == record.characteristics &&
                     Objects.equals(plural, record.plural) &&
+                    Objects.equals(singularKey, record.singularKey) &&
                     Arrays.equals(singularCases, record.singularCases) &&
                     Arrays.equals(pluralCases, record.pluralCases);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(characteristics, plural);
+            int result = Objects.hash(characteristics, plural, singularKey);
             result = 31 * result + Arrays.hashCode(singularCases);
             result = 31 * result + Arrays.hashCode(pluralCases);
             return result;
