@@ -7,7 +7,11 @@ import pro.greendata.rugrammartools.impl.Phrase.Type;
 import pro.greendata.rugrammartools.impl.dictionaries.AdjectiveDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
-import pro.greendata.rugrammartools.impl.utils.*;
+import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
+import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
+import pro.greendata.rugrammartools.impl.utils.NumeralUtils;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -235,9 +239,9 @@ public class InflectionEngineImpl implements InflectionEngine {
             if (NumeralUtils.canBeNumeral(parts[i])) {
                 String[] res = getNumeralAndUnit(parts, i);
                 if (res[1].isEmpty()) {
-                    return inflectNumeral(res[0], declension);
+                    return TextUtils.toProperCase(phrase, inflectNumeral(res[0], declension));
                 } else {
-                    return inflectNumeral(res[0], res[1], declension);
+                    return TextUtils.toProperCase(phrase, inflectNumeral(res[0], res[1], declension));
                 }
             }
         }
@@ -252,7 +256,6 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return inflectFullname(phrase, declension);
             }
         }
-        // todo: handle numerals (both cardinal and ordinal)
         return inflectRegularTerm(phrase, declension, null);
     }
 
@@ -318,7 +321,7 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     private static String[] checkAndSplit(String phrase) {
-        String[] res = require(phrase, "phrase").trim().split("\\s+");
+        String[] res = require(phrase, "phrase").trim().split("\\p{Z}");
         if (res.length == 0) {
             throw new IllegalArgumentException();
         }
@@ -379,7 +382,7 @@ public class InflectionEngineImpl implements InflectionEngine {
     protected String processDictionaryAdjectiveRecord(String key, AdjectiveDictionary.Word record, Case declension,
                                                       Word detail, Boolean plural) {
         String[] cases;
-        if (plural == Boolean.TRUE || plural == null && detail.isPlural()) {
+        if (plural == Boolean.TRUE || plural == null && detail.isPlural() == Boolean.TRUE) {
             cases = record.pluralCases();
         } else if (detail.gender() == Gender.MALE) {
             cases = record.masculineCases();
@@ -392,7 +395,7 @@ public class InflectionEngineImpl implements InflectionEngine {
         }
 
         String w = cases[declension.ordinal()];
-        if (declension == Case.ACCUSATIVE) {
+        if (declension == Case.ACCUSATIVE && (detail.gender() == Gender.MALE || plural == Boolean.TRUE)) {
             if (!detail.animate()) {
                 //Case.NOMINATIVE
                 w = cases[0];

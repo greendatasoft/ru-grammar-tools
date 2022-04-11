@@ -55,7 +55,7 @@ public class PhraseAssembler {
     }
 
     public static boolean isSpace(char ch) {
-        return Character.isWhitespace(ch);
+        return Character.isWhitespace(ch) || ch == 160;
     }
 
     public static boolean isStopSymbol(char ch) {
@@ -339,13 +339,10 @@ public class PhraseAssembler {
     }
 
     private static void processAdjective(Part part, Gender gender, Boolean animate) {
-        Optional<? extends Dictionary.Record> from = findAdjectiveInDictionary(part);
-
-        part.gender = gender;
-        part.animate = animate;
+        Optional<? extends Dictionary.Record> from = findAdjectiveInDictionary(part, gender, animate);
     }
 
-    private static Optional<? extends Dictionary.Record> findAdjectiveInDictionary(Part part) {
+    private static Optional<? extends Dictionary.Record> findAdjectiveInDictionary(Part part, Gender gender, Boolean animate) {
         if (part.word != null) { // already processed, found
             return Optional.of(part.word);
         }
@@ -361,6 +358,7 @@ public class PhraseAssembler {
         for (String s : keys) {
             from = fromDictionary(s);
             if (from.isPresent()) {
+                part.plural = from.get().pluralCases() != null && from.get().pluralCases()[0].equals(part.key);
                 part.key = s;
                 break;
             }
@@ -369,7 +367,7 @@ public class PhraseAssembler {
         part.notFoundInDictionary = from.isEmpty();
         from.ifPresent(word -> {
             part.word = word;
-            part.fillMissedSettings(null, PartOfSpeech.ADJECTIVE, null, false);
+            part.fillMissedSettings(gender, PartOfSpeech.ADJECTIVE, animate, false);
         });
         return from;
     }
