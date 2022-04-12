@@ -382,8 +382,8 @@ public class GrammarUtils {
             return TextUtils.replaceEnd(word, 2, "ий");
         }
         //For Plural Adjectives
-        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ие"))) { // Громкий (громкие)
-            return TextUtils.replaceEnd(word, 2, "ий");
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ие"))) { // Громкий (громкие), Мужской (мужские)
+            return TextUtils.replaceEnd(word, 2, "ий,") + TextUtils.replaceEnd(word, 2, "ой");
         }
         if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ые"))) { // Смешной (смешные), Смешанный (смешанные)
             return TextUtils.replaceEnd(word, 2, "ой,") + TextUtils.replaceEnd(word, 2, "ый");

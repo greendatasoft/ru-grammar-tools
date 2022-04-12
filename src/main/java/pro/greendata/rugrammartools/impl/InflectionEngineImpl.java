@@ -396,7 +396,7 @@ public class InflectionEngineImpl implements InflectionEngine {
 
         String w = cases[declension.ordinal()];
         if (declension == Case.ACCUSATIVE && (detail.gender() == Gender.MALE || plural == Boolean.TRUE)) {
-            if (!detail.animate()) {
+            if (detail.animate() == Boolean.FALSE) {
                 //Case.NOMINATIVE
                 w = cases[0];
             } else {

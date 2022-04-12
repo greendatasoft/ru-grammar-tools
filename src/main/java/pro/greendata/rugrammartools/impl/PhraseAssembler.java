@@ -416,7 +416,7 @@ public class PhraseAssembler {
             Gender g = Optional.ofNullable(word.gender()).orElse(givenGender);
             Boolean a = Optional.ofNullable(word.animate()).orElse(givenAnimate);
             if (!word.isIndeclinable()) {
-                part.plural = !word.singular().equals(part.key());
+                part.plural = !word.singular().equals(part.key()) || ".".equals(word.plural());
                 part.key = word.singular();
             } else {
                 part.plural = false;
