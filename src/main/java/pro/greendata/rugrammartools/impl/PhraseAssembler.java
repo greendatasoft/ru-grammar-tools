@@ -1,6 +1,7 @@
 package pro.greendata.rugrammartools.impl;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.AdjectiveDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
@@ -8,7 +9,15 @@ import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
 import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
 import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+
 
 /**
  * Mutable phrase-builder.
@@ -37,12 +46,16 @@ public class PhraseAssembler {
         return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
     }
 
+    public static Optional<AdjectiveDictionary.Word> fromDictionary(String key) {
+        return Dictionary.getAdjectiveDictionary().wordDetails(key);
+    }
+
     public static String toKey(String w) {
         return TextUtils.normalize(w);
     }
 
     public static boolean isSpace(char ch) {
-        return Character.isWhitespace(ch);
+        return Character.isWhitespace(ch) || ch == 160;
     }
 
     public static boolean isStopSymbol(char ch) {
@@ -229,20 +242,26 @@ public class PhraseAssembler {
             // (masculine) skip leading adjectives
             if (phrase.isNullOr(Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
                 phrase.phraseGender = Gender.MALE;
-                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w)) {
+                //TODO: need to think. example: Рабочий полигона, но Рабочий день
+                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w) &&
+                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
+                //TODO: processAdjective
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 continue;
             }
             // (feminine) skip the leading adjectives
             if (phrase.isNullOr(Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
                 phrase.phraseGender = Gender.FEMALE;
-                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w)) {
+                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w) &&
+                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 continue;
             }
@@ -250,6 +269,13 @@ public class PhraseAssembler {
             if (phrase.isNullOr(Gender.NEUTER) && GrammarUtils.canBeSingularNominativeNeuterAdjective(w)) {
                 phrase.phraseGender = Gender.NEUTER;
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
+                continue;
+            }
+            if (next != null && GrammarUtils.canBePluralNominativeAdjective(w)){
+                part.plural = true;
+                part.partOfSpeech = PartOfSpeech.ADJECTIVE;
+                processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 continue;
             }
             phrase.subjectStartIndex = index;
@@ -257,6 +283,7 @@ public class PhraseAssembler {
         }
     }
 
+    // TODO: add processNoun and processAdjective
     private static void processPostSubjectParts(PhraseAssembler phrase) {
         phrase.endIndex = phrase.subjectEndIndex;
         Integer lastIndex = phrase.parts.lastKey();
@@ -264,8 +291,10 @@ public class PhraseAssembler {
         for (Integer k : tail.keySet()) {
             Part p = tail.get(k);
             if (!GrammarUtils.canBeAdjective(p.raw, phrase.phraseGender)) {
+                //processNoun(p, phrase.phraseGender, phrase.phraseAnimate);
                 break;
             }
+            //processAdjective(p, phrase.phraseGender, phrase.phraseAnimate);
             phrase.endIndex = k;
         }
         if (!Objects.equals(phrase.endIndex, phrase.subjectEndIndex) && !Objects.equals(phrase.endIndex, lastIndex)) {
@@ -309,6 +338,40 @@ public class PhraseAssembler {
         phrase.fillMissedSettingsFromWord(newParts.get(0));
     }
 
+    private static void processAdjective(Part part, Gender gender, Boolean animate) {
+        Optional<? extends Dictionary.Record> from = findAdjectiveInDictionary(part, gender, animate);
+    }
+
+    private static Optional<? extends Dictionary.Record> findAdjectiveInDictionary(Part part, Gender gender, Boolean animate) {
+        if (part.word != null) { // already processed, found
+            return Optional.of(part.word);
+        }
+        if (part.notFoundInDictionary) { // already processed, but not found
+            return Optional.empty();
+        }
+
+        //TODO: Ключ надо поставить в единственное число м.р.
+        String key = GrammarUtils.toSingularMasculineAdjective(part.key());
+        String[] keys = key.split(",");
+        Optional<AdjectiveDictionary.Word> from = Optional.empty();
+
+        for (String s : keys) {
+            from = fromDictionary(s);
+            if (from.isPresent()) {
+                part.plural = from.get().pluralCases() != null && from.get().pluralCases()[0].equals(part.key);
+                part.key = s;
+                break;
+            }
+        }
+
+        part.notFoundInDictionary = from.isEmpty();
+        from.ifPresent(word -> {
+            part.word = word;
+            part.fillMissedSettings(gender, PartOfSpeech.ADJECTIVE, animate, false);
+        });
+        return from;
+    }
+
     private static void processNoun(Part part, Gender gender, Boolean animate) {
         Optional<? extends Dictionary.Record> from = findNounInDictionary(part, gender, animate);
         if (from.isPresent()) {
@@ -347,21 +410,18 @@ public class PhraseAssembler {
             return Optional.empty();
         }
         Optional<NounDictionary.Word> from = fromDictionary(part.key(), givenGender, givenAnimate);
-        if (from.isPresent()) {
-            part.plural = false;
-        } else if (GrammarUtils.canBePlural(part.key())) {
-            String k = GrammarUtils.toSingular(part.key());
-            from = fromDictionary(k, givenGender, givenAnimate);
-            if (from.isPresent()) {
-                part.key = k; // replace key!
-                part.plural = true;
-            }
-        }
         part.notFoundInDictionary = from.isEmpty();
         from.ifPresent(word -> {
             part.word = word;
             Gender g = Optional.ofNullable(word.gender()).orElse(givenGender);
             Boolean a = Optional.ofNullable(word.animate()).orElse(givenAnimate);
+            if (!word.isIndeclinable()) {
+                part.plural = !word.singular().equals(part.key()) || ".".equals(word.plural());
+                part.key = word.singular();
+            } else {
+                part.plural = false;
+            }
+
             part.fillMissedSettings(g, PartOfSpeech.NOUN, a, word.isIndeclinable());
         });
         return from;

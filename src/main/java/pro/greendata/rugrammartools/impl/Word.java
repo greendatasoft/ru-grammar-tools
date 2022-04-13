@@ -16,6 +16,8 @@ public interface Word {
 
     PartOfSpeech partOfSpeech();
 
+    Boolean isPlural();
+
     boolean isIndeclinable();
 
     default RuleType rule() {

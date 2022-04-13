@@ -3,7 +3,13 @@ package pro.greendata.rugrammartools.impl.utils;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 
 /**
  * Utilities for working with the Russian language.
@@ -48,14 +54,16 @@ public class GrammarUtils {
                     "расписаний", "растений", "соединений", "сооружений", "строений", "термсоединений", "учреждений"),
             of("вой", "буровой", "вентилевой", "верховой", "горновой", "дверевой", "душевой", "кладовой",
                     "люковой", "миксеровой", "печевой", "скиповой", "стволовой"),
-            of("дой", "слюдой")
+            of("дой", "слюдой"),
+            of("ние", "рефинансирование", "оседание"),
+            of("тие", "развитие")
     );
 
     private static final Collection<String> DEFINITELY_NEUTER_NOUNS = Set.of("знания", "прения");
 
     private static final List<String> MALE_ADJECTIVE_ENDINGS = List.of("ий", "ый", "ой");
-    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя", "ка");
-    private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое");
+    private static final List<String> FEMALE_ADJECTIVE_ENDINGS = List.of("ая", "яя");
+    private static final List<String> NEUTER_ADJECTIVE_ENDINGS = List.of("ое", "ее");
 
     private static final List<String> PLURAL_ENDINGS = List.of("ы", "и", "я", "а");
 
@@ -114,6 +122,11 @@ public class GrammarUtils {
         return canBeSingularNominativeFeminineAdjective(word) && !canBeFeminineAdjectiveBasedSubstantiveNoun(word);
     }
 
+    public static boolean canBePluralNominativeAdjective(String word) {
+        return TextUtils.endsWithOneOfIgnoreCase(word, List.of("ые", "ие", "ьи")) && !DEFINITELY_NOT_ADJECTIVES.
+                getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(TextUtils.normalize(word));
+    }
+
     /**
      * Determines whether the specified {@code word} can be a singular nominative masculine adjective
      * (i.e. является ли слово {@code прилагательным в мужском роде, единственном числе и именительном падеже}?).
@@ -160,7 +173,7 @@ public class GrammarUtils {
 
     private static boolean canBeSingularNominativeAdjective(String word) {
         return word.length() > 2 && !DEFINITELY_NOT_ADJECTIVES
-                .getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(word);
+                .getOrDefault(word.substring(word.length() - 3), Collections.emptySet()).contains(TextUtils.normalize(word));
     }
 
     /**
@@ -183,6 +196,11 @@ public class GrammarUtils {
      */
     public static boolean canBeFeminineAdjectiveBasedSubstantiveNoun(String word) {
         return PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word));
+    }
+
+    // TODO: Remove NO_SUBSTANTIVE_PHRASE dic
+    public static boolean canBePhraseIsNotSubstantiveNoun(String phrase) {
+        return PlainDictionary.NO_SUBSTANTIVE_PHRASE.contains(TextUtils.normalize(phrase));
     }
 
     /**
@@ -350,6 +368,28 @@ public class GrammarUtils {
         }
         // TODO: complete
         return plural;
+    }
+
+    public static String toSingularMasculineAdjective(String word) {
+        //For Singular Adjectives
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ья", "ье", "ьи"))) { // кошачий, божий, птичий
+            return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ая", "ое"))) { // Хороший, Смешной
+            return TextUtils.replaceEnd(word, 2, "ий,") + TextUtils.replaceEnd(word, 2, "ой");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ее"))) { // Хороший
+            return TextUtils.replaceEnd(word, 2, "ий");
+        }
+        //For Plural Adjectives
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ие"))) { // Громкий (громкие), Мужской (мужские)
+            return TextUtils.replaceEnd(word, 2, "ий,") + TextUtils.replaceEnd(word, 2, "ой");
+        }
+        if (TextUtils.endsWithOneOfIgnoreCase(word, List.of("ые"))) { // Смешной (смешные), Смешанный (смешанные)
+            return TextUtils.replaceEnd(word, 2, "ой,") + TextUtils.replaceEnd(word, 2, "ый");
+        }
+        // TODO: complete
+        return word;
     }
 
     static boolean endsWithWord(String phrase, String word) {

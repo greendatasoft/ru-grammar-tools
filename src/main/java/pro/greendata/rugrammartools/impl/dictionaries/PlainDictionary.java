@@ -33,6 +33,11 @@ public class PlainDictionary {
      */
     public static final Collection<String> MASCULINE_SUBSTANTIVE_NOUNS = load("/male-substantives.txt");
     /**
+     * collection of phrases that are not substantive
+     * (выражения, в которых прилагательные точно не являются существительными)
+     */
+    public static final Collection<String> NO_SUBSTANTIVE_PHRASE = load("/no-substantives-phrase.txt");
+    /**
      * A {@code List} of big cardinal numerals, so called {@code "Короткая шкала"}.
      *
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%98%D0%BC%D0%B5%D0%BD%D0%BD%D1%8B%D0%B5_%D0%BD%D0%B0%D0%B7%D0%B2%D0%B0%D0%BD%D0%B8%D1%8F_%D1%81%D1%82%D0%B5%D0%BF%D0%B5%D0%BD%D0%B5%D0%B9_%D1%82%D1%8B%D1%81%D1%8F%D1%87%D0%B8'>Именные названия степеней тысячи</a>
@@ -41,6 +46,12 @@ public class PlainDictionary {
             "тысяча", "миллион", "миллиард", "триллион", "квадриллион", "квинтиллион", "секстиллион", "септиллион",
             "октиллион", "нониллион", "дециллион", "ундециллион", "дуодециллион", "тредециллион", "кваттордециллион",
             "квиндециллион", "седециллион", "септдециллион", "октодециллион", "новемдециллион", "вигинтиллион");
+
+    /**
+     * A {@code List} of big ordinal numerals.
+     */
+    public static final List<String> BIG_ORDINAL_NUMERALS = BIG_CARDINAL_NUMERALS.stream()
+            .map(w -> w + "ный").collect(Collectors.toList());
     /**
      * A collection of simple (non-derivative) prepositions ({@code список непроизводных предлогов})
      * @see <a href='https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B5%D0%B4%D0%BB%D0%BE%D0%B3'>Предлог</a>

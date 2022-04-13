@@ -15,7 +15,44 @@ public class NumeralUtils {
 
     static final Set<String> FEMALE_NUMERALS = Set.of("одна", "две", "тысяча", "тысяч", "тысячи", "целая");
     static final Set<String> MALE_NUMERALS = Set.of("один");
-    static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("ой", "ый", "ий", "ая", "ое");
+    static final Set<String> ORDINAL_NUMERAL_DISCHARGE_ENDING = Set.of("десятый", "сотый", "тысячный", "миллионный",
+            "миллиардный", "триллионный");
+    static final List<String> ORDINAL_NUMERAL_ENDINGS = List.of("первый", "второй", "третий", "четвёртый", "пятый", "шестой", "седьмой",
+            "восьмой", "девятый", "десятый", "дцатый", "сороковой", "сотый", "тысячный");
+    static final List<String> CARDINAL_NUMERAL_ENDINGS = List.of("один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять",
+            "десять", "дцать", "сорок", "десят", "сто", "сти", "ста", "сот");
+
+    //TODO: FIX
+    private static final Set<String> NOT_NUMERAL = Set.of("место", "места", "двери");
+
+    /**
+     * Determines whether the given {@code word} can be a numeral.
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    //TODO: should do it right
+    public static boolean canBeNumeral(String word) {
+        String ordinalWord = changeGenderOfOrdinalDischargeNumeral(word);
+        word = TextUtils.normalize(word);
+        return !NOT_NUMERAL.contains(word) &&
+                (
+                        canBeCardinal(word) ||
+                        canBeOrdinalNumeral(word) ||
+                        TextUtils.endsWithOneOfIgnoreCase(ordinalWord, ORDINAL_NUMERAL_DISCHARGE_ENDING)
+                );
+    }
+
+    /**
+     * Determines whether the given {@code word} can be a cardinal numeral.
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBeCardinal(String word) {
+        return (TextUtils.endsWithOneOfIgnoreCase(word, CARDINAL_NUMERAL_ENDINGS) ||
+                TextUtils.startsWithOneOfIgnoreCase(word, FEMALE_NUMERALS) ||
+                containsBigCardinalNumeral(word) ||
+                FEMALE_NUMERALS.contains(word));
+    }
 
     /**
      * Determines whether the given {@code word} can be an ordinal numeral.
@@ -24,7 +61,12 @@ public class NumeralUtils {
      * @return {@code boolean}
      */
     public static boolean canBeOrdinalNumeral(String word) {
-        return TextUtils.endsWithOneOfIgnoreCase(word, ORDINAL_NUMERAL_ENDINGS) && !canBeFraction(word);
+        String[] parts = word.split(" ");
+        word = parts.length > 1 ? changeGenderOfOrdinalNumeral(parts[parts.length - 1], Gender.MALE) :
+                changeGenderOfOrdinalNumeral(word, Gender.MALE);
+        return (TextUtils.endsWithOneOfIgnoreCase(word, ORDINAL_NUMERAL_ENDINGS) ||
+                TextUtils.endsWithOneOfIgnoreCase(word, PlainDictionary.BIG_ORDINAL_NUMERALS)) &&
+                !canBeFraction(word);
     }
 
     /**
@@ -52,7 +94,7 @@ public class NumeralUtils {
         }
         for (String s : PlainDictionary.BIG_CARDINAL_NUMERALS) {
             // два миллиона целых две десятых, миллион целых одна сотая
-            if (nw.startsWith(s)) {
+            if (nw.startsWith(s) && !nw.equals(s + "ы")) {
                 return true;
             }
         }
@@ -94,6 +136,17 @@ public class NumeralUtils {
         return numeral;
     }
 
+    //TODO: temporary solution
+    private static String changeGenderOfOrdinalDischargeNumeral(String numeral) {
+        if (numeral.length() < 2) {
+            return numeral;
+        }
+        String nw = TextUtils.normalize(numeral);
+        String ending = GrammarUtils.select("ая", "ое", "ый", Gender.MALE);
+        String res = TextUtils.replaceEnd(nw, 2, ending);
+        return TextUtils.toProperCase(numeral, res);
+    }
+
     /**
      * Changes the gender of the specified ordinal numeral word.
      *
@@ -102,6 +155,9 @@ public class NumeralUtils {
      * @return {@code String}
      */
     public static String changeGenderOfOrdinalNumeral(String numeral, Gender gender) {
+        if (numeral.length() < 2) {
+            return numeral;
+        }
         String nw = TextUtils.normalize(numeral);
         if ("третий".equals(nw)) {
             return TextUtils.toProperCase(numeral, GrammarUtils.select("третья", "третье", "третий", gender));

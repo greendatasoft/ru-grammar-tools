@@ -4,9 +4,14 @@ import pro.greendata.rugrammartools.Case;
 import pro.greendata.rugrammartools.Gender;
 import pro.greendata.rugrammartools.InflectionEngine;
 import pro.greendata.rugrammartools.impl.Phrase.Type;
+import pro.greendata.rugrammartools.impl.dictionaries.AdjectiveDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
-import pro.greendata.rugrammartools.impl.utils.*;
+import pro.greendata.rugrammartools.impl.utils.GrammarUtils;
+import pro.greendata.rugrammartools.impl.utils.HumanNameUtils;
+import pro.greendata.rugrammartools.impl.utils.NumeralUtils;
+import pro.greendata.rugrammartools.impl.utils.RuleUtils;
+import pro.greendata.rugrammartools.impl.utils.TextUtils;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -230,6 +235,16 @@ public class InflectionEngineImpl implements InflectionEngine {
     public String inflectAny(String phrase, Case declension) {
         require(declension, "null case declension");
         String[] parts = checkAndSplit(phrase);
+        for (int i = parts.length - 1; i >= 0; i--) {
+            if (NumeralUtils.canBeNumeral(parts[i])) {
+                String[] res = getNumeralAndUnit(parts, i);
+                if (res[1].isEmpty()) {
+                    return TextUtils.toProperCase(phrase, inflectNumeral(res[0], declension));
+                } else {
+                    return TextUtils.toProperCase(phrase, inflectNumeral(res[0], res[1], declension));
+                }
+            }
+        }
         if (parts.length < 4) { // then can be full name
             if (parts.length > 1 && HumanNameUtils.isFirstname(parts[1])) {
                 return inflectFullname(phrase, declension);
@@ -241,7 +256,6 @@ public class InflectionEngineImpl implements InflectionEngine {
                 return inflectFullname(phrase, declension);
             }
         }
-        // todo: handle numerals (both cardinal and ordinal)
         return inflectRegularTerm(phrase, declension, null);
     }
 
@@ -307,10 +321,29 @@ public class InflectionEngineImpl implements InflectionEngine {
     }
 
     private static String[] checkAndSplit(String phrase) {
-        String[] res = require(phrase, "phrase").trim().split("\\s+");
+        String[] res = require(phrase, "phrase").trim().split("\\p{Z}");
         if (res.length == 0) {
             throw new IllegalArgumentException();
         }
+        return res;
+    }
+
+    private static String[] getNumeralAndUnit(String[] parts, Integer upToIndex) {
+        upToIndex = upToIndex == null ? parts.length : upToIndex;
+        String[] res = new String[2];
+        res[0] = "";
+        res[1] = "";
+
+        for (int i = 0; i < parts.length; i++) {
+            if (i <= upToIndex) {
+                res[0] += " " + parts[i];
+            } else {
+                res[1] += " " + parts[i];
+            }
+        }
+
+        res[0] = TextUtils.normalize(res[0]);
+        res[1] = TextUtils.normalize(res[1]);
         return res;
     }
 
@@ -326,8 +359,15 @@ public class InflectionEngineImpl implements InflectionEngine {
     protected String processRegularWord(String key, Word details, Case declension, Boolean toPlural) {
         RuleType type = details.rule();
         Dictionary.Record record = details.record();
-        String res = type == RuleType.GENERIC && record instanceof NounDictionary.Word ?
-                processDictionaryNounRecord(key, (NounDictionary.Word) record, declension, toPlural) : null;
+        String res;
+        if (type == RuleType.GENERIC && record instanceof NounDictionary.Word) {
+            res = processDictionaryNounRecord(key, (NounDictionary.Word) record, declension, toPlural);
+        } else if (type == RuleType.GENERIC && record instanceof AdjectiveDictionary.Word) {
+            res = processDictionaryAdjectiveRecord(key, (AdjectiveDictionary.Word) record, declension,
+                    details, toPlural);
+        } else {
+            res = null;
+        }
         // indeclinable words are skipped upper on the stack, if null - then the word is incomplete, try petrovich
         if (res != null) {
             return res;
@@ -337,6 +377,44 @@ public class InflectionEngineImpl implements InflectionEngine {
             key = GrammarUtils.toPluralNoun(key);
         }
         return processRule(key, type, declension, details.gender(), details.partOfSpeech(), details.animate(), toPlural);
+    }
+
+    protected String processDictionaryAdjectiveRecord(String key, AdjectiveDictionary.Word record, Case declension,
+                                                      Word detail, Boolean plural) {
+        String[] cases;
+        if (plural == Boolean.TRUE || plural == null && detail.isPlural() == Boolean.TRUE) {
+            cases = record.pluralCases();
+        } else if (detail.gender() == Gender.MALE) {
+            cases = record.masculineCases();
+        } else if (detail.gender() == Gender.FEMALE) {
+            cases = record.feminineCases();
+        } else if (detail.gender() == Gender.NEUTER) {
+            cases = record.neuterCases();
+        } else {
+            return null;
+        }
+
+        String w = cases[declension.ordinal()];
+        if (declension == Case.ACCUSATIVE && (detail.gender() == Gender.MALE || plural == Boolean.TRUE)) {
+            if (detail.animate() == Boolean.FALSE) {
+                //Case.NOMINATIVE
+                w = cases[0];
+            } else {
+                //Берем окончание, которое отличное от Case.NOMINATIVE
+                if (cases[declension.ordinal()].contains(",")) {
+                    for (String s : cases[declension.ordinal()].split(",")) {
+                        if (cases[0].equals(s)) {
+                            continue;
+                        }
+                        w = s;
+                    }
+                } else {
+                    w = cases[declension.ordinal()];
+                }
+            }
+        }
+
+        return applyCase(key, w);
     }
 
     /**

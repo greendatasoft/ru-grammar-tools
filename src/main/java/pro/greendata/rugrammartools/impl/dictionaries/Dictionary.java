@@ -24,7 +24,7 @@ public abstract class Dictionary {
     // but just in case store it as SoftReference:
     private volatile SoftReference<Map<String, Record>> content;
 
-    protected Dictionary(String path, Function<String, Map.Entry<String, ? extends Record>> parser) {
+    protected Dictionary(String path, Function<String, Map<String, ? extends Record>> parser) {
         Objects.requireNonNull(path);
         Objects.requireNonNull(parser);
         this.loader = () -> load(path, 26900, parser);
@@ -39,6 +39,10 @@ public abstract class Dictionary {
         return NounDictionary.DICTIONARY;
     }
 
+    public static AdjectiveDictionary getAdjectiveDictionary() {
+        return AdjectiveDictionary.DICTIONARY;
+    }
+
     /**
      * Loads the {@link Dictionary} from the file system.
      *
@@ -50,19 +54,21 @@ public abstract class Dictionary {
     @SuppressWarnings({"unchecked"})
     protected static Map<String, Record> load(String source,
                                               int capacity,
-                                              Function<String, Map.Entry<String, ? extends Record>> parser) {
+                                              Function<String, Map<String, ? extends Record>> parser) {
         Map<String, Record> data = new HashMap<>(capacity);
         Map<Record, Record> cache = new HashMap<>(capacity);
         try (InputStream in = Objects.requireNonNull(Dictionary.class.getResourceAsStream(source));
              BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
              Stream<String> lines = reader.lines()) {
             lines.forEach(record -> {
-                Map.Entry<String, ? extends Record> e = parser.apply(record);
+                Map<String, ? extends Record> e = parser.apply(record);
                 if (e == null) {
                     return;
                 }
-                Record value = cache.computeIfAbsent(e.getValue(), x -> e.getValue());
-                data.merge(e.getKey(), value, MultiRecord::create);
+                e.forEach((k, v) -> {
+                    Record value = cache.computeIfAbsent(v, x -> v);
+                    data.merge(k, value, MultiRecord::create);
+                });
             });
         } catch (IOException e) {
             throw new UncheckedIOException("Can't load " + source, e);
@@ -150,6 +156,11 @@ public abstract class Dictionary {
                 res.add(RuleUtils.calcEnding(key, p));
             }
             return res.toString();
+        }
+
+        //If key contains ', remove it
+        protected static String normalizeKey(String key) {
+            return TextUtils.normalize(key).replace("'", "");
         }
 
         /**

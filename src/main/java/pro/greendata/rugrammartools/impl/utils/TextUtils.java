@@ -176,6 +176,16 @@ public class TextUtils {
     }
 
     /**
+     * Answers {@code true} if the given {@code string} starts with the given {@code ending} ignoring case.
+     * @param string {@code String}
+     * @param starting {@code String}
+     * @return {@code boolean}
+     */
+    public static boolean startsWithIgnoreCase(String string, String starting) {
+        return string.toLowerCase().startsWith(starting.toLowerCase());
+    }
+
+    /**
      * Answers {@code true} if the given {@code string} ends with the given {@code ending} ignoring case.
      *
      * @param string {@code String}
@@ -188,6 +198,22 @@ public class TextUtils {
             return false;
         }
         return string.substring(index).equalsIgnoreCase(ending);
+    }
+
+    /**
+     * Answers {@code true} if the given {@code string} starts with on of the starting from the specified collection, ignoring case.
+     *
+     * @param string  {@code String}
+     * @param starting {@code Collection} of {@code String}s
+     * @return {@code boolean}
+     */
+    public static boolean startsWithOneOfIgnoreCase(String string, Collection<String> starting) {
+        for (String prefix : starting) {
+            if (startsWithIgnoreCase(string, prefix)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
