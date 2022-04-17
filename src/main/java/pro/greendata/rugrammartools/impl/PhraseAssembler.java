@@ -43,7 +43,7 @@ public class PhraseAssembler {
     private String trailingSpace;
 
     public static Optional<NounDictionary.Word> fromDictionary(String key, Gender gender, Boolean animate) {
-        return Dictionary.getNounDictionary().wordDetails(key, gender, animate);
+        return Dictionary.getNounDictionary().wordDetails(key, gender, animate, null);
     }
 
     public static Optional<AdjectiveDictionary.Word> fromDictionary(String key) {
@@ -242,13 +242,12 @@ public class PhraseAssembler {
             // (masculine) skip leading adjectives
             if (phrase.isNullOr(Gender.MALE) && GrammarUtils.canBeSingularNominativeMasculineAdjective(w)) {
                 phrase.phraseGender = Gender.MALE;
-                //TODO: need to think. example: Рабочий полигона, но Рабочий день
-                if (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w) &&
-                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
+                //If next the word is a noun in the nominative case, then this word is definitely not substantive
+                if ((GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w) && next == null) ||
+                        (GrammarUtils.canBeMasculineAdjectiveBasedSubstantiveNoun(w) && next != null && !GrammarUtils.canBeMaleNoun(next.getValue().raw))) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
-                //TODO: processAdjective
                 processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 continue;
@@ -256,8 +255,9 @@ public class PhraseAssembler {
             // (feminine) skip the leading adjectives
             if (phrase.isNullOr(Gender.FEMALE) && GrammarUtils.canBeSingularNominativeFeminineAdjective(w)) {
                 phrase.phraseGender = Gender.FEMALE;
-                if (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w) &&
-                        !GrammarUtils.canBePhraseIsNotSubstantiveNoun(phrase.raw)) {
+                //If next the word is a noun in the nominative case, then this word is definitely not substantive
+                if ((GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w) && next == null) ||
+                        (GrammarUtils.canBeFeminineAdjectiveBasedSubstantiveNoun(w) && next != null && !GrammarUtils.canBeFeminineNoun(next.getValue().raw))) {
                     phrase.subjectStartIndex = index;
                     break;
                 }
@@ -274,6 +274,11 @@ public class PhraseAssembler {
             }
             if (next != null && GrammarUtils.canBePluralNominativeAdjective(w)){
                 part.plural = true;
+                //If next the word is a noun in the nominative case, then this word is definitely not substantive
+                if (GrammarUtils.canBePluralAdjectiveBasedSubstantiveNoun(w) && !GrammarUtils.canBePluralNoun(next.getValue().raw)) {
+                    phrase.subjectStartIndex = index;
+                    break;
+                }
                 part.partOfSpeech = PartOfSpeech.ADJECTIVE;
                 processAdjective(part, phrase.phraseGender, phrase.phraseAnimate);
                 continue;
@@ -415,13 +420,7 @@ public class PhraseAssembler {
             part.word = word;
             Gender g = Optional.ofNullable(word.gender()).orElse(givenGender);
             Boolean a = Optional.ofNullable(word.animate()).orElse(givenAnimate);
-            if (!word.isIndeclinable()) {
-                part.plural = !word.singular().equals(part.key()) || ".".equals(word.plural());
-                part.key = word.singular();
-            } else {
-                part.plural = false;
-            }
-
+            part.plural = word.isPluralKey();
             part.fillMissedSettings(g, PartOfSpeech.NOUN, a, word.isIndeclinable());
         });
         return from;
