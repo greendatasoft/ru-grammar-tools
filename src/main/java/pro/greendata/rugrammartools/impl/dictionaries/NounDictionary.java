@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,7 +34,7 @@ public class NounDictionary extends Dictionary {
      */
     @Override
     public Optional<Word> wordDetails(String word) {
-        return wordDetails(word, null, null);
+        return wordDetails(word, null, null, null);
     }
 
     /**
@@ -46,12 +45,16 @@ public class NounDictionary extends Dictionary {
      * @param animate {@code Boolean}a filter parameter, can be {@code null}
      * @return an {@code Optional} of {@link Record}
      */
-    public Optional<Word> wordDetails(String key, Gender gender, Boolean animate) {
+    public Optional<Word> wordDetails(String key, Gender gender, Boolean animate, Boolean isPlural) {
         Record record = contentMap().get(key);
         if (record == null) {
             return Optional.empty();
         }
-        return Optional.of(selectSingleRecord(record, gender, animate));
+        Word word = selectSingleRecord(record, gender, animate, isPlural);
+        if (word == null) {
+            return Optional.empty();
+        }
+        return Optional.of(word);
     }
 
     /**
@@ -62,15 +65,23 @@ public class NounDictionary extends Dictionary {
      * @param animated {@code Boolean}
      * @return {@link Word}
      */
-    protected Word selectSingleRecord(Record record, Gender gender, Boolean animated) {
+    protected Word selectSingleRecord(Record record, Gender gender, Boolean animated, Boolean isPlural) {
         if (record instanceof Word) {
-            return (Word) record;
+            Word word = (Word) record;
+            if (isPlural == null) {
+                return word;
+            }
+
+            if (word.isPluralKey == isPlural) {
+                return word;
+            }
+            return null;
         }
         MultiRecord multi = (MultiRecord) record;
         List<Word> res = Arrays.stream(multi.words)
                 .map(r -> (Word) r)
                 .sorted(BaseRecordImpl.FULLNESS_COMPARATOR)
-                .filter(w -> (gender == null || w.gender() == gender) && (animated == null || w.animate() == animated))
+                .filter(w -> (gender == null || w.gender() == gender) && (animated == null || w.animate() == animated) && (isPlural == null || w.isPluralKey() == isPlural))
                 .collect(Collectors.toList());
         if (res.isEmpty()) { // can't select, choose first
             return (Word) multi.words[0];
@@ -89,10 +100,11 @@ public class NounDictionary extends Dictionary {
         private static final int GENDER_FLAG_0 = 32;
         private static final int GENDER_FLAG_1 = 64;
 
-        private String singularKey;
+        private String singular;
         private String plural;
         private String[] singularCases;
         private String[] pluralCases;
+        private boolean isPluralKey;
 
         /**
          * Parses the csv-line (for noun).
@@ -106,45 +118,66 @@ public class NounDictionary extends Dictionary {
         private static Map<String, Word> parse(String sourceLine) {
             String[] array = sourceLine.split("\t");
             String key = TextUtils.normalize(Objects.requireNonNull(array[0]));
+            Word singularWord = toParse(key, array);
+
+            if (singularWord == null) {
+                return null;
+            }
+            singularWord.isPluralKey = false;
+
+            if (array.length < 22) {
+                return Map.of(key, singularWord);
+            }
+
+            String pluralKey = normalizeKey(array[16]);
+            if (key.equals(pluralKey)) {
+                singularWord.isPluralKey = true;
+                return Map.of(key, singularWord);
+            }
+
+            Word pluralWord = toParse(pluralKey, array);
+            if (pluralWord != null) {
+                pluralWord.isPluralKey = true;
+                return Map.of(key, singularWord, pluralKey, pluralWord);
+            }
+            return Map.of(key, singularWord);
+        }
+
+        private static Word toParse(String key, String[] array) {
             if (array.length < 5) {
                 return null;
             }
             Word res = new Word();
-            res.singularKey = key;
             res.gender(parseGender(array[4]));
             if (array.length < 7) {
-                return Map.of(key, res);
+                return res;
             }
             res.animate(parseBoolean(array[6]));
             if (array.length < 8) {
-                return Map.of(key, res);
+                return res;
             }
             res.indeclinable(parseBoolean(array[7]));
             if (res.indeclinable() == Boolean.TRUE) {
-                return Map.of(key, res);
+                return res;
             }
             if (array.length < 16) {
-                return Map.of(key, res);
+                return res;
             }
+            res.singular = toEnding(key, array[10]);
             res.singularCases = new String[5];
             for (int i = 0; i < 5; i++) {
                 res.singularCases[i] = toEnding(key, array[11 + i]);
             }
             if (array.length < 22) {
-                return Map.of(key, res);
+                return res;
             }
-            String pluralKey = normalizeKey(array[16]);
             res.plural = toEnding(key, array[16]);
             res.pluralCases = new String[5];
             for (int i = 0; i < 5; i++) { // note that the base here is a singular key, not plural its form
                 res.pluralCases[i] = toEnding(key, array[17 + i]);
             }
 
-            return toMap(res, key, pluralKey);
-        }
-
-        private static Map<String, Word> toMap(Word res, String... keys) {
-            return Arrays.stream(keys).collect(Collectors.toMap(Function.identity(), k -> res, (a, b) -> a));
+            return res;
         }
 
         private static Gender parseGender(String g) {
@@ -216,7 +249,7 @@ public class NounDictionary extends Dictionary {
         }
 
         public String singular() {
-            return singularKey;
+            return singular;
         }
 
         public String[] singularCases() {
@@ -235,9 +268,13 @@ public class NounDictionary extends Dictionary {
             return indeclinable() != null && indeclinable();
         }
 
+        public boolean isPluralKey() {
+            return isPluralKey;
+        }
+
         @Override
         protected int fullness() {
-            return Stream.of(gender(), animate(), indeclinable(), plural, singularKey, singularCases, pluralCases)
+            return Stream.of(gender(), animate(), indeclinable(), plural, isPluralKey, singularCases, pluralCases, singular)
                     .filter(Objects::nonNull).mapToInt(x -> 1).sum();
         }
 
@@ -254,14 +291,15 @@ public class NounDictionary extends Dictionary {
             Word record = (Word) o;
             return characteristics == record.characteristics &&
                     Objects.equals(plural, record.plural) &&
-                    Objects.equals(singularKey, record.singularKey) &&
+                    Objects.equals(singular, record.singular) &&
+                    Objects.equals(isPluralKey, record.isPluralKey) &&
                     Arrays.equals(singularCases, record.singularCases) &&
                     Arrays.equals(pluralCases, record.pluralCases);
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hash(characteristics, plural, singularKey);
+            int result = Objects.hash(characteristics, plural, isPluralKey, singular);
             result = 31 * result + Arrays.hashCode(singularCases);
             result = 31 * result + Arrays.hashCode(pluralCases);
             return result;

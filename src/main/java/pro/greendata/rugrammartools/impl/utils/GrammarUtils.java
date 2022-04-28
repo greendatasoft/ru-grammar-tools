@@ -1,6 +1,8 @@
 package pro.greendata.rugrammartools.impl.utils;
 
 import pro.greendata.rugrammartools.Gender;
+import pro.greendata.rugrammartools.impl.dictionaries.Dictionary;
+import pro.greendata.rugrammartools.impl.dictionaries.NounDictionary;
 import pro.greendata.rugrammartools.impl.dictionaries.PlainDictionary;
 
 import java.util.Collection;
@@ -70,6 +72,9 @@ public class GrammarUtils {
     private static Map.Entry<String, Set<String>> of(String key, String... values) {
         return Map.entry(key, Set.of(values));
     }
+
+    //Noun Dictionary
+    private static final NounDictionary NOUN_DICTIONARY = Dictionary.getNounDictionary();
 
     /**
      * Answers {@code true} if the given {@code word} consists of russian letters and hyphen.
@@ -198,9 +203,28 @@ public class GrammarUtils {
         return PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.normalize(word));
     }
 
-    // TODO: Remove NO_SUBSTANTIVE_PHRASE dic
-    public static boolean canBePhraseIsNotSubstantiveNoun(String phrase) {
-        return PlainDictionary.NO_SUBSTANTIVE_PHRASE.contains(TextUtils.normalize(phrase));
+    /**
+     * Determines whether the given {@code word} can be a noun-substantive from a plural adjective
+     * (i.e. является ли слово {@code существительным-субстантиватом из прилагательного во множественном числе}?).
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBePluralAdjectiveBasedSubstantiveNoun(String word) {
+        if (word.length() < 2) {
+            return false;
+        }
+        if (PlainDictionary.FEMININE_SUBSTANTIVE_NOUNS.contains(TextUtils.replaceEnd(word, 2, "ая"))) {
+            return true;
+        }
+        return PlainDictionary.MASCULINE_SUBSTANTIVE_NOUNS.stream().anyMatch(noun -> {
+            if (noun.equals(TextUtils.replaceEnd(word, 2, "ой"))) {
+                return true;
+            }
+            if (noun.equals(TextUtils.replaceEnd(word, 2, "ий"))) {
+                return true;
+            }
+            return noun.equals(TextUtils.replaceEnd(word, 2, "ый"));
+        });
     }
 
     /**
@@ -212,6 +236,9 @@ public class GrammarUtils {
      */
     public static boolean canBeFeminineNoun(String word) {
         if (canBeFeminineAdjectiveBasedSubstantiveNoun(word)) {
+            return true;
+        }
+        if (NOUN_DICTIONARY.wordDetails(word, Gender.FEMALE, null, false).isPresent()) {
             return true;
         }
         // свинья, ладья, свекла, берёза, копейка
@@ -252,7 +279,23 @@ public class GrammarUtils {
         if (canBeMasculineAdjectiveBasedSubstantiveNoun(word)) {
             return true;
         }
-        return TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.MALE));
+        if (NOUN_DICTIONARY.wordDetails(word, Gender.MALE, null, false).isPresent()) {
+            return true;
+        }
+        //TODO: Пока отключил, потому что в эти окончания попадают не только И. п.
+        return false;
+        //return TextUtils.endsWithOneOfIgnoreCase(word, endings(Gender.MALE));
+    }
+
+    /**
+     * Determines (not very accurately) whether the given {@code word} can be a plural and nominative masculine noun
+     * (i.e. является ли слово {@code существительным в мужском роде множественного числе и именительном падеже}?).
+     *
+     * @param word {@code String}, not {@code null}
+     * @return {@code boolean}
+     */
+    public static boolean canBePluralNoun(String word) {
+        return NOUN_DICTIONARY.wordDetails(word, null, null, true).isPresent();
     }
 
     private static Collection<String> endings(Gender gender) {
